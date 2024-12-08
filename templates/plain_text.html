@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+</head>
+<body>
+    <pre>{{ page_text|e }}</pre>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy the text from the source element to the clipboard.
+        const x = '{{ clip_b64 }}';
+        if (x != '')  {
+            navigator.clipboard.writeText(atob(x));
+        }
+    });
+  </script>
+</body>
+</body>
+</html>

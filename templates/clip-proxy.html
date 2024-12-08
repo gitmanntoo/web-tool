@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipboard Proxy</title>
+</head>
+<body>
+  <h1 id="heading">Clipboard Proxy</h1>
+  <!-- <button id="read-clipboard">Read Clipboard</button> -->
+  <div id="clipboard-text"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Send clipboard data in chunks of 1024 characters.
+      const chunkSize = 2 << 20;
+
+      // Generate a unique ID for this form. All chunks will use the same ID.
+      const batchId = crypto.randomUUID();
+
+      const readClipboardButton = document.getElementById('read-clipboard');
+      const clipboardTextElement = document.getElementById('clipboard-text');
+
+      navigator.clipboard.readText()
+          .then(function(text) {
+              var textLength = text.length;
+
+              // Build a target URL for the form by replacing the current path with the target path.
+              var b = new URL(window.location.href)
+              var p = new URLSearchParams(window.location.search);
+              b.pathname = p.get('target');
+              p.delete('target');
+              p.append('batchId', batchId);
+              p.append("textLength", textLength);
+              b.search = p.toString();
+              var formAction = b.toString();
+
+              var chunks = [];
+              for (let i = 0; i < text.length; i += chunkSize) {
+                const chunk = text.slice(i, i + chunkSize);
+                chunks.push(chunk);
+              }
+              clipboardTextElement.textContent = `Processin ${chunks.length} chunks, ${text.length} characters...`;
+
+              var promises = [];
+              var chunkNum = 0;
+              for (let i = 0; i < chunks.length; i += 1) {
+                chunkNum += 1;
+                const chunk = chunks[i];
+
+                // Create a new request object for the chunk
+                var collectorUrl =
+                  new URL(window.location.href).origin + "/clip-collector";
+                collectorUrl += "?batchId=" + batchId;
+                collectorUrl += "&chunkNum=" + chunkNum;
+
+                promises.push(new Promise((resolve, reject) => {
+                  const xhr = new XMLHttpRequest();
+                  xhr.open('POST', collectorUrl, true);
+                  xhr.setRequestHeader('Content-Type', 'text/plain');
+
+                  xhr.onload = () => {
+                    if (xhr.status === 200) {
+                      const msg = `Chunk sent successfully! (${chunkNum})`
+                      console.log(msg);
+                      resolve();
+                    } else {
+                      console.error(`Error sending chunk: ${xhr.statusText}`);
+                      reject(new Error(xhr.statusText));
+                    }
+                  };
+
+                  xhr.onerror = () => {
+                    console.error('Error sending chunk:', xhr.statusText);
+                    reject(new Error(xhr.statusText));
+                  };
+
+                  // Add delay between chunks to prevent resource exhaustion
+                  setTimeout(() => {
+                    xhr.send(chunk);
+                  }, chunkNum * 10);
+                }));
+              }
+              
+              let completedPromises = 0;
+              Promise.all(promises).then(() => {
+                completedPromises = promises.length;
+                clipboardTextElement.textContent = `Processed ${completedPromises}/${promises.length} chunks...`;
+
+                // Create a new form element
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = formAction;
+
+                // Add the clipboard content as the content of the form
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'X-Batch-Id';
+                input.value = batchId;
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+
+                // Submit the form
+                form.submit();
+              }).catch((error) => {
+                console.error('Error sending chunks:', error);
+                clipboardTextElement.textContent = 'Error processing chunks';
+              });
+
+              // // Create a new form element
+              // const form = document.createElement('form');
+              // form.method = 'post';
+              // form.action = formAction;
+
+              // // Add the clipboard content as the content of the form
+              // const input = document.createElement('input');
+              // input.type = 'hidden';
+              // input.name = 'X-Batch-Id';
+              // input.value = batchId;
+              // form.appendChild(input);
+
+              // document.body.appendChild(form);
+
+              // // Submit the form
+              // form.submit();
+          })
+          .catch(function(err) {
+            console.error(err);
+            clipboardTextElement.textContent = 'Error reading clipboard';
+          });
+
+      // readClipboardButton.addEventListener('click', function(e) {
+      //   // Prevent the default button click behavior from occurring
+      //   e.preventDefault();
+
+      // });
+    });
+  </script>
+</body>
+</body>
+</html>

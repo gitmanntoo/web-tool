@@ -1,8 +1,9 @@
+import base64
 import json
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-from flask import abort, request
+from flask import abort, request, make_response
 from jinja2 import Environment, FileSystemLoader
 import jsmin
 import pyperclip
@@ -36,7 +37,7 @@ def get_javascript_file(filename, mode, template_env=None):
             abort(404)  # Not found if the file does not exist
 
     # Minify the contents if set.
-    if mode in ("minify","bookmarklet"):
+    if mode in ("minify", "bookmarklet"):
         contents = jsmin.jsmin(contents).strip()
 
     # Add a bookmarklet if set.
@@ -129,3 +130,23 @@ def get_page_metadata():
     )
 
     return metadata
+
+
+def plain_text_response(
+    template_env: Environment,
+    page_title: str,
+    page_text: str,
+):
+    template = template_env.get_template('plain_text.html')
+
+    # Base64 encode the page text so that it can be safely embedded in the HTML.
+    clip_b64 = base64.b64encode(page_text.encode()).decode()
+
+    rendered_html = template.render({
+        "page_title": page_title,
+        "page_text": page_text,
+        "clip_b64": clip_b64,
+    })
+
+    resp = make_response(rendered_html)
+    return resp
