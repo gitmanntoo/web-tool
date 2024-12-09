@@ -1,3 +1,4 @@
+import base64
 import json
 from urllib.parse import urlparse
 
@@ -200,6 +201,96 @@ def convert_ico_to_png():
         return response
     else:
         return "Failed to convert ICO to PNG", 500
+
+
+@app.route("/mirror-links", methods=["GET", "POST"])
+def get_mirror_links():
+    """
+    Return the links for the page.
+    """
+    metadata = util.get_page_metadata()
+
+    favicons = html_util.get_favicon_links(
+        metadata["url"],
+        metadata["html"],
+    )
+    if favicons:
+        metadata["favicon"] = favicons[0].href
+
+    # build urls
+    urls = []
+    metadata["urls"] = urls
+
+    for u in (
+        metadata["url"],
+        metadata["url_clean"],
+        metadata["url_root"],
+        metadata["url_host"],
+    ):
+        if urls:
+            if u.endswith("/"):
+                u = u[:-1]
+            if u != urls[-1]:
+                urls.append(u)
+        else:
+            urls.append(u)
+
+    # build links
+    links = []
+    metadata["links"] = links
+
+    if favicons:
+        links.append({
+            "header": "Obsidian",
+            "html": (
+                f'<img src="{metadata["favicon"]}" width="20" />'
+                f'<a target="_blank" href="{metadata["url"]}">{metadata["title"]}</a>'
+            ),
+            "markdown": (
+                f'![favicon|20]({metadata["favicon"]}) [{metadata["title"]}]({metadata["url"]})'
+            ),
+        })
+
+        if metadata["url"] != metadata["url_clean"]:
+            links.append({
+                "header": "Obsidian - Clean",
+                "html": (
+                    f'<img src="{metadata["favicon"]}" width="20" />'
+                    f'<a target="_blank" href="{metadata["url_clean"]}">{metadata["title"]}</a>'
+                ),
+                "markdown": (
+                    f'![favicon|20]({metadata["favicon"]}) [{metadata["title"]}]({metadata["url_clean"]})'
+                ),
+            })
+
+    links.append({
+        "header": "Markdown",
+        "html": (
+            f'<a target="_blank" href="{metadata["url"]}">{metadata["title"]}</a>'
+        ),
+        "markdown": (
+            f'[{metadata["title"]}]({metadata["url"]})'
+        ),
+    })
+
+    if metadata["url"] != metadata["url_clean"]:
+        links.append({
+            "header": "Markdown - Clean",
+            "html": (
+                f'<a target="_blank" href="{metadata["url_clean"]}">{metadata["title"]}</a>'
+            ),
+            "markdown": (
+                f'[{metadata["title"]}]({metadata["url_clean"]})'
+            ),
+        })
+
+    metadata["clip_b64"] = base64.b64encode(links[0]["markdown"].encode()).decode()
+
+    template = template_env.get_template('mirror-links.html')
+    rendered_html = template.render(metadata)
+
+    resp = make_response(rendered_html)
+    return resp
 
 
 if __name__ == "__main__":
