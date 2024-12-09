@@ -187,18 +187,20 @@ def add_favicon_to_cache(cache_key, favicon_link):
 
 def get_favicon_links(page_url, html_string, include=None):
     """Get the favicon links for the page URL."""
+
+    # Keep track of href already seen.
+    seen = set()
+
     links = []
 
     if cached_url := get_favicon_cache(page_url):
         links.append(cached_url)
         if include != 'all':
             return links
+        seen.add(cached_url.href)
 
     soup = BeautifulSoup(html_string, 'html.parser')
     head = soup.find('head')
-
-    # Keep track of href already seen.
-    seen = set()
 
     # Try to find links in <head>.
     if head:
@@ -218,7 +220,7 @@ def get_favicon_links(page_url, html_string, include=None):
             # Make sure rel is a list.
             if not isinstance(rel, list):
                 rel = [rel]
-            
+
             for r in rel:
                 if r in FAVICON_REL and url_util.check_url_exists(href):
                     links.append(RelLink(href, rel, sizes))
@@ -247,16 +249,17 @@ def get_favicon_links(page_url, html_string, include=None):
 
         if url_util.check_url_exists(abs_url):
             links.append(RelLink(abs_url))
-    
+
             # Wrap .ico links in a conversion service.
             if abs_url.endswith(".ico"):
                 params = {"url": abs_url}
                 abs_url = f"{ICO_TO_PNG_URL}?{urlencode(params)}"
 
-            links.append(RelLink(abs_url))
+                links.append(RelLink(abs_url))
+
             if include != "all":
                 return links
-        
+
     # No favicon links found.
     return links
 
@@ -270,4 +273,3 @@ def get_common_favicon_links(page_url):
         links.append(RelLink(url_util.make_absolute_urls(page_url, f)))
 
     return links
-
