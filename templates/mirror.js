@@ -16,6 +16,7 @@ var c = {
 
 p.append('title', c.title);
 p.append('url', c.url);
+p.append('format', '{{ format }}');
 
 navigator.clipboard.writeText(JSON.stringify(c)).then(
   function () {

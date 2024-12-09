@@ -1,10 +1,15 @@
+import json
+from urllib.parse import urlparse
+
+from bs4 import BeautifulSoup
 from flask import Flask, abort, request, make_response
 from jinja2 import Environment, FileSystemLoader
-import json
 import markdown
-import pyperclip
 
 from library import util
+from library import html_util
+from library import img_util
+from library import url_util
 
 app = Flask(__name__)
 
@@ -33,13 +38,21 @@ def serve_js(filename):
 
     # Read options
     mode = request.args.get("mode", "")
+    format = request.args.get("format", "html")
 
     # Return the contents
     outStr = util.get_javascript_file(
-        filename, mode, template_env=template_env
+        filename, mode, template_env=template_env,
+        format=format,
     )
 
-    return util.plain_text_response(template_env, f"{filename}.js", outStr)
+    return util.plain_text_response(
+        template_env, 
+        f"{filename}.js",
+        outStr,
+        format="html",
+        language="javascript",
+    )
 
 
 @app.route('/clip-proxy', methods=['GET'])
@@ -66,9 +79,9 @@ def clip_collector():
     return "OK"
 
 
-@app.route('/mirror-clip', methods=['POST'])
+@app.route('/mirror-clip', methods=['GET', 'POST'])
 def mirror_clip():
-    """Copy the contents of a post request into the clipboard."""
+    """Display the contents of the clipboard."""
 
     metadata = util.get_page_metadata()
 
@@ -83,7 +96,110 @@ def mirror_clip():
     except json.JSONDecodeError:
         pass
 
-    return util.plain_text_response(template_env, "Clipboard Contents", clip_text)
+    return util.plain_text_response(
+        template_env, "Clipboard Contents", clip_text,
+        format=metadata["format"],
+        language="json",
+    )
+
+@app.route('/mirror-html-source', methods=['GET', 'POST'])
+def mirror_html_source():
+    """Display the HTML from the clipboard."""
+
+    metadata = util.get_page_metadata()
+
+    # Read clipboard contents.
+    clip = metadata["clipboard"]
+
+    # If clip is valid JSON, extract the HTML and prettify it.
+    html_text = ""
+    try:
+        clip_json = json.loads(clip)
+        if html_raw := clip_json.get("html"):
+            html_text = BeautifulSoup(html_raw, "html.parser").prettify()
+    except json.JSONDecodeError:
+        pass
+
+    return util.plain_text_response(
+        template_env,
+        "HTML Source",
+        html_text,
+        format=metadata["format"],
+        language="html",
+    )
+
+
+@app.route("/mirror-favicons", methods=["GET", "POST"])
+def get_mirror_favicons():
+    """
+    Return the favicons for the page.
+    """
+
+    metadata = util.get_page_metadata()
+
+    # Set the cache key from the url.
+    parsed = urlparse(url_util.get_url_root(metadata["url"]))
+    metadata["cache_key"] = f"{parsed.netloc}{parsed.path}"
+
+    # Get the favicons.
+    favicons = html_util.get_favicon_links(
+        metadata["url"],
+        metadata["html"],
+        include="all",
+    )
+
+    # If the first favicon has a cacheKey, set it aside.
+    cache_favicon = None
+    if favicons and favicons[0].cache_key:
+        cache_favicon = favicons[0]
+        favicons = favicons[1:]
+
+    # Get the size of each favicon.
+    for favicon in favicons:
+        if size := url_util.get_image_size(favicon.href):
+            favicon.width = size.width
+            favicon.height = size.height
+
+    # Sort favicons by area.
+    favicons.sort(key=lambda x: x.width * x.height, reverse=True)
+
+    # Add back the cached favicon at the start.
+    if cache_favicon:
+        if size := url_util.get_image_size(cache_favicon.href):
+            cache_favicon.width = size.width
+            cache_favicon.height = size.height
+        favicons.insert(0, cache_favicon)
+    elif favicons:
+        # Add the top favicon as the cached favicon.
+        html_util.add_favicon_to_cache(
+            metadata["cache_key"],
+            favicons[0].href,
+        )
+
+    metadata["favicons"] = favicons
+
+    template = template_env.get_template('mirror-favicons.html')
+    rendered_html = template.render(metadata)
+
+    resp = make_response(rendered_html)
+    return resp
+
+
+@app.route('/convert-ico-to-png', methods=['GET'])
+def convert_ico_to_png():
+    ico_url = request.args.get('url')
+
+    if not ico_url:
+        return "URL parameter 'url' is required", 400
+
+    png_bytes = img_util.convert_image(ico_url, "PNG")
+    if png_bytes is not None:
+        # Create a response with PNG bytes
+        response = make_response(png_bytes)
+        response.headers.set('Content-Type', 'image/png')
+        return response
+    else:
+        return "Failed to convert ICO to PNG", 500
 
 
 if __name__ == "__main__":

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mirror Favicons</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <strong>URL: </strong>{{ url|e }}<br />
+    {% for f in favicons %}
+    <p>
+        <a href="{{ f.href }}">{{ cache_key }}: {{ f.href|e }}</a><br />
+        ({{ f.width }}x{{ f.height }})
+        <img src="{{ f.href }}" width="20" />
+        <img src="{{ f.href }}"/>
+    </p>
+    {% endfor %}
+</body>
+</html>
+

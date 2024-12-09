@@ -3,10 +3,11 @@ import json
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-from flask import abort, request, make_response
+from flask import abort, request, make_response, Response
 from jinja2 import Environment, FileSystemLoader
 import jsmin
 import pyperclip
+import yaml
 
 from library import url_util
 
@@ -18,7 +19,7 @@ TEMPLATE_DIR = Path("templates")
 clip_cache = {}
 
 
-def get_javascript_file(filename, mode, template_env=None):
+def get_javascript_file(filename, mode, template_env=None, format: str = "html"):
     # Read the contents of the file
 
     # Handle the mirror- pattern. These are built using a template.
@@ -28,7 +29,10 @@ def get_javascript_file(filename, mode, template_env=None):
 
         template_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
         template = template_env.get_template('mirror.js')
-        contents = template.render(path=filename)
+        contents = template.render(
+            path=filename,
+            format=format,
+        )
     else:
         try:
             with open(STATIC_DIR / "javascript" / f"{filename}.js", "r") as f:
@@ -88,6 +92,7 @@ def get_page_metadata():
         "headers": dict(request.headers),
         "batch_id": batch_id,
         "text_length": int(request.args.get("textLength", 0)),
+        "format": request.args.get("format", "html"),
     }
 
     if batch_id and batch_id in clip_cache:
@@ -131,12 +136,70 @@ def get_page_metadata():
 
     return metadata
 
+# Map from coding language to Prism.js class.
+LANGUAGE_TO_PRISM_CLASS = {
+    "javascript": "language-javascript",
+    "html": "language-html",
+    "json": "language-json",
+    "yaml": "language-yaml",
+}
+
 
 def plain_text_response(
     template_env: Environment,
     page_title: str,
     page_text: str,
+    format: str = "html",
+    language: str = None,
 ):
+    """
+    Return a "plain text" response.
+    - If format is `yaml` or `json`, the page_text is rendered with the 
+      appropriate content-type if text matches the format.
+        - If text is not valid `yaml` or `json`, the page_text is rendered using `text`.
+    - The `html` format wraps the page_text in a `<pre><code>` tag with the 
+      appropriate Prism.js class for the `language`.
+
+    Args:
+        template_env (jinja2.Environment): The Jinja2 environment.
+        page_title (str): The title of the page.
+        page_text (str): The text of the page.
+        format (str): The format of the page (html, yaml, json, text)
+        language (str): The coding language of the text (html, javascript, json, yaml).
+
+    Returns:
+        flask.Response: The response.
+    """
+
+    if format in ("yaml", "json"):
+        try:
+            # JSON is YAML, so we can parse both as YAML.
+            page_text = yaml.safe_load(page_text)
+
+            # If parsing succeeeds, format with the appropriate format and content-type.
+            if format == "yaml":
+                return Response(
+                    response=yaml.dump(page_text, sort_keys=False),
+                    status=200,                    
+                    mimetype="text/yaml",
+                )
+            elif format == "json":
+                return Response(
+                    response=json.dumps(page_text, indent=2),
+                    status=200,
+                    mimetype="application/json",
+                )
+        except Exception:
+            # If the text is not valid JSON, render it as plain text.
+            format = "text"
+
+    if format == "text":
+        return Response(
+            response=page_text,
+            status=200,
+            mimetype="text/plain",
+        )
+
     template = template_env.get_template('plain_text.html')
 
     # Base64 encode the page text so that it can be safely embedded in the HTML.
@@ -146,6 +209,7 @@ def plain_text_response(
         "page_title": page_title,
         "page_text": page_text,
         "clip_b64": clip_b64,
+        "language_class": LANGUAGE_TO_PRISM_CLASS.get(language, ""),
     })
 
     resp = make_response(rendered_html)
