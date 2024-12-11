@@ -13,9 +13,8 @@
     {% for f in favicons %}
     <p>
         <a href="{{ f.href }}">{{ cache_key }}: {{ f.href|e }}</a><br />
-        ({{ f.width }}x{{ f.height }})
-        <img src="{{ f.href }}" width="20" />
-        <img src="{{ f.href }}"/>
+        <p><img src="{{ f.href }}" width="20" /> 20x20</p>
+        <p><img src="{{ f.href }}"/> {{ f.width }}x{{ f.height }}</p>
     </p>
     {% endfor %}
 </body>

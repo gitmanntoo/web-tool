@@ -188,12 +188,13 @@ def get_mirror_favicons():
 
 @app.route('/convert-ico-to-png', methods=['GET'])
 def convert_ico_to_png():
+    """Convert """
     ico_url = request.args.get('url')
 
     if not ico_url:
         return "URL parameter 'url' is required", 400
 
-    png_bytes = img_util.convert_image(ico_url, "PNG")
+    png_bytes = img_util.convert_ico(ico_url)
     if png_bytes is not None:
         # Create a response with PNG bytes
         response = make_response(png_bytes)
@@ -201,6 +202,24 @@ def convert_ico_to_png():
         return response
     else:
         return "Failed to convert ICO to PNG", 500
+
+
+@app.route('/convert-svg-to-png', methods=['GET'])
+def convert_svg_to_png():
+    """Convert """
+    ico_url = request.args.get('url')
+
+    if not ico_url:
+        return "URL parameter 'url' is required", 400
+
+    png_bytes = img_util.convert_svg(ico_url)
+    if png_bytes is not None:
+        # Create a response with PNG bytes
+        response = make_response(png_bytes)
+        response.headers.set('Content-Type', 'image/png')
+        return response
+    else:
+        return "Failed to convert SVG to PNG", 500
 
 
 @app.route("/mirror-links", methods=["GET", "POST"])

@@ -33,6 +33,20 @@ def check_url_exists(url):
         return False
 
 
+@lru_cache(maxsize=128)
+def get_url_bytes(url) -> bytes | None:
+    """
+    Gets the bytes of a URL. Returns None if the URL does not exist.
+    """
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.content
+    except requests.exceptions.RequestException:
+        return None
+
+
 @lru_cache(maxsize=2048)
 def get_top_domain_name(url):
     """

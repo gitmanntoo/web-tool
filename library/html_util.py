@@ -10,6 +10,7 @@ import pyperclip
 import requests
 import yaml
 
+from library import img_util
 from library import url_util
 
 FAVICON_WIDTH = 20
@@ -18,6 +19,7 @@ FAVICON_WIDTH = 20
 FAVICON_CACHE = Path("static/favicon-cache.yml")
 FAVICON_NEW_CACHE = Path("static/favicon-cache-new.yml")
 ICO_TO_PNG_URL = "http://localhost:8532/convert-ico-to-png"
+SVG_TO_PNG_URL = "http://localhost:8532/convert-svg-to-png"
 SERVE_FAVICON_URL = "http://localhost:8532/favicon/"
 
 # List of link rel values for favicons.
@@ -225,10 +227,14 @@ def get_favicon_links(page_url, html_string, include=None):
                 if r in FAVICON_REL and url_util.check_url_exists(href):
                     links.append(RelLink(href, rel, sizes))
 
-                    # Wrap .ico links in a conversion service.
-                    if href.endswith(".ico"):
+                    # Wrap .ico and .svg links in a conversion service.
+                    if img_util.convert_ico(href) is not None:
                         params = {"url": href}
                         href = f"{ICO_TO_PNG_URL}?{urlencode(params)}"
+                        links.append(RelLink(href, rel, sizes))
+                    elif img_util.convert_svg(href) is not None:
+                        params = {"url": href}
+                        href = f"{SVG_TO_PNG_URL}?{urlencode(params)}"
                         links.append(RelLink(href, rel, sizes))
 
                     break
@@ -242,20 +248,23 @@ def get_favicon_links(page_url, html_string, include=None):
 
     for f in COMMON_FAVICON_FILES:
         # Check if the file exists.
-        abs_url = url_util.make_absolute_urls(page_host, f)
-        if abs_url in seen:
+        href = url_util.make_absolute_urls(page_host, f)
+        if href in seen:
             continue
-        seen.add(abs_url)
+        seen.add(href)
 
-        if url_util.check_url_exists(abs_url):
-            links.append(RelLink(abs_url))
+        if url_util.check_url_exists(href):
+            links.append(RelLink(href))
 
-            # Wrap .ico links in a conversion service.
-            if abs_url.endswith(".ico"):
-                params = {"url": abs_url}
-                abs_url = f"{ICO_TO_PNG_URL}?{urlencode(params)}"
-
-                links.append(RelLink(abs_url))
+            # Wrap .ico and .svg links in a conversion service.
+            if img_util.convert_ico(href) is not None:
+                params = {"url": href}
+                href = f"{ICO_TO_PNG_URL}?{urlencode(params)}"
+                links.append(RelLink(href, rel, sizes))
+            elif img_util.convert_svg(href) is not None:
+                params = {"url": href}
+                href = f"{SVG_TO_PNG_URL}?{urlencode(params)}"
+                links.append(RelLink(href, rel, sizes))
 
             if include != "all":
                 return links
