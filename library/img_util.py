@@ -2,8 +2,12 @@ from io import BytesIO
 from functools import lru_cache
 
 from cairosvg import svg2png
+from magika import Magika
 from PIL import Image
 import requests
+
+# Initialize the Magika object for image type detection.
+mgk = Magika()
 
 
 @lru_cache(maxsize=128)
@@ -50,10 +54,15 @@ def convert_svg(href: str, to_format: str = 'PNG') -> bytes:
         response = requests.get(href)
         response.raise_for_status()  # Raise an error for bad responses
 
+        # Use Magika to identify the content directly
+        m = mgk.identify_bytes(response.content)
+        if m.output.ct_label != 'svg':
+            raise Exception(f"file type is {m.output.group}/{m.output.ct_label}")
+
         # Convert to PNG and save in memory
         png_buffer = BytesIO()
         svg2png(bytestring=response.content, write_to=png_buffer)
         return png_buffer.getvalue()
-    except Exception:
-        print(f"Not an SVG file: {href}")
+    except Exception as e:
+        print(f"Not an SVG file: {href} {e}")
         return None
