@@ -3,11 +3,12 @@ import json
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
-from flask import Flask, abort, request, make_response
+from flask import Flask, abort, request, make_response, redirect
 from jinja2 import Environment, FileSystemLoader
 import markdown
 
 from library import util
+from library import docker_util
 from library import html_util
 from library import img_util
 from library import url_util
@@ -18,10 +19,18 @@ app = Flask(__name__)
 template_loader = FileSystemLoader(util.TEMPLATE_DIR)
 template_env = Environment(loader=template_loader)
 
+
 @app.route('/')
 def read_root():
-    """Display the README file."""
-    return markdown.markdown(open("README.md").read())
+    """Display the README file replacing instances of `http://localhost:8532`
+    with the current host."""
+
+    current_host = f"http://{request.host}"
+    with open("README.md") as f:
+        content = f.read()
+        content = content.replace("http://localhost:8532", current_host)
+        html = markdown.markdown(content)
+        return f'<html><head><link rel="stylesheet" href="/static/default.css"></head><body>{html}</body></html>'
 
 
 @app.route('/js/<filename>.js')
@@ -59,6 +68,14 @@ def serve_js(filename):
 @app.route('/clip-proxy', methods=['GET'])
 def clip_to_post():
     """Copy the contents of a the clipboard into a POST request."""
+
+    if not docker_util.is_running_in_container():
+        # Redirect to the web-tool.py endpoint given in the target query parameter.
+        target = request.args.get("target")
+        if target:
+            new_url = f"http://{request.host}/{target}?{request.query_string.decode()}"
+            return redirect(new_url)
+
     template = template_env.get_template('clip-proxy.html')
     rendered_html = template.render({})
 
@@ -160,6 +177,7 @@ def get_mirror_favicons():
         if size := url_util.get_image_size(favicon.href):
             favicon.width = size.width
             favicon.height = size.height
+            favicon.image_type = size.image_type
 
     # Sort favicons by area.
     favicons.sort(key=lambda x: x.width * x.height, reverse=True)
@@ -169,6 +187,7 @@ def get_mirror_favicons():
         if size := url_util.get_image_size(cache_favicon.href):
             cache_favicon.width = size.width
             cache_favicon.height = size.height
+            cache_favicon.image_type = size.image_type
         favicons.insert(0, cache_favicon)
     elif favicons:
         # Add the top favicon as the cached favicon.
@@ -178,6 +197,7 @@ def get_mirror_favicons():
         )
 
     metadata["favicons"] = favicons
+    print(f"DEBUGXXXXX {favicons=}")
 
     template = template_env.get_template('mirror-favicons.html')
     rendered_html = template.render(metadata)

@@ -1,26 +1,35 @@
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 import json
 from pathlib import Path
-from typing import NamedTuple
-from urllib.parse import urlparse, urljoin, urlsplit, urlunsplit, urlunparse, urlencode
+from urllib.parse import urlparse, urlunparse, urlencode
 
 from bs4 import BeautifulSoup
-from flask import Flask, abort, make_response, render_template, request, send_file, send_from_directory
+from flask import request
 import pyperclip
-import requests
 import yaml
 
+from library import docker_util
 from library import img_util
 from library import url_util
 
 FAVICON_WIDTH = 20
 
-# Locations of static files.
-FAVICON_CACHE = Path("static/favicon-cache.yml")
-FAVICON_NEW_CACHE = Path("static/favicon-cache-new.yml")
-ICO_TO_PNG_URL = "http://localhost:8532/convert-ico-to-png"
-SVG_TO_PNG_URL = "http://localhost:8532/convert-svg-to-png"
-SERVE_FAVICON_URL = "http://localhost:8532/favicon/"
+# Static favicon mapping distributed with the web-tool.
+FAVICON_CACHE = Path("static/favicon.yml")
+
+# Local cache of favicon mappings and images.
+if docker_util.is_running_in_container():
+    # If running in a container, use a file in /data.
+    FAVICON_LOCAL_PARENT = Path("/data")
+else:
+    # If running locally, use a file in the working directory.
+    FAVICON_LOCAL_PARENT = Path("local-cache")
+
+FAVICON_LOCAL_PARENT.mkdir(exist_ok=True, parents=True)
+FAVICON_LOCAL_CACHE = FAVICON_LOCAL_PARENT / "favicon.yml"
+
+ICO_TO_PNG_PATH = "convert-ico-to-png"
+SVG_TO_PNG_PATH = "convert-svg-to-png"
 
 # List of link rel values for favicons.
 FAVICON_REL = [
@@ -37,6 +46,7 @@ COMMON_FAVICON_FILES = [
     "favicon.gif",
 ]
 
+
 @dataclass
 class RelLink:
     href: str
@@ -44,6 +54,7 @@ class RelLink:
     sizes: str = None
     height: int = 0
     width: int = 0
+    image_type: str = ""
     cache_key: str = None
 
     def __post_init__(self):
@@ -128,8 +139,8 @@ def get_favicon_cache(page_url) -> RelLink:
             if isinstance(tmp, dict):
                 cache.update(tmp)
 
-    if FAVICON_NEW_CACHE.exists():
-        with open(FAVICON_NEW_CACHE, "r") as f:
+    if FAVICON_LOCAL_CACHE.exists():
+        with open(FAVICON_LOCAL_CACHE, "r") as f:
             tmp = yaml.safe_load(f)
             if isinstance(tmp, dict):
                 cache.update(tmp)
@@ -155,14 +166,7 @@ def get_favicon_cache(page_url) -> RelLink:
     for s in search_paths:
         print(f"favicon cache search: {s}")
         if favicon := cache.get(s):
-            if favicon.startswith("http"):
-                return RelLink(href=favicon,  cache_key=s)
-            elif favicon.startswith("file://"):
-                favicon = favicon.replace("file://", "")
-                return RelLink(
-                    href=f"{SERVE_FAVICON_URL}{favicon}",
-                    cache_key=s,
-                )
+            return RelLink(href=favicon,  cache_key=s)
 
     return None
 
@@ -171,8 +175,8 @@ def add_favicon_to_cache(cache_key, favicon_link):
     """Add the favicon link to the cache."""
     cache = {}
 
-    if FAVICON_NEW_CACHE.exists():
-        with open(FAVICON_NEW_CACHE, "r") as f:
+    if FAVICON_LOCAL_CACHE.exists():
+        with open(FAVICON_LOCAL_CACHE, "r") as f:
             tmp = yaml.safe_load(f)
             if isinstance(tmp, dict):
                 cache.update(tmp)
@@ -183,7 +187,7 @@ def add_favicon_to_cache(cache_key, favicon_link):
     cache[cache_key] = favicon_link
 
     # Write cache in sorted order.
-    with open(FAVICON_NEW_CACHE, "w") as f:
+    with open(FAVICON_LOCAL_CACHE, "w") as f:
         yaml.dump(cache, f, sort_keys=True)
 
 
@@ -230,11 +234,11 @@ def get_favicon_links(page_url, html_string, include=None):
                     # Wrap .ico and .svg links in a conversion service.
                     if img_util.convert_ico(href) is not None:
                         params = {"url": href}
-                        href = f"{ICO_TO_PNG_URL}?{urlencode(params)}"
+                        href = f"http://{request.host}/{ICO_TO_PNG_PATH}?{urlencode(params)}"
                         links.append(RelLink(href, rel, sizes))
                     elif img_util.convert_svg(href) is not None:
                         params = {"url": href}
-                        href = f"{SVG_TO_PNG_URL}?{urlencode(params)}"
+                        href = f"http://{request.host}/{SVG_TO_PNG_PATH}?{urlencode(params)}"
                         links.append(RelLink(href, rel, sizes))
 
                     break
@@ -259,11 +263,11 @@ def get_favicon_links(page_url, html_string, include=None):
             # Wrap .ico and .svg links in a conversion service.
             if img_util.convert_ico(href) is not None:
                 params = {"url": href}
-                href = f"{ICO_TO_PNG_URL}?{urlencode(params)}"
+                href = f"http://{request.host}/{ICO_TO_PNG_PATH}?{urlencode(params)}"
                 links.append(RelLink(href, rel, sizes))
             elif img_util.convert_svg(href) is not None:
                 params = {"url": href}
-                href = f"{SVG_TO_PNG_URL}?{urlencode(params)}"
+                href = f"http://{request.host}/{SVG_TO_PNG_PATH}?{urlencode(params)}"
                 links.append(RelLink(href, rel, sizes))
 
             if include != "all":

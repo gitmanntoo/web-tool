@@ -66,3 +66,13 @@ def convert_svg(href: str, to_format: str = 'PNG') -> bytes:
     except Exception as e:
         print(f"Not an SVG file: {href} {e}")
         return None
+
+
+def get_image_type(image: Image) -> str:
+    """
+    Get the image type from the image bytes.
+    """
+    try:
+        return image.format
+    except Exception:
+        return "unknown image type"

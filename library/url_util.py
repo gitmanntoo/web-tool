@@ -10,6 +10,7 @@ import urllib.parse
 from urllib.parse import urljoin
 
 from library import html_util
+from library import img_util
 
 
 DEFAULT_TIMEOUT = 5
@@ -81,6 +82,7 @@ def get_top_domain_name(url):
 class ImageSize:
     width: int
     height: int
+    image_type: str
 
 
 @lru_cache(maxsize=2048)
@@ -93,12 +95,16 @@ def get_image_size(url):
 
     try:
         print(f"Getting image size for {url}")
-        response = requests.get(url, headers={"User-Agent": DEFAULT_USER_AGENT}, timeout=DEFAULT_TIMEOUT)
+        response = requests.get(
+            url, headers={"User-Agent": DEFAULT_USER_AGENT},
+            timeout=DEFAULT_TIMEOUT)
 
         if response.status_code == 200:
             image = Image.open(BytesIO(response.content))
             width, height = image.size
-            return ImageSize(width, height)
+            return ImageSize(
+                width, height,
+                img_util.get_image_type(image))
     except Exception as e:
         # Any exceptions are ignored.
         logging.warning(e)
