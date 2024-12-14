@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
@@ -105,7 +106,7 @@ def get_page_metadata():
 
         metadata["clipboard"] = "".join(all_chunks)
         if len(metadata["clipboard"]) != metadata["text_length"]:
-            print(
+            logging.warning(
                 f"Clipboard length {len(metadata['clipboard'])} does not match text length {metadata['text_length']}"
             )
     else:

@@ -1,5 +1,6 @@
 from io import BytesIO
 from functools import lru_cache
+import logging
 
 from cairosvg import svg2png
 from magika import Magika
@@ -28,13 +29,13 @@ def convert_ico(href: str, to_format: str = "PNG") -> bytes | None:
 
         # Check if the response is an ICO image.
         if t := resp.get_type() != "image/ico":
-            print(f"Not an ICO file (magika): {href} {t}")
+            logging.warning(f"Not an ICO file (magika): {href} {t}")
             return None
 
         # Open the ICO image
         ico_image = Image.open(BytesIO(resp.content))
         if ico_image.format != "ICO":
-            print(f"Not an ICO file (pillow): {href} {ico_image.format}")
+            logging.warning(f"Not an ICO file (pillow): {href} {ico_image.format}")
             return None
 
         # Convert to PNG and save in memory
@@ -59,7 +60,7 @@ def convert_svg(href: str, to_format: str = 'PNG') -> bytes:
 
         # Check if the response is an SVG image.
         if t := resp.get_type() != "image/svg":
-            print(f"Not an SVG file (magika): {href} {t}")
+            logging.warning(f"Not an SVG file (magika): {href} {t}")
             return None
 
         # Convert to PNG and save in memory
@@ -72,5 +73,5 @@ def convert_svg(href: str, to_format: str = 'PNG') -> bytes:
         )
         return png_buffer.getvalue()
     except Exception as e:
-        print(f"Not an SVG file: {href} {e}")
+        logging.warning(f"Not an SVG file: {href} {e}")
         return None

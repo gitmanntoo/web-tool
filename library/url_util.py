@@ -260,7 +260,6 @@ def get_image_size(url):
     """
 
     try:
-        print(f"Getting image size for {url}")
         resp = url_util.get_url(url)
         if resp.status_code == 200:
             return ImageSize(

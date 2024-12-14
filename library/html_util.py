@@ -179,7 +179,6 @@ def get_favicon_cache(page_url) -> RelLink:
         tokens.pop(0)
 
     for s in search_paths:
-        print(f"favicon cache search: {s}")
         if favicon := cache.get(s):
             r = RelLink(favicon, cache_key=s)
             if r.is_valid():
