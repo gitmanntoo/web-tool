@@ -8,6 +8,14 @@ Tools use the following pattern:
 
 All endpoints are hosted at http://localhost:8532.
 
+## Use Docker
+```
+docker stop web-tool; \
+  docker rm web-tool; \
+  docker pull dockmann/web-tool && \
+  docker run -d -p 8532:8532 -v $(pwd):/data --name web-tool dockmann/web-tool
+```
+
 ## Dependencies
 
 - [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) for HTML parsing.
