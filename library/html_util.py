@@ -39,30 +39,39 @@ FAVICON_REL = [
 ]
 
 COMMON_FAVICON_FILES = [
-    "favicon.ico",
     "favicon.png",
-    "favicon.svg",
     "favicon.jpg",
     "favicon.gif",
+    "favicon.ico",
+    "favicon.svg",
 ]
 
 
 @dataclass
 class RelLink:
     href: str
+    cache_key: str = None
     rel: str = None
     sizes: str = None
+
+    resolved_href: str = None
     height: int = 0
     width: int = 0
-    image_type: str = ""
-    cache_key: str = None
+    image_type: str = None
 
     def __post_init__(self):
-        if self.sizes:
-            size_parts = self.sizes.split('x')
-            if len(size_parts) == 2:
-                self.width = int(size_parts[0])
-                self.height = int(size_parts[1])
+        """Fetch the href and get image details if it is an image."""
+        resp = url_util.get_url(self.href)
+        self.resolved_href = resp.resolved_url
+
+        if resp.image_width is not None:
+            self.image_type = resp.get_type()
+            self.width = resp.image_width
+            self.height = resp.image_height
+
+    def is_valid(self) -> bool:
+        """Return True if the link is valid."""
+        return self.resolved_href is not None and self.image_type is not None
 
 
 @dataclass
@@ -79,14 +88,18 @@ class PageMetadata:
     error: str = None
 
 
-def get_page_metadata(meta: PageMetadata = None, max_favicon_links: int=1, favicon_width: int=FAVICON_WIDTH) -> PageMetadata:
+def get_page_metadata(
+    meta: PageMetadata = None,
+    max_favicon_links: int = 1,
+    favicon_width: int = FAVICON_WIDTH
+) -> PageMetadata:
     """Add metadata to PageMetadata object."""
 
     if meta is None:
         # Get metadata from rueqest parameters.
         meta = PageMetadata(
-            title=request.args.get("title",""),
-            url=request.args.get("url",""),
+            title=request.args.get("title", ""),
+            url=request.args.get("url", ""),
         )
 
         # Read clipboard contents.
@@ -101,7 +114,8 @@ def get_page_metadata(meta: PageMetadata = None, max_favicon_links: int=1, favic
 
     # Reconstruct the URL without the query and fragment.
     parsed = urlparse(meta.url)
-    meta.clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
+    meta.clean_url = urlunparse(
+        (parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
 
     # Get the host from the URL
     meta.host_url = f'{parsed.scheme}://{parsed.netloc}'
@@ -118,7 +132,8 @@ def get_page_metadata(meta: PageMetadata = None, max_favicon_links: int=1, favic
 
     # Extract favicon links from the HTML page in descending order by size.
     favicon_links = get_favicon_links(meta.url, meta.html)
-    meta.favicons =url_util.sort_favicon_links(favicon_links, max_favicon_links, favicon_width)
+    meta.favicons = url_util.sort_favicon_links(
+        favicon_links, max_favicon_links, favicon_width)
 
     return meta
 
@@ -166,7 +181,9 @@ def get_favicon_cache(page_url) -> RelLink:
     for s in search_paths:
         print(f"favicon cache search: {s}")
         if favicon := cache.get(s):
-            return RelLink(href=favicon,  cache_key=s)
+            r = RelLink(favicon, cache_key=s)
+            if r.is_valid():
+                return r
 
     return None
 
@@ -229,22 +246,39 @@ def get_favicon_links(page_url, html_string, include=None):
 
             for r in rel:
                 if r in FAVICON_REL and url_util.check_url_exists(href):
-                    links.append(RelLink(href, rel, sizes))
+                    r = RelLink(
+                        href,
+                        rel=rel,
+                        sizes=sizes,
+                    )
+                    if r.is_valid():
+                        links.append(r)
+                        if include != "all":
+                            return links
 
-                    # Wrap .ico and .svg links in a conversion service.
-                    if img_util.convert_ico(href) is not None:
-                        params = {"url": href}
-                        href = f"http://{request.host}/{ICO_TO_PNG_PATH}?{urlencode(params)}"
-                        links.append(RelLink(href, rel, sizes))
-                    elif img_util.convert_svg(href) is not None:
-                        params = {"url": href}
-                        href = f"http://{request.host}/{SVG_TO_PNG_PATH}?{urlencode(params)}"
-                        links.append(RelLink(href, rel, sizes))
+                        # Wrap .ico and .svg links in a conversion service.
+                        if img_util.convert_ico(href) is not None:
+                            params = urlencode({"url": href})
+                            href = f"http://{request.host}/{ICO_TO_PNG_PATH}?{params}"
+                            r = RelLink(
+                                href,
+                                rel=rel,
+                                sizes=sizes,
+                            )
+                            if r.is_valid():
+                                links.append(r)
+                        elif img_util.convert_svg(href) is not None:
+                            params = urlencode({"url": href})
+                            href = f"http://{request.host}/{SVG_TO_PNG_PATH}?{params}"
+                            r = RelLink(
+                                href,
+                                rel=rel,
+                                sizes=sizes,
+                            )
+                            if r.is_valid():
+                                links.append(r)
 
                     break
-
-        if links and include != "all":
-            return links
 
     # Fallback to common favicon files.
     parsed = urlparse(page_url)
@@ -258,20 +292,25 @@ def get_favicon_links(page_url, html_string, include=None):
         seen.add(href)
 
         if url_util.check_url_exists(href):
-            links.append(RelLink(href))
+            r = RelLink(href)
+            if r.is_valid():
+                links.append(r)
+                if include != "all":
+                    return links
 
-            # Wrap .ico and .svg links in a conversion service.
-            if img_util.convert_ico(href) is not None:
-                params = {"url": href}
-                href = f"http://{request.host}/{ICO_TO_PNG_PATH}?{urlencode(params)}"
-                links.append(RelLink(href, rel, sizes))
-            elif img_util.convert_svg(href) is not None:
-                params = {"url": href}
-                href = f"http://{request.host}/{SVG_TO_PNG_PATH}?{urlencode(params)}"
-                links.append(RelLink(href, rel, sizes))
-
-            if include != "all":
-                return links
+                # Wrap .ico and .svg links in a conversion service.
+                if img_util.convert_ico(href) is not None:
+                    params = urlencode({"url": href})
+                    href = f"http://{request.host}/{ICO_TO_PNG_PATH}?{params}"
+                    r = RelLink(href)
+                    if r.is_valid():
+                        links.append(r)
+                elif img_util.convert_svg(href) is not None:
+                    params = urlencode({"url": href})
+                    href = f"http://{request.host}/{SVG_TO_PNG_PATH}?{params}"
+                    r = RelLink(href)
+                    if r.is_valid():
+                        links.append(r)
 
     # No favicon links found.
     return links
@@ -286,3 +325,66 @@ def get_common_favicon_links(page_url):
         links.append(RelLink(url_util.make_absolute_urls(page_url, f)))
 
     return links
+
+
+def sort_favicon_links(
+    favicons: list[RelLink], 
+    include: str = None
+) -> list[RelLink]:
+    """Sort favicons to get the largest one with ICO, SVG and conversions last.
+
+    Order of precedence (higher is first):
+    999. Cached favicon
+    500. Images except for ICO and SVG.
+    400. ICO
+    300. SVG
+    200. ICO conversion
+    100. SVG conversion
+    """
+
+    if len(favicons) == 0:
+        return favicons
+
+    # If the first favicon has a cacheKey, return it immediately.
+    if favicons and favicons[0].cache_key:
+        if include != "all":
+            # Return cache immediately.
+            return favicons[:1]
+        
+    key_precedence = {
+        "cache": 999,
+        "image": 500,
+        "ico": 400,
+        "svg": 300,
+        "ico-conversion": 200,
+        "svg-conversion": 100,
+    }
+
+    # Define a key function that returns the sorting key.
+    def key_fn(x: RelLink):
+        if x.cache_key:
+            group_key = key_precedence["cache"]
+        elif SVG_TO_PNG_PATH in x.href:
+            # SVG conversion
+            group_key = key_precedence["svg-conversion"]
+        elif ICO_TO_PNG_PATH in x.href:
+            # ICO conversion
+            group_key = key_precedence["ico-conversion"]
+        elif x.image_type == "image/svg":
+            # SVG image type
+            group_key = key_precedence["svg"]
+        elif x.image_type == "image/ico":
+            # ICO image type
+            group_key = key_precedence["ico"]
+        else:
+            # All other image types
+            group_key = key_precedence["image"]
+
+        # Calculate the area of the image.
+        a = 0
+        if x.width is not None:
+            a = x.width * x.height
+
+        return f"{group_key:03d}_{a}"
+
+    return sorted(favicons, key=lambda x: key_fn(x), reverse=True)

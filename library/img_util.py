@@ -4,75 +4,73 @@ from functools import lru_cache
 from cairosvg import svg2png
 from magika import Magika
 from PIL import Image
-import requests
+
+from library import url_util
 
 # Initialize the Magika object for image type detection.
 mgk = Magika()
 
+# SVG conversion width and height.
+SVG_WIDTH = 256
+SVG_HEIGHT = 256
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=64)
 def convert_ico(href: str, to_format: str = "PNG") -> bytes | None:
     """Convert an ICO image to another format (default PNG)
 
     Returns a bytes object containing the converted image.
     - If the href is not an ICO file, return None.
     """
-    if not href.lower().endswith(".ico"):
-        return None
-
     try:
         # Fetch the ICO file from the URL
-        response = requests.get(href)
-        response.raise_for_status()  # Raise an error for bad responses
+        resp = url_util.get_url(href)
+        resp.raise_for_status()
+
+        # Check if the response is an ICO image.
+        if t := resp.get_type() != "image/ico":
+            print(f"Not an ICO file (magika): {href} {t}")
+            return None
 
         # Open the ICO image
-        ico_image = Image.open(BytesIO(response.content))
+        ico_image = Image.open(BytesIO(resp.content))
         if ico_image.format != "ICO":
-            print(f"Not an ICO file: {href} {ico_image.format}")
+            print(f"Not an ICO file (pillow): {href} {ico_image.format}")
             return None
 
         # Convert to PNG and save in memory
         png_buffer = BytesIO()
         ico_image.save(png_buffer, format=to_format)
         return png_buffer.getvalue()
-    except Exception:
+    except url_util.SerializedResponseError:
         return None
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=64)
 def convert_svg(href: str, to_format: str = 'PNG') -> bytes:
     """Convert an SVG image to another format (default PNG)
 
     Returns a bytes object containing the converted image.
     - If the href is not an SVG file, return None.
     """
-    if not href.lower().endswith(".svg"):
-        return None
-
     try:
         # Fetch the SVG file from the URL
-        response = requests.get(href)
-        response.raise_for_status()  # Raise an error for bad responses
+        resp = url_util.get_url(href)
+        resp.raise_for_status()
 
-        # Use Magika to identify the content directly
-        m = mgk.identify_bytes(response.content)
-        if m.output.ct_label != 'svg':
-            raise Exception(f"file type is {m.output.group}/{m.output.ct_label}")
+        # Check if the response is an SVG image.
+        if t := resp.get_type() != "image/svg":
+            print(f"Not an SVG file (magika): {href} {t}")
+            return None
 
         # Convert to PNG and save in memory
         png_buffer = BytesIO()
-        svg2png(bytestring=response.content, write_to=png_buffer)
+        svg2png(
+            bytestring=resp.content,
+            write_to=png_buffer,
+            output_height=SVG_HEIGHT,
+            output_width=SVG_WIDTH,
+        )
         return png_buffer.getvalue()
     except Exception as e:
         print(f"Not an SVG file: {href} {e}")
         return None
-
-
-def get_image_type(image: Image) -> str:
-    """
-    Get the image type from the image bytes.
-    """
-    try:
-        return image.format
-    except Exception:
-        return "unknown image type"

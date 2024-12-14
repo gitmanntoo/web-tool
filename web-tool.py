@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
@@ -18,6 +19,11 @@ app = Flask(__name__)
 # Initialize template environment.
 template_loader = FileSystemLoader(util.TEMPLATE_DIR)
 template_env = Environment(loader=template_loader)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
 
 
 @app.route('/')
@@ -179,8 +185,8 @@ def get_mirror_favicons():
             favicon.height = size.height
             favicon.image_type = size.image_type
 
-    # Sort favicons by area.
-    favicons.sort(key=lambda x: x.width * x.height, reverse=True)
+    # Sort favicons.
+    favicons = html_util.sort_favicon_links(favicons, include='all')
 
     # Add back the cached favicon at the start.
     if cache_favicon:
@@ -197,7 +203,6 @@ def get_mirror_favicons():
         )
 
     metadata["favicons"] = favicons
-    print(f"DEBUGXXXXX {favicons=}")
 
     template = template_env.get_template('mirror-favicons.html')
     rendered_html = template.render(metadata)
@@ -332,5 +337,24 @@ def get_mirror_links():
     return resp
 
 
+@app.route("/get", methods=["GET", ])
+def get_url_response():
+    """Use the get_url method to retrieve a URL.
+    """
+    url = request.args.get("url")
+    if not url:
+        return "URL parameter 'url' is required", 400
+
+    # Get the URL response
+    resp = url_util.get_url(url)
+    if not resp:
+        return "Failed to retrieve URL", 500
+
+    return resp.as_dict()
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8532, debug=True)
+    debug_flag = not docker_util.is_running_in_container()
+    debug_flag = False
+
+    app.run(host="0.0.0.0", port=8532, debug=debug_flag)

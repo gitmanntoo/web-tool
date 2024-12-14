@@ -8,7 +8,10 @@
     <strong>URL: </strong>{{ url|e }}<br />
     {% for f in favicons %}
     <p>
-        <a href="{{ f.href }}">{{ cache_key }}: {{ f.href|e }}</a><br />
+        <p><a href="{{ f.href }}">{{ cache_key }}: {{ f.href|e }}</a></p>
+        {% if f.href != f.resolved_href %}
+        <p>Resolves to: <a href="{{ f.resolved_href }}">{{ f.resolved_href|e }}</a></p>
+        {% endif %}
         <p>Image Type: {{ f.image_type }} </p>
         <p><img src="{{ f.href }}" width="20" /> 20x20</p>
         <p><img src="{{ f.href }}"/> {{ f.width }}x{{ f.height }}</p>
