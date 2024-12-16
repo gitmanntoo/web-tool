@@ -4,7 +4,7 @@ import logging
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
-from flask import Flask, abort, request, make_response, redirect
+from flask import Flask, abort, request, make_response, redirect, Response
 from jinja2 import Environment, FileSystemLoader
 import markdown
 
@@ -12,6 +12,7 @@ from library import util
 from library import docker_util
 from library import html_util
 from library import img_util
+from library import text_util
 from library import url_util
 
 app = Flask(__name__)
@@ -336,6 +337,20 @@ def get_mirror_links():
     resp = make_response(rendered_html)
     return resp
 
+
+@app.route("/mirror-text", methods=["GET", "POST"])
+def get_mirror_text():
+    """
+    Return the text for the page.
+    """
+    metadata = util.get_page_metadata()
+    extracted_text = text_util.extract_text_from_html(metadata["html"])
+
+    return Response(
+        response=extracted_text,
+        status=200,
+        mimetype="text/plain",
+    )
 
 @app.route("/get", methods=["GET", ])
 def get_url_response():

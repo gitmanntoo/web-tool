@@ -23,3 +23,5 @@ docker stop web-tool; \
 - [Magika](https://google.github.io/magika/) for HTML parsing.
 - [Pillow](https://pillow.readthedocs.io/en/stable/) for ICO conversion.
 - [Prism](https://prismjs.com/index.html) for syntax highlighting.
+- [Spacy](https://spacy.io/) for NLP.
+  - **NOTE:** Spacy version 3.7.5 is required to work with Magika.
