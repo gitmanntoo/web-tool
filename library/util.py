@@ -49,6 +49,9 @@ def get_javascript_file(filename, mode, template_env=None, format: str = "html")
     if mode == "bookmarklet":
         contents = f"javascript:(function(){{{contents}}})();"
 
+    # Replace the default host with current host.
+    contents = contents.replace("http://localhost:8532", f"http://{request.host}")
+
     # Return the contents
     return contents
 

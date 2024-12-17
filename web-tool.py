@@ -352,6 +352,35 @@ def get_mirror_text():
         mimetype="text/plain",
     )
 
+
+@app.route("/mirror-text-strings", methods=["GET", "POST"])
+def get_mirror_text_strings():
+    """
+    Return the raw strings with debugging info for the page.
+    """
+    metadata = util.get_page_metadata()
+
+    # Parse the HTML.
+    soup = BeautifulSoup(metadata["html"], "html.parser")
+    extracted_text = text_util.walk_soup_tree_strings(soup)
+
+    txt = []
+    for x in extracted_text:
+        if x.name == "script.String":
+            txt.append(str(x))
+        # for tok in x.doc:
+        #     txt.append(
+        #         f"{tok.pos_:10s} {tok.lemma_}"
+        #     )
+
+    txt = "\n".join(txt)
+
+    return Response(
+        response=txt,
+        status=200,
+        mimetype="text/plain",
+    )
+
 @app.route("/get", methods=["GET", ])
 def get_url_response():
     """Use the get_url method to retrieve a URL.
@@ -369,7 +398,11 @@ def get_url_response():
 
 
 if __name__ == "__main__":
-    debug_flag = not docker_util.is_running_in_container()
-    debug_flag = False
+    if docker_util.is_running_in_container():
+        port = 8532
+        debug_flag = False
+    else:
+        port = 8535
+        debug_flag = True
 
-    app.run(host="0.0.0.0", port=8532, debug=debug_flag)
+    app.run(host="0.0.0.0", port=port, debug=debug_flag)
