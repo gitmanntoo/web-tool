@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup, element
 import esprima
 import spacy
 from magika import Magika
+from nltk.corpus import wordnet as wn
 from nltk.corpus import words
 
 MAX_WORD_LEN = len("pneumonoultramicroscopicsilicovolcanoconiosis")
@@ -67,26 +68,56 @@ class SoupToken:
     depth: int
     name: str
     text: str
+    special_tag: str = ""
     doc: spacy.tokens.doc.Doc = None
+    token_count: int = 0
     word_count: int = 0
     alnum_count: int = 0
 
     def __post_init__(self):
-        try:
-            self.alnum_count = sum([x.isalnum() for x in self.text])
+        # Special tags are kept and do not need further analysis.
+        for t in (HEAD_TAG, BODY_TAG, TEXT_TAG):
+            if self.text.startswith(t):
+                self.special_tag = t
+                return
+            
+        # Split text into tokens.
+        tokens = self.text.split()
+        self.token_count = len(tokens)
 
+        # Count alphanumeric characters in tokens.
+        self.alnum_count = 0
+        for tok in tokens:
+            self.alnum_count += sum([x.isalnum() for x in tok])
+
+        # Use a simple split to get number of tokens.
+        if self.token_count == 1:
+            if self.text.lower() in nltk_words:
+                self.word_count = 1
+            elif len(wn.synsets(self.text)):
+                self.word_count = 1
+            return
+
+        try:
             self.doc = nlp(self.text)
 
             self.word_count = 0
             for tok in self.doc:
                 if tok.lemma_.lower() in nltk_words:
                     self.word_count += 1
+                elif len(wn.synsets(self.text)):
+                    self.word_count = 1
+                elif (tok.like_email or tok.like_url or tok.like_num):
+                    self.word_count += 1
 
         except Exception as e:
             logging.error(f"SoupToken: {e}")
 
     def __str__(self) -> str:
-        doc_len = len(self.doc)
+        doc_len = 0
+        if self.doc is not None:
+            doc_len = len(self.doc)
+
         word_pct = 0
         if doc_len > 0:
             word_pct = self.word_count / doc_len
@@ -99,7 +130,7 @@ class SoupToken:
         return (f"{self.depth:6d} {self.name:15s} "
                 f"words:{self.word_count:3d}/{doc_len:3d} ({word_pct:3.2f}) "
                 f"alnum:{self.alnum_count:3d}/{text_len:3d} ({alnum_pct:3.2f}) "
-                f"{self.text.splitlines()[0][:99]}")
+                f"{self.text}")
 
 
 def walk_soup_tree_strings(

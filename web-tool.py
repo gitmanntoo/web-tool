@@ -365,13 +365,20 @@ def get_mirror_text_strings():
     extracted_text = text_util.walk_soup_tree_strings(soup)
 
     txt = []
-    for x in extracted_text:
-        if x.name == "script.String":
-            txt.append(str(x))
-        # for tok in x.doc:
-        #     txt.append(
-        #         f"{tok.pos_:10s} {tok.lemma_}"
-        #     )
+    for idx, x in enumerate(extracted_text):
+        # if idx in (3275, 3502):
+            if x.special_tag != "":
+                txt.append(f"{idx:6d} {x}")
+            elif x.name == "script.String" and x.word_count > 0:
+                txt.append(f"{idx:6d} {x}")
+
+            # for tok in x.doc:
+            #     txt.append(
+            #         f"{tok.pos_:10s} "
+            #         f"{tok.lemma_.lower() in text_util.nltk_words} "
+            #         f"{tok.lemma_} >>> "
+            #         f"{tok.text}"
+            #     )
 
     txt = "\n".join(txt)
 
@@ -380,6 +387,7 @@ def get_mirror_text_strings():
         status=200,
         mimetype="text/plain",
     )
+
 
 @app.route("/get", methods=["GET", ])
 def get_url_response():
