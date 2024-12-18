@@ -72,7 +72,9 @@ class SoupToken:
     doc: spacy.tokens.doc.Doc = None
     token_count: int = 0
     word_count: int = 0
+    char_count: int = 0
     alnum_count: int = 0
+    magika_type: str = ""
 
     def __post_init__(self):
         # Special tags are kept and do not need further analysis.
@@ -80,14 +82,20 @@ class SoupToken:
             if self.text.startswith(t):
                 self.special_tag = t
                 return
-            
+
+        self.text = self.eval_text()
+        m = mgk.identify_bytes(self.text.encode())
+        self.magika_type = f"{m.output.group}/{m.output.ct_label}"
+
         # Split text into tokens.
         tokens = self.text.split()
         self.token_count = len(tokens)
 
         # Count alphanumeric characters in tokens.
+        self.char_count = 0
         self.alnum_count = 0
         for tok in tokens:
+            self.char_count += len(tok)
             self.alnum_count += sum([x.isalnum() for x in tok])
 
         # Use a simple split to get number of tokens.
@@ -114,23 +122,63 @@ class SoupToken:
             logging.error(f"SoupToken: {e}")
 
     def __str__(self) -> str:
-        doc_len = 0
-        if self.doc is not None:
-            doc_len = len(self.doc)
-
-        word_pct = 0
-        if doc_len > 0:
-            word_pct = self.word_count / doc_len
-
-        text_len = len(self.text)
-        alnum_pct = 0
-        if text_len > 0:
-            alnum_pct = self.alnum_count / text_len
-
         return (f"{self.depth:6d} {self.name:15s} "
-                f"words:{self.word_count:3d}/{doc_len:3d} ({word_pct:3.2f}) "
-                f"alnum:{self.alnum_count:3d}/{text_len:3d} ({alnum_pct:3.2f}) "
+                f"words:{self.word_count:3d}/{self.tok_count():3d} "
+                f"({self.word_pct():3.2f}) "
+                f"alnum:{self.alnum_count:3d}/{self.char_count:3d} "
+                f"({self.alnum_pct():3.2f}) "
+                f"{self.magika_type} "
                 f"{self.text}")
+
+    def eval_text(self) -> str:
+        """Return a clean version of text with entities evaluated."""
+        new_text = self.text.strip()
+        if new_text == "":
+            return new_text
+
+        # Remove leading and trailing quotes.
+        if new_text[0] == "'" and new_text[-1] == "'":
+            new_text = new_text[1:-1]
+        elif new_text[0] == '"' and new_text[-1] == '"':
+            new_text = new_text[1:-1]
+
+        # Strip whitespace again and check for empty string.
+        new_text = new_text.strip()
+        if new_text == "":
+            return new_text
+
+        # Evaluate string to evaluate special characters.
+        try:
+            if new_text.startswith('"') and new_text.endswith('"'):
+                cmd = f"'''{new_text}'''"
+            else:
+                cmd = f'"""{new_text}"""'
+
+            new_text = eval(cmd)
+        except Exception:
+            pass
+
+        return new_text
+
+    def tok_count(self) -> int:
+        """Return the number of tokens or words."""
+        if self.doc is not None:
+            return len(self.doc)
+        return self.token_count
+    
+    def word_pct(self) -> float:
+        """Return percentage of tokens that are words."""
+        if (c := self.tok_count()) > 0:
+            return self.word_count / c
+        
+        return 0.0
+
+    def alnum_pct(self) -> float:
+        """Return percentage of characters that are alphanumeric."""
+        if self.char_count == 0:
+            return 0.0
+        
+        return self.alnum_count / self.char_count
 
 
 def walk_soup_tree_strings(

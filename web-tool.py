@@ -367,9 +367,10 @@ def get_mirror_text_strings():
     txt = []
     for idx, x in enumerate(extracted_text):
         # if idx in (3275, 3502):
+        # if idx in (3819,):
             if x.special_tag != "":
                 txt.append(f"{idx:6d} {x}")
-            elif x.name == "script.String" and x.word_count > 0:
+            elif x.name == "script.String" and x.word_count > 1:
                 txt.append(f"{idx:6d} {x}")
 
             # for tok in x.doc:
@@ -380,7 +381,7 @@ def get_mirror_text_strings():
             #         f"{tok.text}"
             #     )
 
-    txt = "\n".join(txt)
+    txt = "\n====================\n".join(txt)
 
     return Response(
         response=txt,
