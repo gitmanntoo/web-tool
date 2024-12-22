@@ -13,6 +13,7 @@ from library import docker_util
 from library import html_util
 from library import img_util
 from library import text_util
+from library import unicode_util
 from library import url_util
 
 app = Flask(__name__)
@@ -364,24 +365,92 @@ def get_mirror_text_strings():
     soup = BeautifulSoup(metadata["html"], "html.parser")
     extracted_text = text_util.walk_soup_tree_strings(soup)
 
+    seen_text = set()
     txt = []
     for idx, x in enumerate(extracted_text):
+        # if x.name in ('script', 'script.String'):
+        #     continue
+
+        # # Print details for element.
+        # txt.append('=' * 20)
+        # txt.append(
+        #     f"{'KEEP' if x.keep else '':4s} {idx:4d} {x.depth:3d} {x.parent_name}/{x.get_name()}"
+        # )
+
+        # for line_num, line in enumerate(x.lines):
+        #     txt.append(
+        #         f"  {line_num+1:3d} {'KEEP' if line.keep else '':4s} {line}"
+        #     )
+
+        # if x.parent_name != '':
+        #     txt.append(f"<{x.parent_name}>")
+
+        if x.keep:
+            for line in x.lines:
+                if line.text in seen_text:
+                    continue
+                seen_text.add(line.text)
+
+                txt.append(line.text)
+
+        # # Print details for lines.
+        # for 
+        # if x.name == "script.String":
+        #     for line in x.text.splitlines():
+        #         elem = text_util.SoupElem(x.depth, x.name, line)
+        #         cat_str = unicode_util.category_str(elem.category_counter)
+        #         dist = unicode_util.standard_distance(elem.category_counter)
+
+        #         # keep flag
+        #         keep_flag = ""
+        #         if elem.word_count > 2 and dist < 0.4 and elem.word_pct() > 0.5:
+        #             keep_flag = "OK"
+
+        #         txt.append(
+        #             f"{keep_flag:2s} {idx:6d} {elem.name:15s} D={dist:.4f} "
+        #             f"W%={elem.word_pct():.4f} "
+        #             f"W={elem.word_count} "
+        #             f"{cat_str} {line}")
+        # else:
+        #     # txt.append(f"{idx:6d} {x}")
+        #     pass
+
+        #     # for j, tok in enumerate(x.text.splitlines()):
+        #     #     txt.append(f"{idx}.{j:04d} {tok}")
+        #     # txt.append(f"{x.text}")
+        #     continue
+
+        # if x.line_count == 1 and x.word_count > 1 and x.word_pct() > 0.5:
+        # txt.append(f"{idx:6d} {x}")
+
         # if idx in (3275, 3502):
-        # if idx in (3819,):
-            if x.special_tag != "":
-                txt.append(f"{idx:6d} {x}")
-            elif x.name == "script.String" and x.word_count > 1:
-                txt.append(f"{idx:6d} {x}")
+        # if idx in (1804,):
+        #     if x.text in seen_text:
+        #         continue
+        #     seen_text.add(x.text)
 
-            # for tok in x.doc:
-            #     txt.append(
-            #         f"{tok.pos_:10s} "
-            #         f"{tok.lemma_.lower() in text_util.nltk_words} "
-            #         f"{tok.lemma_} >>> "
-            #         f"{tok.text}"
-            #     )
+        #     if x.special_tag != "":
+        #         txt.append(f"{idx:6d} {x}")
+        #     elif x.name == "script.String" and x.word_count > 1:
+        #         txt.append(f"{idx:6d} {x}")
+        #     elif x.name != "script.String":
+        #         txt.append(f"{idx:6d} {x}")
 
-    txt = "\n====================\n".join(txt)
+        #     if x.doc is not None:
+        #         for tok in x.doc:
+        #             txt.append(
+        #                 f"{tok.pos_:10s} "
+        #                 f"{tok.lemma_.lower() in text_util.nltk_words} "
+        #                 f"{tok.lemma_} >>> "
+        #                 f"{tok.text}"
+        #             )
+        #     else:
+        #         for tok in x.text.split():
+        #             txt.append(
+        #                 f"{tok}"
+        #             )
+
+    txt = "\n".join(txt)
 
     return Response(
         response=txt,

@@ -23,6 +23,9 @@ cairosvg = "^2.7.1"
 nltk = "^3.9.1"
 
 
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
