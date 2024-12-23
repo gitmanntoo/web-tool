@@ -13,7 +13,6 @@ from library import docker_util
 from library import html_util
 from library import img_util
 from library import text_util
-from library import unicode_util
 from library import url_util
 
 app = Flask(__name__)
@@ -143,7 +142,7 @@ def mirror_html_source():
     try:
         clip_json = json.loads(clip)
         if html_raw := clip_json.get("html"):
-            html_text = BeautifulSoup(html_raw, "html.parser").prettify()
+            html_text = BeautifulSoup(html_raw, "html.parser")
     except json.JSONDecodeError:
         pass
 
@@ -343,22 +342,7 @@ def get_mirror_links():
 @app.route("/mirror-text", methods=["GET", "POST"])
 def get_mirror_text():
     """
-    Return the text for the page.
-    """
-    metadata = util.get_page_metadata()
-    extracted_text = text_util.extract_text_from_html(metadata["html"])
-
-    return Response(
-        response=extracted_text,
-        status=200,
-        mimetype="text/plain",
-    )
-
-
-@app.route("/mirror-text-strings", methods=["GET", "POST"])
-def get_mirror_text_strings():
-    """
-    Return the raw strings with debugging info for the page.
+    Return the raw strings for the page.
     """
     metadata = util.get_page_metadata()
 
@@ -370,12 +354,52 @@ def get_mirror_text_strings():
     txt = []
     for idx, x in enumerate(extracted_text):
         if x.keep:
-            for line in x.lines:
-                if line.text in seen_text:
+            if x.name == 'script.String':
+                if x.text in seen_text:
                     continue
-                seen_text.add(line.text)
+                seen_text.add(x.text)
 
-                txt.append(line.text)
+            # Avoid multiple blank lines.
+            txt.append(x.text)
+
+    # Remove multiple blank lines.
+    txt = "\n".join(txt).splitlines()
+    last_txt = ""
+    new_txt = []
+    for t in txt:
+        if t.strip() == "" and last_txt == "":
+            continue
+        last_txt = t.strip()
+        new_txt.append(t)
+
+    txt = "\n".join(new_txt)
+
+    return Response(
+        response=txt,
+        status=200,
+        mimetype="text/plain",
+    )
+
+
+@app.route("/mirror-text-debug", methods=["GET", "POST"])
+def get_mirror_text_debug():
+    """
+    Return debugging info and strings for the page.
+    """
+    metadata = util.get_page_metadata()
+
+    # Parse the HTML.
+    soup = BeautifulSoup(metadata["html"], "html.parser")
+    extracted_text = text_util.walk_soup_tree_strings(soup)
+
+    txt = []
+    for idx, x in enumerate(extracted_text):
+        out = (
+            f"{'.' * x.depth}{x.depth:3d} "
+            f"{'KEEP' if x.keep else '':4s} "
+            f"<{x.get_name()}>{x.text}"
+        )
+        txt.append(out)
 
     txt = "\n".join(txt)
 
