@@ -198,7 +198,6 @@ def plain_text_response(
             format = "text"
 
     if format == "text":
-        logging.info(f"DEBUGXXXXX {page_text=}")
         return Response(
             response=page_text,
             status=200,

@@ -273,7 +273,6 @@ def get_mirror_links():
         metadata["url_root"],
         metadata["url_host"],
     ):
-        logging.info(f"DEBUGXXXXX {u=}")
         if u.endswith('/'):
             u = u[:-1]
 
@@ -366,7 +365,7 @@ def get_mirror_text():
             txt.append(x.text)
 
     # Remove multiple blank lines.
-    txt = text_util.remove_blank_lines("\n".join(txt))
+    txt = text_util.remove_repeated_lines("\n".join(txt))
 
     return Response(
         response=txt,
@@ -384,7 +383,7 @@ def get_mirror_text_debug():
 
     # Parse the HTML.
     soup = BeautifulSoup(metadata["html"], "html.parser")
-    extracted_text = text_util.walk_soup_tree_strings(soup)
+    extracted_text = text_util.walk_soup_tree_strings(soup, rollup=False)
 
     txt = []
     for idx, x in enumerate(extracted_text):
@@ -428,7 +427,7 @@ def get_mirror_soup_text():
 
     # Parse the HTML.
     soup = BeautifulSoup(metadata["html"], "html.parser")
-    soup_text = text_util.remove_blank_lines(soup.get_text("\n"))
+    soup_text = text_util.remove_repeated_lines(soup.get_text("\n"))
 
     return Response(
         response=soup_text,

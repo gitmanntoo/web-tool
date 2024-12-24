@@ -16,5 +16,8 @@ COPY requirements.txt .
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install NLTK data.
+RUN python -m nltk.downloader wordnet words
+
 EXPOSE 8532
 ENTRYPOINT ["python", "web-tool.py"]

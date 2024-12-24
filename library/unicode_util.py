@@ -110,21 +110,24 @@ def count_categories(s: str) -> Counter:
     return counts
 
 
-def longest_run(s: str) -> int:
+def longest_run(s: str) -> str:
     """Count the longest sequence of characters without a separator."""
 
-    max_run = 0
-    current_run = 0
+    longest_run_str = []
+    current_run_str = []
     for c in s:
         cat = unicodedata.category(c)
         if CATEGORY_MAP[cat] == 'Z':
-            max_run = max(current_run, max_run)
-            current_run = 0
+            if len(current_run_str) > len(longest_run_str):
+                longest_run_str = current_run_str[:]
+            current_run_str = []
         else:
-            current_run += 1
+            current_run_str.append(c)
 
-    max_run = max(current_run, max_run)
-    return max_run
+    if len(current_run_str) > len(longest_run_str):
+        longest_run_str = current_run_str[:]
+
+    return ''.join(longest_run_str)
 
 
 def category_tensor(c: Counter) -> list[float]:

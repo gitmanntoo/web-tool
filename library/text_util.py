@@ -43,6 +43,15 @@ EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 START_TAG_REGEX = re.compile(r"<([a-zA-Z]+[1-6]?)", flags=re.MULTILINE)
 END_TAG_REGEX = re.compile(r"<\/([a-zA-Z]+[1-6]?)>", flags=re.MULTILINE)
 
+# Attribute keys to capture.
+ATTRS_KEYS = set(
+    ('href', 'src', 'alt', 'title', 'caption', 'aria-label', 'longdesc')
+)
+
+# HTML tag names that are always kept without stripping whitespace.
+ROLLUP_TAGS = set(('span', 'kbd', 'dd', 'dt', 'code', 'pre'))
+KEEP_TAGS = ROLLUP_TAGS | set(('br', 'hr', 'p'))
+
 
 def split_special_tag(s: str) -> tuple[str, str]:
     tag = s[0:SPECIAL_TAG_LEN]
@@ -180,17 +189,23 @@ def like_url(s: str) -> bool:
         return False
 
 
-def remove_blank_lines(s: str) -> str:
-    """Remove multiple blank lines."""
+def remove_repeated_lines(s: str) -> str:
+    """Remove repeated lines."""
 
-    s = s.splitlines()
-    last_s = ""
+    lines = s.splitlines()
+    last_line = ""
+    last_not_empty_line = ""
+
     new_s = []
-    for t in s:
-        if t.strip() == "" and last_s == "":
+    for line in lines:
+        line = line.rstrip()
+        if line == last_line or line == last_not_empty_line:
             continue
-        last_s = t.strip()
-        new_s.append(t)
+        last_line = line
+        if line != "":
+            last_not_empty_line = line
+
+        new_s.append(line)
 
     return "\n".join(new_s)
 
@@ -266,8 +281,7 @@ class SoupLine:
                 self.keep = False
 
         # Strip whitespace except for special tags.
-        if self.parent is not None and self.parent.name in (
-                'pre', 'code', 'span', 'kbd', 'br', 'hr', 'p'):
+        if self.parent is not None and self.parent.name in KEEP_TAGS:
             self.keep = True
         else:
             self.text = self.text.strip()
@@ -275,24 +289,30 @@ class SoupLine:
                 # Blank line
                 return
 
-        # Count unicode major categories in text.
-        self.longest_run = unicode_util.longest_run(self.text)
-        self.category_counter = unicode_util.count_categories(self.text)
-        self.category_tensor = unicode_util.category_tensor(
-            self.category_counter)
-        self.standard_dist = unicode_util.standard_distance(
-            self.category_counter)
-
-        self.word_count = 0
-        tokens = self.text.split()
-        for tok in tokens:
-            new_token = SoupToken(tok)
-            self.tokens.append(new_token)
-            self.word_count += int(new_token.is_word())
-
-        # For a script.String, only keep if the following criteria
-        # are satisfied.
+        # Additional analysis for script.String
         if self.name == 'script.String':
+            # Count unicode major categories in text.
+            longest_run_str = unicode_util.longest_run(self.text)
+            if is_word(longest_run_str) or like_email(longest_run_str) or like_url(longest_run_str):
+                self.longest_run = 0
+            else:
+                self.longest_run = len(longest_run_str)
+
+            self.category_counter = unicode_util.count_categories(self.text)
+            self.category_tensor = unicode_util.category_tensor(
+                self.category_counter)
+            self.standard_dist = unicode_util.standard_distance(
+                self.category_counter)
+
+            self.word_count = 0
+            tokens = self.text.split()
+            for tok in tokens:
+                new_token = SoupToken(tok)
+                self.tokens.append(new_token)
+                self.word_count += int(new_token.is_word())
+
+            # For a script.String, only keep if the following criteria
+            # are satisfied.
             if self.longest_run > MAX_WORD_LEN:
                 self.keep = False
             elif (self.word_count > 2 and self.standard_dist < 0.4
@@ -315,7 +335,7 @@ class SoupElem:
     parent: 'SoupElem'
     name: str
     text: str
-    keep: bool = False
+    keep: bool = True
     special_tag: str = ""
     lines: list[str] = field(default_factory=list)
     attrs: dict[str, str] = field(default_factory=dict)
@@ -337,44 +357,50 @@ class SoupElem:
         self.special_tag = tag
         if self.special_tag != "":
             self.text = other
-        elif self.name in ('pre', 'code', 'span', 'kbd', 'br', 'hr', 'p'):
+        elif self.name in KEEP_TAGS:
             self.keep = True
             self.text = "\n"
-
-        m = mgk.identify_bytes(self.text.encode())
-        self.magika_type = f"{m.output.group}/{m.output.ct_label}"
+        elif self.name == 'script.String':
+            self.keep = False
 
         for line in self.text.splitlines():
             new_line = SoupLine(self.parent, self.name, line)
             self.lines.append(new_line)
 
-            self.word_count += new_line.word_count
-            self.token_count += len(new_line.tokens)
-            self.category_counter.update(new_line.category_counter)
+            if self.name == 'script.String':
+                self.word_count += new_line.word_count
+                self.token_count += len(new_line.tokens)
+                self.category_counter.update(new_line.category_counter)
 
-            if self.min_standard_dist is None:
-                self.min_standard_dist = new_line.standard_dist
-                self.max_standard_dist = new_line.standard_dist
-            elif new_line.standard_dist is not None:
-                self.min_standard_dist = min(
-                    self.min_standard_dist,
-                    new_line.standard_dist,
+                if self.min_standard_dist is None:
+                    self.min_standard_dist = new_line.standard_dist
+                    self.max_standard_dist = new_line.standard_dist
+                elif new_line.standard_dist is not None:
+                    self.min_standard_dist = min(
+                        self.min_standard_dist,
+                        new_line.standard_dist,
+                    )
+                    self.max_standard_dist = max(
+                        self.max_standard_dist,
+                        new_line.standard_dist,
+                    )
+
+                self.max_longest_run = max(
+                    new_line.longest_run,
+                    self.max_longest_run,
                 )
-                self.max_standard_dist = max(
-                    self.max_standard_dist,
-                    new_line.standard_dist,
-                )
 
-            self.max_longest_run = max(
-                new_line.longest_run,
-                self.max_longest_run,
-            )
+                if self.max_longest_run > MAX_WORD_LEN:
+                    self.keep = False
+                elif new_line.keep:
+                    self.keep = True
 
-            if new_line.keep:
-                self.keep = True
+        if self.name == 'script.String':
+            self.category_tensor = unicode_util.category_tensor(
+                self.category_counter)
 
-        self.category_tensor = unicode_util.category_tensor(
-            self.category_counter)
+            m = mgk.identify_bytes(self.text.encode())
+            self.magika_type = f"{m.output.group}/{m.output.ct_label}"
 
     def __str__(self) -> str:
         n = f"<{self.name}>" if self.name is not None else NONE_TAG
@@ -400,7 +426,7 @@ class SoupElem:
         # Check for attributes.
         if self.name not in ('link', 'script'):
             attr_list = []
-            for k in ('href', 'src', 'alt', 'title', 'caption', 'aria-label', 'longdesc'):
+            for k in ATTRS_KEYS:
                 if k in self.attrs:
                     v = self.attrs[k].strip()
                     if v:
@@ -434,6 +460,7 @@ def walk_soup_tree_strings(
     elem: element.Tag,
     depth: int = 0,
     parent: SoupElem = None,
+    rollup: bool = True,
 ) -> list[SoupElem]:
     """Walk the HTML soup tree and collect a list of SoupElems."""
 
@@ -455,14 +482,14 @@ def walk_soup_tree_strings(
                     if tok.type == "String":
                         tok_value = tok.value.strip()
                         if tok_value != "":
+                            tok_value = eval_script_text(tok_value)
+
                             script_string_elem = SoupElem(
                                 depth+1,
                                 script_parent,
                                 'script.String',
                                 tok_value
                             )
-
-                            tok_value = eval_script_text(tok_value)
 
                             # Try to parse text as HTML?
                             script_elem = []
@@ -472,6 +499,7 @@ def walk_soup_tree_strings(
                                 script_elem = walk_soup_tree_strings(
                                     script_soup, depth + 2,
                                     parent=script_string_elem,
+                                    rollup=rollup,
                                 )
                                 tok_value = ""
 
@@ -488,7 +516,6 @@ def walk_soup_tree_strings(
                         elem_text)
                 )
 
-
     if hasattr(elem, 'children'):
         this_elem = SoupElem(
             depth, parent, elem.name, "",
@@ -501,11 +528,13 @@ def walk_soup_tree_strings(
         for child_index, child in enumerate(elem.children):
             child_elem = walk_soup_tree_strings(
                 child, depth + 1,
-                parent=parent)
+                parent=parent,
+                rollup=rollup,
+            )
             child_elem_collector.extend(child_elem)
-            
+
         # Collect text for inline tags.
-        if this_elem.name in ('span', 'kbd', 'code', 'pre',):
+        if rollup and this_elem.name in ROLLUP_TAGS:
             collect_text = []
             for el in child_elem_collector:
                 if el.name == 'div':
