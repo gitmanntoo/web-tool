@@ -142,7 +142,7 @@ def mirror_html_source():
     try:
         clip_json = json.loads(clip)
         if html_raw := clip_json.get("html"):
-            html_text = BeautifulSoup(html_raw, "html.parser")
+            html_text = BeautifulSoup(html_raw, "html.parser").prettify()
     except json.JSONDecodeError:
         pass
 
@@ -273,17 +273,20 @@ def get_mirror_links():
         metadata["url_root"],
         metadata["url_host"],
     ):
-        if urls:
-            if u.endswith("/"):
-                u = u[:-1]
-            if u != urls[-1]:
-                urls.append(u)
-        else:
+        logging.info(f"DEBUGXXXXX {u=}")
+        if u.endswith('/'):
+            u = u[:-1]
+
+        if u not in urls:
             urls.append(u)
 
     # build links
     links = []
     metadata["links"] = links
+
+    # Set a default title so links are not blank.
+    if metadata["title"] == "":
+        metadata["title"] = "link"
 
     if favicons:
         links.append({
@@ -363,16 +366,7 @@ def get_mirror_text():
             txt.append(x.text)
 
     # Remove multiple blank lines.
-    txt = "\n".join(txt).splitlines()
-    last_txt = ""
-    new_txt = []
-    for t in txt:
-        if t.strip() == "" and last_txt == "":
-            continue
-        last_txt = t.strip()
-        new_txt.append(t)
-
-    txt = "\n".join(new_txt)
+    txt = text_util.remove_blank_lines("\n".join(txt))
 
     return Response(
         response=txt,
@@ -421,6 +415,23 @@ def get_mirror_text_debug():
 
     return Response(
         response=txt,
+        status=200,
+        mimetype="text/plain",
+    )
+
+
+@app.route("/mirror-soup-text", methods=["GET", "POST"])
+def get_mirror_soup_text():
+    """Return text from BeautifulSoup."""
+
+    metadata = util.get_page_metadata()
+
+    # Parse the HTML.
+    soup = BeautifulSoup(metadata["html"], "html.parser")
+    soup_text = text_util.remove_blank_lines(soup.get_text("\n"))
+
+    return Response(
+        response=soup_text,
         status=200,
         mimetype="text/plain",
     )

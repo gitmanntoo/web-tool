@@ -180,6 +180,21 @@ def like_url(s: str) -> bool:
         return False
 
 
+def remove_blank_lines(s: str) -> str:
+    """Remove multiple blank lines."""
+
+    s = s.splitlines()
+    last_s = ""
+    new_s = []
+    for t in s:
+        if t.strip() == "" and last_s == "":
+            continue
+        last_s = t.strip()
+        new_s.append(t)
+
+    return "\n".join(new_s)
+
+
 class WordCategory(Enum):
     NLTK_WORDS = 1
     NLTK_SYNSETS = 2
@@ -252,7 +267,7 @@ class SoupLine:
 
         # Strip whitespace except for special tags.
         if self.parent is not None and self.parent.name in (
-                'pre', 'code', 'span', 'br', 'hr', 'p'):
+                'pre', 'code', 'span', 'kbd', 'br', 'hr', 'p'):
             self.keep = True
         else:
             self.text = self.text.strip()
@@ -322,7 +337,7 @@ class SoupElem:
         self.special_tag = tag
         if self.special_tag != "":
             self.text = other
-        elif self.name in ('pre', 'code', 'span', 'br', 'hr', 'p'):
+        elif self.name in ('pre', 'code', 'span', 'kbd', 'br', 'hr', 'p'):
             self.keep = True
             self.text = "\n"
 
@@ -490,7 +505,7 @@ def walk_soup_tree_strings(
             child_elem_collector.extend(child_elem)
             
         # Collect text for inline tags.
-        if this_elem.name in ('span', 'code', 'pre',):
+        if this_elem.name in ('span', 'kbd', 'code', 'pre',):
             collect_text = []
             for el in child_elem_collector:
                 if el.name == 'div':
