@@ -394,12 +394,28 @@ def get_mirror_text_debug():
 
     txt = []
     for idx, x in enumerate(extracted_text):
-        out = (
-            f"{'.' * x.depth}{x.depth:3d} "
-            f"{'KEEP' if x.keep else '':4s} "
-            f"<{x.get_name()}>{x.text}"
-        )
-        txt.append(out)
+        if x.name == 'script.String':
+            out = (
+                f"{'.' * x.depth}{x.depth:3d} "
+                f"{'KEEP' if x.keep else '':4s} "
+                f"<{x.get_name()}> "
+                f"L={x.line_count()} "
+                f"W={x.word_count}/{x.token_count}/{x.word_pct():.2f} "
+                f"C={x.category_str()} "
+                f"D={text_util.nvl(x.min_standard_dist, -999.0):.2f}/"
+                f"{text_util.nvl(x.max_standard_dist, -999.0):.2f} "
+                f"R={x.max_longest_run} "
+                f"{x.magika_type}"
+            )
+            txt.append(out)
+            txt.append(x.text)
+        else:
+            out = (
+                f"{'.' * x.depth}{x.depth:3d} "
+                f"{'KEEP' if x.keep else '':4s} "
+                f"<{x.get_name()}>{x.text}"
+            )
+            txt.append(out)
 
     txt = "\n".join(txt)
 

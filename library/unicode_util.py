@@ -110,6 +110,23 @@ def count_categories(s: str) -> Counter:
     return counts
 
 
+def longest_run(s: str) -> int:
+    """Count the longest sequence of characters without a separator."""
+
+    max_run = 0
+    current_run = 0
+    for c in s:
+        cat = unicodedata.category(c)
+        if CATEGORY_MAP[cat] == 'Z':
+            max_run = max(current_run, max_run)
+            current_run = 0
+        else:
+            current_run += 1
+
+    max_run = max(current_run, max_run)
+    return max_run
+
+
 def category_tensor(c: Counter) -> list[float]:
     """Ratio of category to total in order of CATEGORY_NAMES."""
 
@@ -126,15 +143,14 @@ def category_tensor(c: Counter) -> list[float]:
 def category_str(c: Counter) -> str:
     """Convert categories into a string with each value between 0 and 99.
     """
-    out_pct = []
-    for k in CATEGORY_NAMES:
-        pct = 0
-        if c.total() > 0:
-            pct = int(100 * c[k] / c.total())
-            if pct == 100:
-                pct = 99
 
-            out_pct.append(f"{pct:2d}")
+    tensor = category_tensor(c)
+    out_pct = []
+    for t in tensor:
+        pct = int(100 * t)
+        if pct == 100:
+            pct = 99
+        out_pct.append(f"{pct:2d}")
 
     return " ".join(out_pct)
 

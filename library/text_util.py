@@ -3,11 +3,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 import logging
 import re
+from typing import Any
 from urllib.parse import urlparse
 import yaml
 
-from bs4 import element
+from bs4 import BeautifulSoup, element
 import esprima
+from magika import Magika
 from nltk.corpus import wordnet as wn
 from nltk.corpus import words
 
@@ -37,6 +39,10 @@ SPECIAL_TAGS = set([CODE_TAG, HEAD_TAG, BODY_TAG, TEXT_TAG])
 
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
+# Match opening and closing HTML tags (roughly)
+START_TAG_REGEX = re.compile(r"<([a-zA-Z]+[1-6]?)", flags=re.MULTILINE)
+END_TAG_REGEX = re.compile(r"<\/([a-zA-Z]+[1-6]?)>", flags=re.MULTILINE)
+
 
 def split_special_tag(s: str) -> tuple[str, str]:
     tag = s[0:SPECIAL_TAG_LEN]
@@ -49,7 +55,14 @@ def split_special_tag(s: str) -> tuple[str, str]:
 
 
 # Build set of nltk words for lookups.
+mgk = Magika()
 nltk_words = set([x.lower() for x in words.words()])
+
+
+def nvl(v: Any, default: Any) -> Any:
+    if v is None:
+        return default
+    return v
 
 
 def strip_quotes(s: str) -> str:
@@ -113,6 +126,39 @@ def is_word(s: str) -> bool:
     return False
 
 
+def like_html(s: str) -> bool:
+    """Returns true if string looks like HTML."""
+
+    # Collect opening and closing tags.
+    tags = {}
+    for m in START_TAG_REGEX.finditer(s):
+        tags[m.start()] = ('<', m.group(1))
+
+    for m in END_TAG_REGEX.finditer(s):
+        tags[m.start()] = ('>', m.group(1))
+
+    if len(tags) < 2:
+        return False
+
+    # Match opening and closing tags.
+    tag_stack = []
+    unmatched = []
+    for k in sorted(tags.keys()):
+        op, name = tags[k]
+        name = name.lower()
+
+        if op == '<':
+            tag_stack.append(name)
+        elif op == '>':
+            last = tag_stack.pop()
+            while last != name and len(tag_stack) > 0:
+                unmatched.append(last)
+                last = tag_stack.pop()
+
+    # HTML-like if 95% of tags matched.
+    return (len(unmatched) / len(tags)) < 0.05
+
+
 def like_email(s: str) -> bool:
     """NOTE: regex seems to be more accurate than spacy.like_email"""
     new_text = unicode_util.strip_not_alnum(s)
@@ -127,8 +173,11 @@ def like_url(s: str) -> bool:
     if len(tokens) > 1:
         return False
 
-    u = urlparse(new_text)
-    return all([u.scheme, u.netloc])
+    try:
+        u = urlparse(new_text)
+        return all([u.scheme, u.netloc])
+    except Exception:
+        return False
 
 
 class WordCategory(Enum):
@@ -184,11 +233,12 @@ class SoupLine:
     name: str
     text: str
     keep: bool = True
-    category_counts: Counter = field(default_factory=Counter)
+    category_counter: Counter = field(default_factory=Counter)
     category_tensor: list[float] = field(default_factory=list)
     standard_dist: float = None
     tokens: list[SoupToken] = field(default_factory=list)
     word_count: int = 0
+    longest_run: int = 0
 
     def __post_init__(self):
         """Analyze the text after initialization."""
@@ -211,11 +261,12 @@ class SoupLine:
                 return
 
         # Count unicode major categories in text.
-        self.category_counts = unicode_util.count_categories(self.text)
+        self.longest_run = unicode_util.longest_run(self.text)
+        self.category_counter = unicode_util.count_categories(self.text)
         self.category_tensor = unicode_util.category_tensor(
-            self.category_counts)
+            self.category_counter)
         self.standard_dist = unicode_util.standard_distance(
-            self.category_counts)
+            self.category_counter)
 
         self.word_count = 0
         tokens = self.text.split()
@@ -227,7 +278,9 @@ class SoupLine:
         # For a script.String, only keep if the following criteria
         # are satisfied.
         if self.name == 'script.String':
-            if (self.word_count > 2 and self.standard_dist < 0.4
+            if self.longest_run > MAX_WORD_LEN:
+                self.keep = False
+            elif (self.word_count > 2 and self.standard_dist < 0.4
                     and self.word_pct() > 0.5):
                 self.keep = True
 
@@ -254,16 +307,14 @@ class SoupElem:
 
     token_count: int = 0
     word_count: int = 0
+
+    category_counter: Counter = field(default_factory=Counter)
+    category_tensor: list[float] = field(default_factory=list)
     min_standard_dist: float = None
     max_standard_dist: float = None
-
-    char_count: int = 0
-    alnum_count: int = 0
-    category_counter: Counter = field(default_factory=Counter)
-    char_counter: Counter = field(default_factory=Counter)
+    max_longest_run: int = 0
 
     magika_type: str = "none/none"
-    tokens: list[SoupToken] = field(default_factory=list)
 
     def __post_init__(self):
         # Identify special tags.
@@ -275,12 +326,16 @@ class SoupElem:
             self.keep = True
             self.text = "\n"
 
+        m = mgk.identify_bytes(self.text.encode())
+        self.magika_type = f"{m.output.group}/{m.output.ct_label}"
+
         for line in self.text.splitlines():
             new_line = SoupLine(self.parent, self.name, line)
             self.lines.append(new_line)
 
             self.word_count += new_line.word_count
             self.token_count += len(new_line.tokens)
+            self.category_counter.update(new_line.category_counter)
 
             if self.min_standard_dist is None:
                 self.min_standard_dist = new_line.standard_dist
@@ -295,8 +350,16 @@ class SoupElem:
                     new_line.standard_dist,
                 )
 
+            self.max_longest_run = max(
+                new_line.longest_run,
+                self.max_longest_run,
+            )
+
             if new_line.keep:
                 self.keep = True
+
+        self.category_tensor = unicode_util.category_tensor(
+            self.category_counter)
 
     def __str__(self) -> str:
         n = f"<{self.name}>" if self.name is not None else NONE_TAG
@@ -332,6 +395,12 @@ class SoupElem:
                 return f"{self.name} {' '.join(attr_list)}".strip()
 
         return self.name
+    
+    def line_count(self) -> int:
+        return len(self.lines)
+    
+    def category_str(self) -> str:
+        return unicode_util.category_str(self.category_counter)
 
     def word_pct(self) -> float:
         """Return percentage of tokens that are words."""
@@ -356,27 +425,54 @@ def walk_soup_tree_strings(
     tree_elem = []
 
     if elem.name == 'script':
-        tree_elem.append(
-            SoupElem(
-                depth, parent, elem.name, "",
-                attrs=elem.attrs,
-        ))
+        script_parent =  SoupElem(
+            depth, parent, elem.name, "",
+            attrs=elem.attrs,
+        )
+        tree_elem.append(script_parent)
 
         elem_text = elem.text.strip()
         if elem_text:
             # Tokenize the script and extract the String tokens.
-            tokens = esprima.tokenize(elem_text)
-            for tok in tokens:
-                if tok.type == "String":
-                    tok_value = tok.value.strip()
-                    if tok_value != "":
-                        tree_elem.append(
-                            SoupElem(
+            try:
+                tokens = esprima.tokenize(elem_text)
+                for tok in tokens:
+                    if tok.type == "String":
+                        tok_value = tok.value.strip()
+                        if tok_value != "":
+                            script_string_elem = SoupElem(
                                 depth+1,
-                                parent,
+                                script_parent,
                                 'script.String',
-                                eval_script_text(tok_value))
-                        )
+                                tok_value
+                            )
+
+                            tok_value = eval_script_text(tok_value)
+
+                            # Try to parse text as HTML?
+                            script_elem = []
+                            if like_html(tok_value):
+                                # Probable HTML.
+                                script_soup = BeautifulSoup(tok_value, "html.parser")
+                                script_elem = walk_soup_tree_strings(
+                                    script_soup, depth + 2,
+                                    parent=script_string_elem,
+                                )
+                                tok_value = ""
+
+                            tree_elem.append(script_string_elem)
+                            if tok_value == "":
+                                script_string_elem.text = tok_value
+                                tree_elem.extend(script_elem)
+            except Exception:
+                tree_elem.append(
+                    SoupElem(
+                        depth+1,
+                        script_parent,
+                        'script.String',
+                        elem_text)
+                )
+
 
     if hasattr(elem, 'children'):
         this_elem = SoupElem(
@@ -403,6 +499,8 @@ def walk_soup_tree_strings(
                     collect_text.append(el.text)
 
             this_elem.text = "".join(collect_text)
+            if this_elem.name in ('code', 'pre'):
+                this_elem.text += "\n"
         else:
             tree_elem.extend(child_elem_collector)
     elif elem.text != "":
