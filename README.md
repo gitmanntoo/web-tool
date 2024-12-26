@@ -27,9 +27,13 @@ If the port is changed, the bookmarklets will need to be updated with the new po
     - Extracted text includes snippets found in `<script>` tags.
 - <a href="http://localhost:8532/js/mirror-soup-text.js?mode=bookmarklet" target="_blank">soup-text</a>
     - Extracts text on the page using BeautifulSoup's `get_text()` method.
-    - This 
+    - This method does not extract text in `<script>` tags which may exclude some important blocks.
 - <a href="http://localhost:8532/js/mirror-html-source.js?mode=bookmarklet" target="_blank">html-source</a>
+    - Displays the HTML source of the page using Prism formatting.
+    - This may fail on some larger, complex pages.
 - <a href="http://localhost:8532/js/mirror-html-source.js?mode=bookmarklet&format=text" target="_blank">html-source-text</a>
+    - Display the HTML source of the page using plain text.
+    - This should always work.
 
 ## Use Docker
 
