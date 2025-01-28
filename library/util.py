@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
+from anyascii import anyascii
 from flask import abort, request, make_response, Response
 from jinja2 import Environment, FileSystemLoader
 import jsmin
@@ -124,6 +125,9 @@ def get_page_metadata():
             metadata["jsonDecodeError"] = str(e)
             metadata["rawClip"] = clip
             return metadata
+        
+    # Generate ASCII version of title
+    metadata["title_ascii"] = anyascii(metadata["title"])
     
     # Parse url into variations.
     parsed = urlparse(metadata.get("url", ""))

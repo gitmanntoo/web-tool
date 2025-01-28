@@ -291,11 +291,13 @@ def get_mirror_links():
         links.append({
             "header": "Obsidian",
             "html": (
-                f'<img src="{metadata["favicon"]}" width="20" />'
-                f'<a target="_blank" href="{metadata["url"]}">{metadata["title"]}</a>'
+                f'<img src="{metadata["favicon"]}" width="20" />&nbsp;'
+                f'<a target="_blank" href="{metadata["url"]}">'
+                f'{metadata["title_ascii"]}</a>'
             ),
             "markdown": (
-                f'![favicon|20]({metadata["favicon"]}) [{metadata["title"]}]({metadata["url"]})'
+                f'![favicon|20]({metadata["favicon"]}) '
+                f'[{metadata["title_ascii"]}]({metadata["url"]})'
             ),
         })
 
@@ -303,21 +305,24 @@ def get_mirror_links():
             links.append({
                 "header": "Obsidian - Clean",
                 "html": (
-                    f'<img src="{metadata["favicon"]}" width="20" />'
-                    f'<a target="_blank" href="{metadata["url_clean"]}">{metadata["title"]}</a>'
+                    f'<img src="{metadata["favicon"]}" width="20" />&nbsp;'
+                    f'<a target="_blank" href="{metadata["url_clean"]}">'
+                    f'{metadata["title_ascii"]}</a>'
                 ),
                 "markdown": (
-                    f'![favicon|20]({metadata["favicon"]}) [{metadata["title"]}]({metadata["url_clean"]})'
+                    f'![favicon|20]({metadata["favicon"]}) '
+                    f'[{metadata["title_ascii"]}]({metadata["url_clean"]})'
                 ),
             })
 
     links.append({
         "header": "Markdown",
         "html": (
-            f'<a target="_blank" href="{metadata["url"]}">{metadata["title"]}</a>'
+            f'<a target="_blank" href="{metadata["url"]}">'
+            f'{metadata["title_ascii"]}</a>'
         ),
         "markdown": (
-            f'[{metadata["title"]}]({metadata["url"]})'
+            f'[{metadata["title_ascii"]}]({metadata["url"]})'
         ),
     })
 
@@ -325,10 +330,11 @@ def get_mirror_links():
         links.append({
             "header": "Markdown - Clean",
             "html": (
-                f'<a target="_blank" href="{metadata["url_clean"]}">{metadata["title"]}</a>'
+                f'<a target="_blank" href="{metadata["url_clean"]}">'
+                f'{metadata["title_ascii"]}</a>'
             ),
             "markdown": (
-                f'[{metadata["title"]}]({metadata["url_clean"]})'
+                f'[{metadata["title_ascii"]}]({metadata["url_clean"]})'
             ),
         })
 
