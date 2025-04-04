@@ -1,4 +1,5 @@
 import base64
+import html
 import json
 import logging
 from pathlib import Path
@@ -128,6 +129,9 @@ def get_page_metadata():
         
     # Generate ASCII version of title
     metadata["title_ascii"] = anyascii(metadata["title"])
+
+    # Generate HTML-safe title
+    metadata["title_html"] = html.escape(metadata["title_ascii"])
     
     # Parse url into variations.
     parsed = urlparse(metadata.get("url", ""))
@@ -143,6 +147,7 @@ def get_page_metadata():
     )
 
     return metadata
+
 
 # Map from coding language to Prism.js class.
 LANGUAGE_TO_PRISM_CLASS = {

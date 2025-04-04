@@ -289,56 +289,43 @@ def get_mirror_links():
 
     if favicons:
         links.append({
-            "header": "Obsidian",
+            "header": "Favicon",
             "html": (
-                f'<img src="{metadata["favicon"]}" width="20" />&nbsp;'
+                f'<img src="{metadata["favicon"]}" width="20" /> '
                 f'<a target="_blank" href="{metadata["url"]}">'
-                f'{metadata["title_ascii"]}</a>'
-            ),
-            "markdown": (
-                f'![favicon|20]({metadata["favicon"]}) '
-                f'[{metadata["title_ascii"]}]({metadata["url"]})'
+                f'{metadata["title_html"]}</a>'
             ),
         })
 
-        if metadata["url"] != metadata["url_clean"]:
-            links.append({
-                "header": "Obsidian - Clean",
-                "html": (
-                    f'<img src="{metadata["favicon"]}" width="20" />&nbsp;'
-                    f'<a target="_blank" href="{metadata["url_clean"]}">'
-                    f'{metadata["title_ascii"]}</a>'
-                ),
-                "markdown": (
-                    f'![favicon|20]({metadata["favicon"]}) '
-                    f'[{metadata["title_ascii"]}]({metadata["url_clean"]})'
-                ),
-            })
+        links.append({
+            "header": "Favicon - Clean",
+            "html": (
+                f'<img src="{metadata["favicon"]}" width="20" /> '
+                f'<a target="_blank" href="{metadata["url_clean"]}">'
+                f'{metadata["title_html"]}</a>'
+            ),
+        })
 
     links.append({
-        "header": "Markdown",
+        "header": "Simple",
         "html": (
             f'<a target="_blank" href="{metadata["url"]}">'
             f'{metadata["title_ascii"]}</a>'
-        ),
-        "markdown": (
-            f'[{metadata["title_ascii"]}]({metadata["url"]})'
         ),
     })
 
     if metadata["url"] != metadata["url_clean"]:
         links.append({
-            "header": "Markdown - Clean",
+            "header": "Simple - Clean",
             "html": (
                 f'<a target="_blank" href="{metadata["url_clean"]}">'
                 f'{metadata["title_ascii"]}</a>'
             ),
-            "markdown": (
-                f'[{metadata["title_ascii"]}]({metadata["url_clean"]})'
-            ),
         })
 
-    metadata["clip_b64"] = base64.b64encode(links[0]["markdown"].encode()).decode()
+    # Add a base64 encoded version of the html to use for the copy button.
+    for link in links:
+        link["html_b64"] = base64.b64encode(link["html"].encode()).decode()
 
     template = template_env.get_template('mirror-links.html')
     rendered_html = template.render(metadata)
