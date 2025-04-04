@@ -4,9 +4,11 @@
     <title>Mirror Links</title>
     <link rel="stylesheet" href="/static/default.css">
     <script>
-        function copyToClipboard(url) {
-            navigator.clipboard.writeText(url).then(() => {
-                console.log('URL copied to clipboard');
+        function copyToClipboard(html) {
+            // Decode the base64 encoded HTML
+            const decodedHtml = atob(html);
+            navigator.clipboard.writeText(decodedHtml).then(() => {
+                console.log('HTML copied to clipboard');
             });
         }
     </script>
@@ -26,8 +28,8 @@
     {% for link in links %}
         <h3>{{ link['header'] }}</h3>
         {{ link['html'] }}<br />
-        {{ link['markdown'] }}<br />
-        <button class="copy-btn" onclick="copyToClipboard('{{ link['markdown'] }}')">Copy</button><br />
+        {{ link['html']|e }}<br />
+        <button class="copy-btn" onclick="copyToClipboard('{{ link['html_b64'] }}')">Copy</button><br />
     {% endfor %}
 
   <script>
