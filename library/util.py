@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 from anyascii import anyascii
+from bs4 import BeautifulSoup
 from flask import abort, request, make_response, Response
 from jinja2 import Environment, FileSystemLoader
 import jsmin
@@ -86,6 +87,38 @@ def parse_cookie_string(cookie_string, url):
     return cookies
 
 
+def get_fragment_text(soup, url) -> str:
+    """
+    Get the fragment text from the URL.
+    """
+    if not soup:
+        return ""
+    
+    parsed_url = urlparse(url)
+    if not parsed_url.fragment:
+        return ""
+
+    # Look for an anchor tag with the fragment as the href.
+    anchor = soup.find(href=f'#{parsed_url.fragment}')
+    if anchor:
+        if anchor.text: 
+            return anchor.text
+        
+        # Get the previous sibling element if the anchor has no text.
+        prev = anchor.find_previous_sibling()
+        if prev and prev.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            if prev.text:
+                return prev.text
+            
+        # Get the next sibling element if the anchor has no text.
+        next = anchor.find_next_sibling()
+        if next and next.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            if next.text:
+                return next.text
+
+    return parsed_url.fragment
+
+
 def get_page_metadata():
     """
     Return the metadata for the page.
@@ -127,12 +160,36 @@ def get_page_metadata():
             metadata["rawClip"] = clip
             return metadata
         
+    # Try to parse HTML from the clipboard.
+    metadata["soup"] = None
+    try:
+        metadata["soup"] = BeautifulSoup(metadata["html"], "html.parser")
+
+        if not metadata.get("title"):
+            # Get title from the first H1 tag.
+            h1 = metadata["soup"].find("h1")
+            if h1:
+                metadata["title"] = h1.text
+
+        # If URL has a fragment, get the text from the fragment.
+        metadata["fragment_text"] = get_fragment_text(
+            metadata["soup"], metadata["url"])
+        if metadata["fragment_text"]:
+            metadata["fragment_title"] = (
+                f'{metadata["fragment_text"]} - {metadata["title"]}')
+    except Exception:
+        pass
+
     # Generate ASCII version of title
     metadata["title_ascii"] = anyascii(metadata["title"])
+    metadata["fragment_title_ascii"] = anyascii(
+        metadata.get("fragment_title", ""))
 
     # Generate HTML-safe title
     metadata["title_html"] = html.escape(metadata["title_ascii"])
-    
+    metadata["fragment_title_html"] = html.escape(
+        metadata.get("fragment_title", ""))
+
     # Parse url into variations.
     parsed = urlparse(metadata.get("url", ""))
     metadata["url_host"] = urlunparse((
@@ -140,7 +197,7 @@ def get_page_metadata():
     metadata["url_root"] = url_util.get_url_root(metadata.get("url", ""))
     metadata["url_clean"] = urlunparse((
         parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
-    
+
     # Parse the cookie string into a dictionary.
     metadata["cookies"] = parse_cookie_string(
         metadata.get("cookieString", ""), metadata.get("url", "")

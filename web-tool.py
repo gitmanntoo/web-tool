@@ -288,40 +288,43 @@ def get_mirror_links():
         metadata["title"] = "link"
 
     if favicons:
-        links.append({
-            "header": "Favicon",
-            "html": (
-                f'<img src="{metadata["favicon"]}" width="20" /> '
-                f'<a target="_blank" href="{metadata["url"]}">'
-                f'{metadata["title_html"]}</a>'
-            ),
-        })
+        if metadata.get("fragment_title"):
+            links.append({
+                "header": "Favicon",
+                "html": (
+                    f'<img src="{metadata["favicon"]}" '
+                    f'width="{html_util.FAVICON_WIDTH}" /> '
+                    f'<a target="_blank" href="{metadata["url"]}">'
+                    f'{metadata["fragment_title_html"]}</a>'
+                ),
+            })
 
         links.append({
             "header": "Favicon - Clean",
             "html": (
-                f'<img src="{metadata["favicon"]}" width="20" /> '
+                f'<img src="{metadata["favicon"]}" '
+                f'width="{html_util.FAVICON_WIDTH}" /> '
                 f'<a target="_blank" href="{metadata["url_clean"]}">'
                 f'{metadata["title_html"]}</a>'
             ),
         })
 
+    if metadata.get("fragment_title"):
+        links.append({
+            "header": "Simple",
+            "html": (
+                f'<a target="_blank" href="{metadata["url"]}">'
+                f'{metadata["fragment_title_ascii"]}</a>'
+            ),
+        })
+
     links.append({
-        "header": "Simple",
+        "header": "Simple - Clean",
         "html": (
-            f'<a target="_blank" href="{metadata["url"]}">'
+            f'<a target="_blank" href="{metadata["url_clean"]}">'
             f'{metadata["title_ascii"]}</a>'
         ),
     })
-
-    if metadata["url"] != metadata["url_clean"]:
-        links.append({
-            "header": "Simple - Clean",
-            "html": (
-                f'<a target="_blank" href="{metadata["url_clean"]}">'
-                f'{metadata["title_ascii"]}</a>'
-            ),
-        })
 
     # Add a base64 encoded version of the html to use for the copy button.
     for link in links:
