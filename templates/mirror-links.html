@@ -15,6 +15,7 @@
 </head>
 <body>
     <h2>Title</h2>{{ title|e }}
+    <h2>Fragment</h2>{{ fragment_text|e }}
     <h2>URL:</h2>
     {% for url in urls %}
         <a href="{{ url }}">{{ url|e }}</a><br />

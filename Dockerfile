@@ -11,10 +11,14 @@ COPY README.md .
 COPY library/ ./library/
 COPY static/ ./static/
 COPY templates/ ./templates/
-COPY requirements.txt .
+COPY pyproject.toml .
+COPY uv.lock .
 
-RUN pip install --upgrade pip wheel
-RUN pip install --no-cache-dir -r requirements.txt
+# Install uv
+RUN pip install --no-cache-dir uv
+
+# Install dependencies using uv
+RUN uv pip install --system .
 
 # Install NLTK data.
 RUN python -m nltk.downloader wordnet words

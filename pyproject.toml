@@ -2,7 +2,9 @@
 name = "web-tool"
 version = "0.1.0"
 description = ""
-authors = ["gitmanntoo <gitmanntoo@proton.me>"]
+authors = [
+    {name = "gitmanntoo", email = "gitmanntoo@proton.me"}
+]
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 
@@ -27,3 +29,11 @@ dependencies = [
 dev = [
     "ipykernel>=6.29.5",
 ] 
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = ["library", "static", "templates"] 
