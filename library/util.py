@@ -132,6 +132,8 @@ def get_page_metadata():
         "batch_id": batch_id,
         "text_length": int(request.args.get("textLength", 0)),
         "format": request.args.get("format", "html"),
+        "clipboard_error": request.args.get("clipboardError", ""),
+        "content_type": request.args.get("contentType", ""),
     }
 
     if batch_id and batch_id in clip_cache:
