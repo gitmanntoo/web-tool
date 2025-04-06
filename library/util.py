@@ -260,7 +260,7 @@ class PageMetadata:
 
     def resolve_fragment_text(self):
         """
-        Resolve the fragment text from the URL.
+        Resolve the fragment text from the URL. ¶
         """
         if not self.parsed_url.fragment:
             # No fragment in the URL.
@@ -314,8 +314,8 @@ class PageMetadata:
 
     @property
     def fragment_title(self) -> str:
-        if self.fragment_text:
-            return f'{self.fragment_text} - {self.title}'
+        if f :=self.fragment_text.rstrip('¶'):
+            return f'{f} - {self.title}'
 
         return ''
 
