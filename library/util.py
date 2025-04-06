@@ -1,11 +1,14 @@
 import base64
 from dataclasses import dataclass
+import fitz
 import html
+import io
 import json
 import logging
 import tldextract
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
+from pprint import pprint
 
 from anyascii import anyascii
 from bs4 import BeautifulSoup
@@ -88,6 +91,7 @@ class PageMetadata:
     soup: BeautifulSoup = None
     fragment_text: str = ''
     favicons: list[RelLink] = None
+    page_content: url_util.SerializedResponse = None
 
     def __post_init__(self):
         """Process request args if request is provided."""
@@ -204,6 +208,9 @@ class PageMetadata:
         """Load clipboard data from clip_cache."""
         if self.clipboard_error:
             # Clipboard error occurred, so we can't load clipboard data.
+            self.page_content = url_util.get_url(self.url)
+            if not self.page_content.error:
+                self.content_type = self.page_content.content_type
             return
 
         if self.batch_id and self.batch_id in clip_cache:
@@ -420,13 +427,23 @@ def handle_clipboard_error(metadata: PageMetadata):
     """
 
     if not metadata.content_type:
-        head_response = url_util.head_url(metadata.url)
-        if head_response.status_code != 200:
+        metadata.page_content = url_util.get_url(metadata.url)
+        if metadata.page_content.status_code != 200:
             metadata.content_type = 'unknown/unknown'
         else:
-            metadata.content_type = head_response.content_type
+            metadata.content_type = metadata.page_content.content_type
 
-    metadata.title = f'{metadata.content_type} - {metadata.url}'
+    match metadata.content_type:
+        case "application/pdf":
+            # Load the pdf and get title from metadata.
+            pdf_stream = io.BytesIO(metadata.page_content.content)
+            doc = fitz.open("pdf", pdf_stream.read())
+            pprint(doc.metadata)
+            metadata.title = doc.metadata.get('title', '')
+
+    if not metadata.title:
+        metadata.title = f'{metadata.content_type} - {metadata.url}'
+
     return metadata
 
 

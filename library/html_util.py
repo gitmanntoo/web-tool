@@ -212,9 +212,6 @@ def get_favicon_links(
 ) -> list[RelLink]:
     """Get the favicon links for the page URL."""
 
-    if not soup:
-        return []
-
     # Keep track of href already seen.
     seen = set()
 
@@ -225,6 +222,9 @@ def get_favicon_links(
         if include != 'all':
             return links
         seen.add(cached_url.href)
+
+    if not soup:
+        return links
 
     head = soup.find('head')
 

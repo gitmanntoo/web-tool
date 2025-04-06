@@ -23,6 +23,7 @@ dependencies = [
     "magika>=0.5.1",
     "anyascii>=0.3.2",
     "cairosvg>=2.7.1",
+    "pymupdf>=1.25.5",
 ]
 
 [project.optional-dependencies]
