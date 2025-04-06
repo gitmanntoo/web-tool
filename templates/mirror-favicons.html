@@ -7,8 +7,13 @@
 <body>
     <strong>URL: </strong>{{ url|e }}<br />
     {% for f in favicons %}
+    <hr /
     <p>
-        <p><a href="{{ f.href }}">{{ cache_key }}: {{ f.href|e }}</a></p>
+        <p>
+            {% if f.cache_key %}<strong>{{ f.cache_key }}</strong>{% endif %}
+            <a href="{{ f.href }}">{{ cache_key }}: {{ f.href|e }}</a>
+        </p>
+        <pre>{{ cache_key }}: {{ f.href|e }}</pre>
         {% if f.href != f.resolved_href %}
         <p>Resolves to: <a href="{{ f.resolved_href }}">{{ f.resolved_href|e }}</a></p>
         {% endif %}

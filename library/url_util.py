@@ -171,7 +171,7 @@ class SerializedResponse:
 
 
 @lru_cache(maxsize=64)
-def get_url(url: str) -> SerializedResponse | None:
+def get_url(url: str) -> SerializedResponse:
     """
     Gets a URL. Returns None if the URL does not exist.
     """
@@ -190,6 +190,30 @@ def get_url(url: str) -> SerializedResponse | None:
         out.error = str(e)
 
     logging.info(f"get_url END: {time.time() - start_time:.3f}s {url}")
+    return out
+
+
+@lru_cache(maxsize=64)
+def head_url(url: str) -> SerializedResponse:
+    """
+    Makes a HEAD request to a URL. This is more efficient than get_url when you only need headers.
+    Returns a SerializedResponse with only headers and status information (no content).
+    """
+    logging.info(f"head_url START: {url}")
+    start_time = time.time()
+
+    out = SerializedResponse(source_url=url)
+    try:
+        resp = requests.head(
+            url,
+            headers={"User-Agent": get_user_agent()},
+            timeout=DEFAULT_TIMEOUT)
+        resp.raise_for_status()
+        out.from_response(resp)
+    except requests.exceptions.RequestException as e:
+        out.error = str(e)
+
+    logging.info(f"head_url END: {time.time() - start_time:.3f}s {url}")
     return out
 
 

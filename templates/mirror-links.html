@@ -14,10 +14,12 @@
     </script>
 </head>
 <body>
-    <h2>Title</h2>{{ title|e }}
-    <h2>Fragment</h2>{{ fragment_text|e }}
-    <h2>Content-Type</h2>{{ content_type|e }}
-    <h2>Clipboard Error</h2>{{ clipboard_error|e }}
+    <h2>Metadata</h2>
+    <strong>Title:</strong> {{ title|e }}<br />
+    <strong>Fragment:</strong> {{ fragment_text|e }}<br />
+    <strong>Content-Type:</strong> {{ content_type|e }}<br />
+    <strong>Clipboard Error:</strong> {{ clipboard_error|e }}<br />
+    
     <h2>URL:</h2>
     {% for url in urls %}
         <a href="{{ url }}">{{ url|e }}</a><br />
