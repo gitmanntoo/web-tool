@@ -26,8 +26,10 @@
     {% endfor %}
     
     <h2>Favicon</h2>
+    {% if favicon %}
         <img src="{{ favicon }}" width="20" />
         <a href="{{ favicon }}">{{ favicon|e }}</a><br />
+    {% endif %}
 
     <h2>Links</h2>
     {% for link in links %}
