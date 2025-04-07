@@ -111,7 +111,7 @@ def mirror_clip():
     metadata = util.get_page_metadata()
 
     # Read clipboard contents.
-    clip = metadata["clipboard"]
+    clip = metadata.mirror_data.clipboard
 
     # If clip is valid JSON, format it with indentation.
     clip_text = clip
@@ -123,7 +123,7 @@ def mirror_clip():
 
     return util.plain_text_response(
         template_env, "Clipboard Contents", clip_text,
-        format=metadata["format"],
+        format=metadata.output_format,
         language="json",
     )
 
@@ -134,25 +134,19 @@ def mirror_html_source():
 
     metadata = util.get_page_metadata()
 
-    # Read clipboard contents.
-    clip = metadata["clipboard"]
-
     # If clip is valid JSON, extract the HTML and prettify it.
     html_text = ""
-    try:
-        clip_json = json.loads(clip)
-        if html_raw := clip_json.get("html"):
-            html_text = BeautifulSoup(html_raw, "html.parser").prettify()
-    except json.JSONDecodeError:
-        pass
+    if metadata.soup:
+        html_text = metadata.soup.prettify()
+        return util.plain_text_response(
+            template_env,
+            "HTML Source",
+            html_text,
+            format=metadata.output_format,
+            language="html",
+        )
 
-    return util.plain_text_response(
-        template_env,
-        "HTML Source",
-        html_text,
-        format=metadata["format"],
-        language="html",
-    )
+    return mirror_clip()
 
 
 @app.route("/mirror-favicons", methods=["GET", "POST"])
@@ -163,14 +157,10 @@ def get_mirror_favicons():
 
     metadata = util.get_page_metadata()
 
-    # Set the cache key from the url.
-    parsed = urlparse(url_util.get_url_root(metadata["url"]))
-    metadata["cache_key"] = f"{parsed.netloc}{parsed.path}"
-
     # Get the favicons.
     favicons = html_util.get_favicon_links(
-        metadata["url"],
-        metadata["html"],
+        metadata.url,
+        metadata.soup,
         include="all",
     )
 
@@ -200,14 +190,16 @@ def get_mirror_favicons():
     elif favicons:
         # Add the top favicon as the cached favicon.
         html_util.add_favicon_to_cache(
-            metadata["cache_key"],
+            metadata.cache_key,
             favicons[0].href,
         )
 
-    metadata["favicons"] = favicons
-
     template = template_env.get_template('mirror-favicons.html')
-    rendered_html = template.render(metadata)
+    rendered_html = template.render({
+        'favicons': favicons,
+        'url': metadata.url,
+        'cache_key': metadata.cache_key,
+    })
 
     resp = make_response(rendered_html)
     return resp
@@ -256,73 +248,55 @@ def get_mirror_links():
     """
     metadata = util.get_page_metadata()
 
-    favicons = html_util.get_favicon_links(
-        metadata["url"],
-        metadata["html"],
-    )
-    if favicons:
-        metadata["favicon"] = favicons[0].href
-
     # build urls
     urls = []
-    metadata["urls"] = urls
-
-    for u in (
-        metadata["url"],
-        metadata["url_clean"],
-        metadata["url_root"],
-        metadata["url_host"],
-    ):
-        if u.endswith('/'):
-            u = u[:-1]
-
+    for u in metadata.urls:
         if u not in urls:
             urls.append(u)
 
     # build links
     links = []
-    metadata["links"] = links
 
     # Set a default title so links are not blank.
-    if metadata["title"] == "":
-        metadata["title"] = "link"
+    if not metadata.title:
+        metadata.title = "link"
 
-    if favicons:
-        if metadata.get("fragment_title"):
+    if metadata.favicons:
+        if metadata.fragment_title:
             links.append({
                 "header": "Favicon",
                 "html": (
-                    f'<img src="{metadata["favicon"]}" '
+                    f'<img src="{metadata.favicon_url}" '
                     f'width="{html_util.FAVICON_WIDTH}" /> '
-                    f'<a target="_blank" href="{metadata["url"]}">'
-                    f'{metadata["fragment_title_html"]}</a>'
+                    f'<a target="_blank" href="{metadata.url}">'
+                    f'{util.html_text(util.ascii_text(metadata.fragment_title))}</a>'
                 ),
             })
 
         links.append({
             "header": "Favicon - Clean",
             "html": (
-                f'<img src="{metadata["favicon"]}" '
+                f'<img src="{metadata.favicon_url}" '
                 f'width="{html_util.FAVICON_WIDTH}" /> '
-                f'<a target="_blank" href="{metadata["url_clean"]}">'
-                f'{metadata["title_html"]}</a>'
+                f'<a target="_blank" href="{metadata.url_clean}">'
+                f'{util.html_text(util.ascii_text(metadata.title))}</a>'
             ),
         })
 
-    if metadata.get("fragment_title"):
+    if metadata.fragment_title:
         links.append({
             "header": "Simple",
             "html": (
-                f'<a target="_blank" href="{metadata["url"]}">'
-                f'{metadata["fragment_title_ascii"]}</a>'
+                f'<a target="_blank" href="{metadata.url}">'
+                f'{util.html_text(util.ascii_text(metadata.fragment_title))}</a>'
             ),
         })
 
     links.append({
         "header": "Simple - Clean",
         "html": (
-            f'<a target="_blank" href="{metadata["url_clean"]}">'
-            f'{metadata["title_ascii"]}</a>'
+            f'<a target="_blank" href="{metadata.url_clean}">'
+            f'{util.html_text(util.ascii_text(metadata.title))}</a>'
         ),
     })
 
@@ -331,7 +305,16 @@ def get_mirror_links():
         link["html_b64"] = base64.b64encode(link["html"].encode()).decode()
 
     template = template_env.get_template('mirror-links.html')
-    rendered_html = template.render(metadata)
+    rendered_html = template.render({
+        'title': metadata.title,
+        'fragment_text': metadata.fragment_text,
+        'content_type': metadata.content_type,
+        'clipboard_error': metadata.clipboard_error,
+        'urls': urls,
+        'links': links,
+        'favicon': metadata.favicon_url,
+        'clip_b64': links[0]["html_b64"],
+    })
 
     resp = make_response(rendered_html)
     return resp
@@ -345,8 +328,7 @@ def get_mirror_text():
     metadata = util.get_page_metadata()
 
     # Parse the HTML.
-    soup = BeautifulSoup(metadata["html"], "html.parser")
-    extracted_text = text_util.walk_soup_tree_strings(soup)
+    extracted_text = text_util.walk_soup_tree_strings(metadata.soup)
 
     seen_text = set()
     txt = []
@@ -378,11 +360,11 @@ def get_mirror_text_debug():
     metadata = util.get_page_metadata()
 
     # Parse the HTML.
-    soup = BeautifulSoup(metadata["html"], "html.parser")
-    extracted_text = text_util.walk_soup_tree_strings(soup, rollup=False)
+    extracted_text = text_util.walk_soup_tree_strings(
+        metadata.soup, rollup=False)
 
     txt = []
-    for idx, x in enumerate(extracted_text):
+    for x in extracted_text:
         if x.name == 'script.String':
             out = (
                 f"{'.' * x.depth}{x.depth:3d} "
@@ -422,8 +404,7 @@ def get_mirror_soup_text():
     metadata = util.get_page_metadata()
 
     # Parse the HTML.
-    soup = BeautifulSoup(metadata["html"], "html.parser")
-    soup_text = text_util.remove_repeated_lines(soup.get_text("\n"))
+    soup_text = text_util.remove_repeated_lines(metadata.soup.get_text("\n"))
 
     return Response(
         response=soup_text,

@@ -19,9 +19,15 @@ azure.com: https://portal.azure.com/Content/favicon.ico
 microsoft.com: https://www.microsoft.com/favicon.ico
 # other
 airtable.com: https://airtable.com/images/favicon/baymax/apple-touch-icon.png
+arxiv.org: https://arxiv.org/static/browse/0.3.4/images/icons/favicon-32x32.png
 atlassian.net: https://nytimes.atlassian.net/favicon.ico
 coda.io: https://cdn.coda.io/icons/png/color/coda-32.png
+docs.pydantic.dev: https://docs.pydantic.dev/latest/favicon.png
 github.com: https://github.githubassets.com/favicons/favicon.png
+ibm.com: https://www.ibm.com/content/dam/adobe-cms/default-images/apple-touch-icon-76x76.png
 medium.com: https://miro.medium.com/v2/resize:fill:76:76/10fd5c419ac61637245384e7099e131627900034828f4f386bdaa47a74eae156
 miro.com: https://miro.com/app/static/a2fd57db37a4cfe6.png
 obsidian.md: https://obsidian.md/favicon.ico
+ubuntu.com: https://ubuntu.com/favicon.png
+venice.ai: https://venice.ai/images/icon-512-maskable.png
+windsurf.com: https://windsurf.com/favicon.ico

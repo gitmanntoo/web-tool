@@ -207,7 +207,9 @@ def add_favicon_to_cache(cache_key, favicon_link):
         yaml.dump(cache, f, sort_keys=True)
 
 
-def get_favicon_links(page_url, html_string, include=None):
+def get_favicon_links(
+    page_url: str, soup: BeautifulSoup, include=None
+) -> list[RelLink]:
     """Get the favicon links for the page URL."""
 
     # Keep track of href already seen.
@@ -221,7 +223,9 @@ def get_favicon_links(page_url, html_string, include=None):
             return links
         seen.add(cached_url.href)
 
-    soup = BeautifulSoup(html_string, 'html.parser')
+    if not soup:
+        return links
+
     head = soup.find('head')
 
     # Try to find links in <head>.

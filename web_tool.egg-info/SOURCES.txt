@@ -11,6 +11,16 @@ pyproject.toml
 ./library/util.py
 ./static/__init__.py
 ./templates/__init__.py
+library/__init__.py
+library/docker_util.py
+library/html_util.py
+library/img_util.py
+library/text_util.py
+library/unicode_util.py
+library/url_util.py
+library/util.py
+static/__init__.py
+templates/__init__.py
 web_tool.egg-info/PKG-INFO
 web_tool.egg-info/SOURCES.txt
 web_tool.egg-info/dependency_links.txt

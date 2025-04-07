@@ -19,6 +19,7 @@ Requires-Dist: nltk>=3.9.1
 Requires-Dist: magika>=0.5.1
 Requires-Dist: anyascii>=0.3.2
 Requires-Dist: cairosvg>=2.7.1
+Requires-Dist: pymupdf>=1.25.5
 Provides-Extra: dev
 Requires-Dist: ipykernel>=6.29.5; extra == "dev"
 Dynamic: license-file
