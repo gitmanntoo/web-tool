@@ -60,6 +60,13 @@ docker run -d --restart always -p 8532:8532 -v $(pwd)/web-tool:/data --name web-
 
 ## Debug
 
-Container detection status is available at:
+Container detection status and clipboard proxy testing are available at:
 
 - <a href="http://localhost:8532/debug/container" target="_blank">container status</a>
+    - Returns JSON with `running_in_container` flag to verify container detection logic.
+    - Use this to confirm whether the app is detecting a Docker container correctly.
+
+- <a href="http://localhost:8532/debug/clipboard-proxy" target="_blank">clipboard proxy test</a>
+    - Interactive test page for the clipboard proxy functionality.
+    - Simulates what happens when a bookmarklet successfully captures clipboard data.
+    - Submit test data through the proxy to verify `/clip-collector` and `/mirror-clip` work correctly.

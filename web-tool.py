@@ -437,6 +437,74 @@ def debug_container():
     }
 
 
+@app.route("/debug/clipboard-proxy", methods=["GET", ])
+def debug_clipboard_proxy():
+    """Test the clipboard proxy functionality.
+    
+    This endpoint simulates what happens when a bookmarklet successfully
+    captures clipboard data and sends it through the proxy.
+    
+    Returns a test page that submits clipboard data to /mirror-clip
+    so you can verify the proxy is working.
+    """
+    test_data = {
+        "url": "http://example.com",
+        "title": "Test Page",
+        "userAgent": request.headers.get("User-Agent", "Unknown"),
+        "cookieString": "",
+        "html": "<html><body><h1>Test Content</h1><p>This is test content.</p></body></html>",
+    }
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Clipboard Proxy Debug</title>
+        <link rel="stylesheet" href="/static/default.css">
+    </head>
+    <body>
+        <h1>Clipboard Proxy Debug Test</h1>
+        <p>This page tests the clipboard proxy by submitting test data to /mirror-clip.</p>
+        <p><strong>Test Data:</strong></p>
+        <pre>{json.dumps(test_data, indent=2)}</pre>
+        <button onclick="submitTest()">Submit Test Data</button>
+        <div id="result" style="margin-top: 20px;"></div>
+        
+        <script>
+            function submitTest() {{
+                const testData = {json.dumps(json.dumps(test_data))};
+                const batchId = crypto.randomUUID();
+                
+                // POST the test data to clip-collector
+                fetch('/clip-collector?batchId=' + batchId + '&chunkNum=1', {{
+                    method: 'POST',
+                    body: testData,
+                    headers: {{'Content-Type': 'text/plain'}}
+                }})
+                .then(resp => {{
+                    if (resp.ok) {{
+                        document.getElementById('result').innerHTML = 
+                            '<p style="color: #5cb85c;">✓ Chunk submitted. Opening /mirror-clip...</p>';
+                        // Redirect to mirror-clip with the batch ID
+                        window.location.href = '/mirror-clip?batchId=' + batchId + '&textLength=' + testData.length;
+                    }} else {{
+                        document.getElementById('result').innerHTML = 
+                            '<p style="color: #d9534f;">✗ Failed to submit chunk: ' + resp.statusText + '</p>';
+                    }}
+                }})
+                .catch(err => {{
+                    document.getElementById('result').innerHTML = 
+                        '<p style="color: #d9534f;">✗ Error: ' + err.message + '</p>';
+                }});
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    
+    return html
+
+
 if __name__ == "__main__":
     if docker_util.is_running_in_container():
         port = 8532
