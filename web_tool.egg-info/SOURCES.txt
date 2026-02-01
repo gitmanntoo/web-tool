@@ -21,6 +21,8 @@ library/url_util.py
 library/util.py
 static/__init__.py
 templates/__init__.py
+tests/test_title_strings.py
+tests/test_title_variants.py
 web_tool.egg-info/PKG-INFO
 web_tool.egg-info/SOURCES.txt
 web_tool.egg-info/dependency_links.txt

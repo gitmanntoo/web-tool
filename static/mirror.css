@@ -1,0 +1,307 @@
+/* Cache Badge Styles */
+.cache-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 8px;
+    color: white;
+}
+
+.cache-override {
+    background-color: #0066cc;
+}
+
+.cache-default {
+    background-color: #28a745;
+}
+
+.cache-discovered {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.cache-none {
+    background-color: #6c757d;
+}
+
+.cache-invalid {
+    background-color: #dc3545;
+}
+
+.cache-key-info {
+    font-size: 12px;
+    color: #666;
+    margin-left: 8px;
+}
+
+/* Favicon Entry Styles */
+.favicon-entry {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.favicon-entry.invalid {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+}
+
+/* Override Form Styles */
+.override-form {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+}
+
+.override-form label {
+    display: block;
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.override-form input[type="radio"] {
+    margin-right: 5px;
+}
+
+.override-form button {
+    margin-top: 8px;
+    padding: 5px 12px;
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.override-form button:hover {
+    background-color: #0052a3;
+}
+
+.override-form button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.override-success {
+    color: #28a745;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.override-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Cache Panel Styles */
+.cache-panel {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.cache-panel h2 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.cache-file-list {
+    margin: 10px 0;
+}
+
+.cache-file-item {
+    padding: 8px;
+    margin: 5px 0;
+    border-left: 4px solid #6c757d;
+    background-color: white;
+}
+
+.cache-file-item.precedence-1 {
+    border-left-color: #0066cc;
+}
+
+.cache-file-item.precedence-2 {
+    border-left-color: #28a745;
+}
+
+.cache-file-item.precedence-3 {
+    border-left-color: #ffc107;
+}
+
+.cache-file-name {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.cache-file-path {
+    font-size: 11px;
+    color: #666;
+    font-family: monospace;
+}
+
+.cache-file-stats {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+}
+
+/* Metadata Panel Styles */
+.metadata-panel {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.metadata-panel h2 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.metadata-item {
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.metadata-item strong {
+    color: #333;
+}
+
+/* URL List Styles */
+.url-list {
+    margin: 10px 0;
+}
+
+.url-item {
+    padding: 8px;
+    margin: 5px 0;
+    border-left: 4px solid #0066cc;
+    background-color: white;
+    font-size: 12px;
+    word-break: break-all;
+    font-family: monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.url-item .copy-btn {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.url-item a {
+    word-break: break-all;
+}
+
+/* Favicon Section Styles */
+.favicon-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.favicon-section h2 {
+    margin-top: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.favicon-display {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.favicon-display img {
+    flex-shrink: 0;
+}
+
+.favicon-display .copy-btn {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.favicon-display a {
+    word-break: break-all;
+    font-size: 12px;
+}
+
+/* Links Section Styles */
+.links-section {
+    margin-bottom: 20px;
+}
+
+.links-section h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+}
+
+.link-entry {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.link-entry h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #0066cc;
+}
+
+.link-html-rendered {
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.link-html-code {
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    word-break: break-all;
+    font-family: monospace;
+    border: 1px solid #ddd;
+    color: #333;
+}
+
+/* Copy Button Styles */
+.copy-btn {
+    padding: 5px 12px;
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.copy-btn:hover {
+    background-color: #0052a3;
+}
+
+.copy-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}

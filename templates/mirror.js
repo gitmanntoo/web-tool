@@ -12,6 +12,7 @@ var c = {
     cookieString: document.cookie,
     html: document.documentElement.outerHTML,
 };
+c.htmlSize = c.html.length;
 
 p.append('title', c.title);
 p.append('url', c.url);

@@ -447,11 +447,31 @@ def get_mirror_links():
     """
     metadata = util.get_page_metadata()
 
-    # build urls
-    urls = []
-    for u in metadata.urls:
-        if u not in urls:
-            urls.append(u)
+    # build urls with labels
+    url_variants = []
+    url_map = {
+        metadata.url: 'Original',
+        metadata.url_with_fragment: 'With Fragment',
+        metadata.url_clean: 'Clean',
+        metadata.url_root: 'Root',
+        metadata.url_host: 'Host',
+    }
+    
+    seen_urls = set()
+    ordered_urls = [
+        metadata.url,
+        metadata.url_with_fragment,
+        metadata.url_clean,
+        metadata.url_root,
+        metadata.url_host,
+    ]
+    for url in ordered_urls:
+        if url and url not in seen_urls:
+            url_variants.append({
+                'url': url,
+                'label': url_map.get(url, 'URL')
+            })
+            seen_urls.add(url)
 
     # build links
     links = []
@@ -459,6 +479,26 @@ def get_mirror_links():
     # Set a default title so links are not blank.
     if not metadata.title:
         metadata.title = "link"
+
+    # Generate title variants with deduplication
+    title_obj = util.TitleVariants(metadata.title)
+    
+    title_variant_list = []
+    title_map = {
+        title_obj.original: 'Original',
+        title_obj.ascii_and_emojis: 'ASCII + Emoji',
+        title_obj.ascii_only: 'ASCII Only',
+        title_obj.path_safe: 'Path Safe',
+    }
+    
+    seen_titles = set()
+    for title_value in [title_obj.original, title_obj.ascii_and_emojis, title_obj.ascii_only, title_obj.path_safe]:
+        if title_value not in seen_titles:
+            title_variant_list.append({
+                'value': title_value,
+                'label': title_map[title_value]
+            })
+            seen_titles.add(title_value)
 
     if metadata.favicons:
         if metadata.fragment_title:
@@ -502,10 +542,15 @@ def get_mirror_links():
     template = template_env.get_template('mirror-links.html')
     rendered_html = template.render({
         'title': metadata.title,
+        'title_variants': title_variant_list,
+        'fragment': metadata.parsed_url.fragment if metadata.parsed_url else '',
         'fragment_text': metadata.fragment_text,
         'content_type': metadata.content_type,
         'clipboard_error': metadata.clipboard_error,
-        'urls': urls,
+        'user_agent': metadata.mirror_data.userAgent if metadata.mirror_data else '',
+        'cookie_string': metadata.mirror_data.cookieString if metadata.mirror_data else '',
+        'html_size': metadata.mirror_data.htmlSize if metadata.mirror_data else 0,
+        'url_variants': url_variants,
         'links': links,
         'favicon': metadata.favicon_url,
     })

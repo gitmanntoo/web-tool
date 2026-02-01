@@ -126,6 +126,7 @@ class MirrorData:
     userAgent: str = ''
     cookieString: str = ''
     html: str = ''
+    htmlSize: int = 0
 
     def __post_init__(self):
         """Parse clipboard contents if it's valid JSON and set attributes."""
@@ -140,6 +141,9 @@ class MirrorData:
                 self.userAgent = data.get('userAgent', '')
                 self.cookieString = data.get('cookieString', '')
                 self.html = data.get('html', '')
+                self.htmlSize = data.get('htmlSize', 0)
+                if not self.htmlSize and self.html:
+                    self.htmlSize = len(self.html)
         except json.JSONDecodeError:
             # If clipboard is not valid JSON, keep it as raw clipboard content
             pass
@@ -213,6 +217,16 @@ class PageMetadata:
             self.parsed_url.path, '', '', '')).rstrip('/')
 
     @property
+    def url_with_fragment(self) -> str:
+        """
+        Returns the URL with fragment but without query string.
+        """
+        return urlunparse((
+            self.parsed_url.scheme,
+            self.parsed_url.netloc,
+            self.parsed_url.path, '', '', self.parsed_url.fragment)).rstrip('/')
+
+    @property
     def url_root(self) -> str:
         """
         Returns the URL with the first path segment.
@@ -280,6 +294,7 @@ class PageMetadata:
         urls = []
         for u in (
             self.url,
+            self.url_with_fragment,
             self.url_clean,
             self.url_root,
             self.url_host,
@@ -356,9 +371,98 @@ class PageMetadata:
         # Fallback to using the URL.
         self.title = self.url
 
+    def _fragment_handler_heading_with_id(self):
+        """Handler: Heading element with id attribute matching fragment."""
+        heading = self.soup.find(["h1", "h2", "h3", "h4", "h5", "h6"], id=self.parsed_url.fragment)
+        if heading and (text := heading.text.strip()):
+            return text
+        return None
+
+    def _fragment_handler_anchor_inside_heading(self):
+        """Handler: Anchor tag inside heading (e.g., <h2>Text<a href="#fragment">¶</a></h2>)."""
+        anchor = self._find_fragment_anchor()
+        if anchor and anchor.parent and anchor.parent.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            heading_text = anchor.parent.get_text(strip=True)
+            anchor_text = anchor.get_text(strip=True)
+            if anchor_text and heading_text.endswith(anchor_text):
+                heading_text = heading_text[:-len(anchor_text)].strip()
+            if heading_text:
+                return heading_text
+        return None
+
+    def _fragment_handler_element_before_heading(self):
+        """Handler: Element with id/name before a heading."""
+        # Try id attribute
+        element = self.soup.find(id=self.parsed_url.fragment)
+        if element:
+            next_elem = element.find_next_sibling()
+            if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                if text := next_elem.text.strip():
+                    return text
+        
+        # Try name attribute (older HTML)
+        element = self.soup.find(attrs={"name": self.parsed_url.fragment})
+        if element:
+            next_elem = element.find_next_sibling()
+            if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                if text := next_elem.text.strip():
+                    return text
+        return None
+
+    def _fragment_handler_wrapper_with_id(self):
+        """Handler: Wrapper element (section/div/article) with id containing a heading."""
+        wrapper = self.soup.find(["section", "div", "article"], id=self.parsed_url.fragment)
+        if wrapper:
+            heading = wrapper.find(["h1", "h2", "h3", "h4", "h5", "h6"])
+            if heading and (text := heading.text.strip()):
+                return text
+        return None
+
+    def _fragment_handler_anchor_with_text(self):
+        """Handler: Anchor tag with href matching fragment that has text content."""
+        anchor = self._find_fragment_anchor()
+        if anchor and (text := anchor.text.strip()):
+            return text
+        return None
+
+    def _fragment_handler_anchor_siblings(self):
+        """Handler: Previous or next sibling heading of anchor without text."""
+        anchor = self._find_fragment_anchor()
+        if not anchor:
+            return None
+        
+        # Check previous sibling
+        prev = anchor.find_previous_sibling()
+        if prev and prev.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            if text := prev.text.strip():
+                return text
+        
+        # Check next sibling
+        next_elem = anchor.find_next_sibling()
+        if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            if text := next_elem.text.strip():
+                return text
+        return None
+
+    def _find_fragment_anchor(self):
+        """Find anchor tag with href matching the fragment."""
+        # Look for anchor with fragment as href
+        anchor = self.soup.find(href=f'#{self.parsed_url.fragment}')
+        if anchor:
+            return anchor
+        
+        # Look for anchor with full URL as href
+        url_with_fragment = urlunparse((
+            self.parsed_url.scheme,
+            self.parsed_url.netloc,
+            self.parsed_url.path, '', '', self.parsed_url.fragment))
+        return self.soup.find(href=url_with_fragment)
+
     def resolve_fragment_text(self):
         """
-        Resolve the fragment text from the URL. ¶
+        Resolve the fragment text from the URL using a series of handlers.
+        Each handler attempts to extract text associated with the fragment.
+        Handlers are tried in order until one succeeds.
         """
         if not self.parsed_url.fragment:
             # No fragment in the URL.
@@ -369,42 +473,20 @@ class PageMetadata:
             self.fragment_text = self.parsed_url.fragment
             return
 
-        # Look for a heading using the fragment as the id.
-        heading = self.soup.find(["h1", "h2", "h3", "h4", "h5", "h6"], id=self.parsed_url.fragment)
-        if heading:
-            if h := heading.text.strip():
-                self.fragment_text = h
-                return
+        # List of fragment handlers to try in order
+        handlers = [
+            self._fragment_handler_heading_with_id,
+            self._fragment_handler_anchor_inside_heading,
+            self._fragment_handler_element_before_heading,
+            self._fragment_handler_wrapper_with_id,
+            self._fragment_handler_anchor_with_text,
+            self._fragment_handler_anchor_siblings,
+        ]
 
-        # Look for an anchor tag with the fragment as the href.
-        anchor = self.soup.find(href=f'#{self.parsed_url.fragment}')
-        if not anchor:
-            # Look for an anchor tag with the url as the href.
-            url_with_fragment = urlunparse((
-                self.parsed_url.scheme,
-                self.parsed_url.netloc,
-                self.parsed_url.path, '', '', self.parsed_url.fragment))
-            anchor = self.soup.find(href=url_with_fragment)
-
-        if anchor and (a := anchor.text.strip()):
-            self.fragment_text = a
-            return
-
-        # If no anchor was found or anchor did not have text, check the previous and next siblings.
-        if not anchor:
-            return
-        # Get the previous sibling element if the anchor has no text.
-        prev = anchor.find_previous_sibling()
-        if prev and prev.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
-            if p := prev.text.strip():
-                self.fragment_text = p
-                return
-
-        # Get the next sibling element if the anchor has no text.
-        next = anchor.find_next_sibling()
-        if next and next.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
-            if n := next.text.strip():
-                self.fragment_text = n
+        # Try each handler until one returns text
+        for handler in handlers:
+            if text := handler():
+                self.fragment_text = text
                 return
 
         # Fallback to the fragment.
@@ -684,3 +766,107 @@ def ascii_text(text: str) -> str:
 
 def html_text(text: str) -> str:
     return html.escape(text)
+
+
+def text_with_ascii_and_emojis(text: str) -> str:
+    """
+    Convert text to ASCII and emojis only (removes unicode accents/symbols).
+    Preserves emoji characters while converting other unicode to ASCII equivalents.
+    """
+    result = []
+    for char in text:
+        # Check if character is an emoji or symbol (Unicode category So, No, Po, or emoji blocks)
+        if ord(char) > 127:
+            # Check common emoji ranges
+            code = ord(char)
+            # Emoji ranges: Emoticons, Transport, Miscellaneous Symbols, etc.
+            if (0x1F300 <= code <= 0x1F9FF or  # Emoji blocks (most comprehensive)
+                0x2600 <= code <= 0x26FF or    # Miscellaneous Symbols
+                0x2700 <= code <= 0x27BF or    # Dingbats
+                0x1F000 <= code <= 0x1F02F):   # Mahjong Tiles, Domino Tiles
+                result.append(char)
+            else:
+                # Convert non-emoji unicode to ASCII
+                result.append(anyascii(char))
+        else:
+            result.append(char)
+    return ''.join(result)
+
+
+def text_ascii_only(text: str) -> str:
+    """
+    Convert text to ASCII only (converts all unicode and emojis to ASCII).
+    Emojis are converted to their text equivalents (e.g., 👋 → :wave:).
+    """
+    return anyascii(text)
+
+
+def path_safe_filename(text: str, replacement: str = "_") -> str:
+    """
+    Convert text to a path-safe filename that works on macOS, Linux, and Windows.
+    
+    Removes/replaces characters that are invalid or problematic in filenames:
+    - Windows: < > : " / \ | ? *
+    - Unix: / (null is also invalid but rare in text)
+    - macOS: : (treated as path separator, though HFS+ uses it)
+    - All: control characters, leading/trailing spaces/dots
+    
+    Args:
+        text: The text to convert
+        replacement: Character to use for invalid characters (default: underscore)
+    
+    Returns:
+        A filename-safe string
+    """
+    import re
+    
+    # First convert to ASCII to remove unicode/emojis
+    safe = anyascii(text)
+    
+    # Remove/replace invalid filename characters
+    # Invalid on Windows: < > : " / \ | ? *
+    # Invalid on Unix: / and null
+    # Invalid on macOS: : (path separator in classic Mac OS)
+    invalid_chars = r'[<>:"/\\|?*\x00@]'  # Added @ for safety in edge cases
+    safe = re.sub(invalid_chars, replacement, safe)
+    
+    # Remove control characters
+    safe = re.sub(r'[\x01-\x1f]', '', safe)
+    
+    # Remove leading/trailing spaces and dots (problematic on Windows)
+    safe = safe.strip('. ')
+    
+    # Remove consecutive replacements (e.g., multiple underscores)
+    safe = re.sub(f'{re.escape(replacement)}+', replacement, safe)
+    
+    # Ensure filename is not empty
+    if not safe or safe == replacement:
+        safe = 'untitled'
+    
+    return safe
+
+
+class TitleVariants:
+    """Container for title variants with different transformations."""
+    
+    def __init__(self, original: str):
+        """
+        Generate all title variants from an original title string.
+        
+        Args:
+            original: The original title text
+        """
+        self.original = original
+        self.ascii_and_emojis = text_with_ascii_and_emojis(original)
+        self.ascii_only = text_ascii_only(original)
+        self.path_safe = path_safe_filename(original)
+    
+    def __repr__(self) -> str:
+        return (
+            f"TitleVariants(\n"
+            f"  original={self.original!r},\n"
+            f"  ascii_and_emojis={self.ascii_and_emojis!r},\n"
+            f"  ascii_only={self.ascii_only!r},\n"
+            f"  path_safe={self.path_safe!r}\n"
+            f")"
+        )
