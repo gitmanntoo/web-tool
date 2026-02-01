@@ -5,6 +5,9 @@ import html
 import io
 import json
 import logging
+import psutil
+import sys
+import time
 import tldextract
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
@@ -27,7 +30,91 @@ STATIC_DIR = Path("static")
 TEMPLATE_DIR = Path("templates")
 
 # Cache for clip collector.
+# Structure: {batch_id: {'created_at': timestamp, 'chunks': {chunk_num: data}}}
 clip_cache = {}
+
+# Clip cache configuration
+CLIP_CACHE_TTL_SECONDS = 600  # 10 minutes
+CLIP_CACHE_MAX_BATCHES = 100  # Maximum number of batches to keep
+CLIP_CACHE_MEMORY_LIMIT_PCT = 0.5  # Maximum 50% of available memory
+
+
+def cleanup_clip_cache():
+    """Remove expired batches and enforce size limits on clip_cache.
+    
+    Removes:
+    - Batches older than CLIP_CACHE_TTL_SECONDS
+    - Oldest batches if count exceeds CLIP_CACHE_MAX_BATCHES
+    - Oldest batches if memory usage exceeds CLIP_CACHE_MEMORY_LIMIT_PCT of available memory
+    
+    Note: Memory check only happens during cleanup, allowing in-progress operations to complete.
+    """
+    current_time = time.time()
+    
+    # Remove expired batches
+    expired_batch_ids = [
+        batch_id for batch_id, batch_data in clip_cache.items()
+        if current_time - batch_data.get('created_at', 0) > CLIP_CACHE_TTL_SECONDS
+    ]
+    
+    for batch_id in expired_batch_ids:
+        del clip_cache[batch_id]
+        logging.info(f"Removed expired clip_cache batch: {batch_id}")
+    
+    # Enforce max batch limit by removing oldest
+    if len(clip_cache) > CLIP_CACHE_MAX_BATCHES:
+        # Sort by creation time and remove oldest
+        sorted_batches = sorted(
+            clip_cache.items(),
+            key=lambda x: x[1].get('created_at', 0)
+        )
+        
+        num_to_remove = len(clip_cache) - CLIP_CACHE_MAX_BATCHES
+        for i in range(num_to_remove):
+            batch_id = sorted_batches[i][0]
+            del clip_cache[batch_id]
+            logging.info(f"Removed old clip_cache batch (size limit): {batch_id}")
+    
+    # Enforce memory limit by removing oldest batches
+    try:
+        # Get available memory
+        memory = psutil.virtual_memory()
+        memory_limit = memory.available * CLIP_CACHE_MEMORY_LIMIT_PCT
+        
+        # Calculate cache size
+        cache_size = sys.getsizeof(clip_cache)
+        for batch_data in clip_cache.values():
+            cache_size += sys.getsizeof(batch_data)
+            cache_size += sys.getsizeof(batch_data.get('chunks', {}))
+            for chunk in batch_data.get('chunks', {}).values():
+                cache_size += sys.getsizeof(chunk)
+        
+        # Remove oldest batches if over limit
+        if cache_size > memory_limit and clip_cache:
+            logging.info(
+                f"Clip cache size ({cache_size:,} bytes) exceeds memory limit "
+                f"({memory_limit:,.0f} bytes). Removing oldest batches."
+            )
+            
+            sorted_batches = sorted(
+                clip_cache.items(),
+                key=lambda x: x[1].get('created_at', 0)
+            )
+            
+            while cache_size > memory_limit and sorted_batches:
+                batch_id = sorted_batches.pop(0)[0]
+                del clip_cache[batch_id]
+                logging.info(f"Removed old clip_cache batch (memory limit): {batch_id}")
+                
+                # Recalculate cache size
+                cache_size = sys.getsizeof(clip_cache)
+                for batch_data in clip_cache.values():
+                    cache_size += sys.getsizeof(batch_data)
+                    cache_size += sys.getsizeof(batch_data.get('chunks', {}))
+                    for chunk in batch_data.get('chunks', {}).values():
+                        cache_size += sys.getsizeof(chunk)
+    except Exception as e:
+        logging.warning(f"Error during memory-based clip_cache cleanup: {e}")
 
 
 @dataclass
@@ -216,8 +303,11 @@ class PageMetadata:
         if self.batch_id and self.batch_id in clip_cache:
             # Collect chunks from the cache.
             all_chunks = []
-            for chunk_number in sorted(clip_cache[self.batch_id].keys()):
-                all_chunks.append(clip_cache[self.batch_id][chunk_number])
+            batch_data = clip_cache[self.batch_id]
+            chunks = batch_data.get('chunks', {})
+            
+            for chunk_number in sorted(chunks.keys()):
+                all_chunks.append(chunks[chunk_number])
 
             del clip_cache[self.batch_id]
 

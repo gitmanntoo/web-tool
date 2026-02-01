@@ -20,6 +20,7 @@ Requires-Dist: magika>=0.5.1
 Requires-Dist: anyascii>=0.3.2
 Requires-Dist: cairosvg>=2.7.1
 Requires-Dist: pymupdf>=1.25.5
+Requires-Dist: psutil>=6.1.0
 Provides-Extra: dev
 Requires-Dist: ipykernel>=6.29.5; extra == "dev"
 Dynamic: license-file
@@ -83,3 +84,20 @@ docker run -d --restart always -p 8532:8532 -v $(pwd)/web-tool:/data --name web-
 - [NLTK :: Natural Language Toolkit](https://www.nltk.org/) for word identification.
 - [Pillow](https://pillow.readthedocs.io/en/stable/) for ICO conversion.
 - [Prism](https://prismjs.com/index.html) for syntax highlighting in HTML pages.
+
+## Debug
+
+Container detection status and clipboard proxy testing are available at:
+
+- <a href="http://localhost:8532/debug/container" target="_blank">container status</a>
+    - Returns JSON with `running_in_container` flag to verify container detection logic.
+    - Use this to confirm whether the app is detecting a Docker container correctly.
+
+- <a href="http://localhost:8532/debug/clip-cache" target="_blank">clip cache state</a>
+    - Returns JSON with current clip_cache state including batch count, memory usage, and individual batch details.
+    - Shows TTL, size limits, and how close the cache is to configured limits.
+
+- <a href="http://localhost:8532/debug/clipboard-proxy" target="_blank">clipboard proxy test</a>
+    - Interactive test page for the clipboard proxy functionality.
+    - Simulates what happens when a bookmarklet successfully captures clipboard data.
+    - Submit test data through the proxy to verify `/clip-collector` and `/mirror-clip` work correctly.

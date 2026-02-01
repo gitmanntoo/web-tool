@@ -24,6 +24,7 @@ dependencies = [
     "anyascii>=0.3.2",
     "cairosvg>=2.7.1",
     "pymupdf>=1.25.5",
+    "psutil>=6.1.0",
 ]
 
 [project.optional-dependencies]

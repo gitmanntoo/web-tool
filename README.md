@@ -66,6 +66,10 @@ Container detection status and clipboard proxy testing are available at:
     - Returns JSON with `running_in_container` flag to verify container detection logic.
     - Use this to confirm whether the app is detecting a Docker container correctly.
 
+- <a href="http://localhost:8532/debug/clip-cache" target="_blank">clip cache state</a>
+    - Returns JSON with current clip_cache state including batch count, memory usage, and individual batch details.
+    - Shows TTL, size limits, and how close the cache is to configured limits.
+
 - <a href="http://localhost:8532/debug/clipboard-proxy" target="_blank">clipboard proxy test</a>
     - Interactive test page for the clipboard proxy functionality.
     - Simulates what happens when a bookmarklet successfully captures clipboard data.

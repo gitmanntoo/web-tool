@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import time
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
@@ -20,6 +21,12 @@ app = Flask(__name__)
 # Initialize template environment.
 template_loader = FileSystemLoader(util.TEMPLATE_DIR)
 template_env = Environment(loader=template_loader)
+
+
+@app.before_request
+def before_request_cleanup():
+    """Clean up expired clip_cache entries before each request."""
+    util.cleanup_clip_cache()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -98,8 +105,14 @@ def clip_collector():
     batch_id = request.args.get('batchId')
     chunk_number = int(request.args.get('chunkNum'))
 
-    chunk_dict = util.clip_cache.setdefault(batch_id, {})
-    chunk_dict[chunk_number] = request.data.decode()
+    # Initialize batch if it doesn't exist
+    if batch_id not in util.clip_cache:
+        util.clip_cache[batch_id] = {
+            'created_at': time.time(),
+            'chunks': {}
+        }
+    
+    util.clip_cache[batch_id]['chunks'][chunk_number] = request.data.decode()
 
     return "OK"
 
@@ -434,6 +447,59 @@ def debug_container():
     """Return container detection status."""
     return {
         "running_in_container": docker_util.is_running_in_container(),
+    }
+
+
+@app.route("/debug/clip-cache", methods=["GET", ])
+def debug_clip_cache():
+    """Return current clip_cache state for debugging."""
+    import sys
+    import psutil
+    
+    # Calculate cache size
+    cache_size = sys.getsizeof(util.clip_cache)
+    for batch_data in util.clip_cache.values():
+        cache_size += sys.getsizeof(batch_data)
+        cache_size += sys.getsizeof(batch_data.get('chunks', {}))
+        for chunk in batch_data.get('chunks', {}).values():
+            cache_size += sys.getsizeof(chunk)
+    
+    # Get memory info
+    memory = psutil.virtual_memory()
+    memory_limit = memory.available * util.CLIP_CACHE_MEMORY_LIMIT_PCT
+    
+    # Build batch details
+    batches = []
+    for batch_id, batch_data in util.clip_cache.items():
+        created_at = batch_data.get('created_at', 0)
+        age_seconds = time.time() - created_at
+        chunks = batch_data.get('chunks', {})
+        
+        batch_info = {
+            'batch_id': batch_id,
+            'created_at': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created_at)),
+            'age_seconds': round(age_seconds, 1),
+            'chunk_count': len(chunks),
+            'chunk_numbers': sorted(chunks.keys()),
+        }
+        batches.append(batch_info)
+    
+    # Sort by creation time (oldest first)
+    batches.sort(key=lambda x: x['age_seconds'], reverse=True)
+    
+    return {
+        'batch_count': len(util.clip_cache),
+        'cache_size_bytes': cache_size,
+        'cache_size_mb': round(cache_size / 1024 / 1024, 2),
+        'memory_available_mb': round(memory.available / 1024 / 1024, 2),
+        'memory_limit_mb': round(memory_limit / 1024 / 1024, 2),
+        'memory_usage_pct': round(cache_size / memory_limit * 100, 1) if memory_limit > 0 else 0,
+        'config': {
+            'ttl_seconds': util.CLIP_CACHE_TTL_SECONDS,
+            'max_batches': util.CLIP_CACHE_MAX_BATCHES,
+            'memory_limit_pct': util.CLIP_CACHE_MEMORY_LIMIT_PCT,
+        },
+        'batches': batches,
     }
 
 
