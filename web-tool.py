@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import time
+import uuid
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
@@ -101,9 +102,31 @@ def clip_to_post():
 def clip_collector():
     """Collect chunks of text by batch ID and chunk number."""
 
-    # Read headers.
+    # Validate batchId
     batch_id = request.args.get('batchId')
-    chunk_number = int(request.args.get('chunkNum'))
+    if not batch_id:
+        return "Missing required parameter: batchId", 400
+    
+    try:
+        uuid.UUID(batch_id)
+    except (ValueError, AttributeError):
+        return "Invalid batchId format: must be a valid UUID", 400
+    
+    # Validate chunkNum
+    chunk_num_str = request.args.get('chunkNum')
+    if not chunk_num_str:
+        return "Missing required parameter: chunkNum", 400
+    
+    try:
+        chunk_number = int(chunk_num_str)
+    except (ValueError, TypeError):
+        return "Invalid chunkNum: must be an integer", 400
+    
+    if chunk_number < 1:
+        return "Invalid chunkNum: must be positive", 400
+    
+    if chunk_number > util.CLIP_CACHE_MAX_CHUNK_NUMBER:
+        return f"Invalid chunkNum: exceeds maximum allowed value ({util.CLIP_CACHE_MAX_CHUNK_NUMBER})", 400
 
     # Initialize batch if it doesn't exist
     if batch_id not in util.clip_cache:
@@ -497,6 +520,7 @@ def debug_clip_cache():
         'config': {
             'ttl_seconds': util.CLIP_CACHE_TTL_SECONDS,
             'max_batches': util.CLIP_CACHE_MAX_BATCHES,
+            'max_chunk_number': util.CLIP_CACHE_MAX_CHUNK_NUMBER,
             'memory_limit_pct': util.CLIP_CACHE_MEMORY_LIMIT_PCT,
         },
         'batches': batches,

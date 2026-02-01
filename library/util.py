@@ -36,6 +36,7 @@ clip_cache = {}
 # Clip cache configuration
 CLIP_CACHE_TTL_SECONDS = 600  # 10 minutes
 CLIP_CACHE_MAX_BATCHES = 100  # Maximum number of batches to keep
+CLIP_CACHE_MAX_CHUNK_NUMBER = 10000  # Maximum chunk number allowed
 CLIP_CACHE_MEMORY_LIMIT_PCT = 0.5  # Maximum 50% of available memory
 
 
