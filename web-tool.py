@@ -429,6 +429,14 @@ def get_url_response():
     return resp.as_dict()
 
 
+@app.route("/debug/container", methods=["GET", ])
+def debug_container():
+    """Return container detection status."""
+    return {
+        "running_in_container": docker_util.is_running_in_container(),
+    }
+
+
 if __name__ == "__main__":
     if docker_util.is_running_in_container():
         port = 8532

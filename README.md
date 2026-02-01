@@ -57,3 +57,9 @@ docker run -d --restart always -p 8532:8532 -v $(pwd)/web-tool:/data --name web-
 - [NLTK :: Natural Language Toolkit](https://www.nltk.org/) for word identification.
 - [Pillow](https://pillow.readthedocs.io/en/stable/) for ICO conversion.
 - [Prism](https://prismjs.com/index.html) for syntax highlighting in HTML pages.
+
+## Debug
+
+Container detection status is available at:
+
+- <a href="http://localhost:8532/debug/container" target="_blank">container status</a>

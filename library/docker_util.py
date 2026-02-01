@@ -10,7 +10,20 @@ def is_running_in_container():
     if 'CONTAINER_RUNTIME' in os.environ:
         return True
     if os.path.exists('/proc/1/cgroup'):
-        return True
+        try:
+            with open('/proc/1/cgroup', 'r', encoding='utf-8') as f:
+                cgroup_data = f.read()
+            cgroup_markers = (
+                'docker',
+                'containerd',
+                'kubepods',
+                'podman',
+                'lxc',
+            )
+            if any(marker in cgroup_data for marker in cgroup_markers):
+                return True
+        except OSError:
+            pass
 
     hostname = subprocess.check_output(['hostname']).decode('utf-8').strip()
     if hostname.startswith('docker-') or hostname.startswith('container-'):
