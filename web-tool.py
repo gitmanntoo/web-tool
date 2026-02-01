@@ -217,39 +217,191 @@ def get_mirror_favicons():
         cache_favicon = favicons[0]
         favicons = favicons[1:]
 
-    # Get the size of each favicon.
+    # Get the size of each favicon and determine cache source.
+    # Keep cached favicons even if they fail to load (to show invalid cache entries).
+    # Filter out only non-cached favicons that don't exist.
+    valid_favicons = []
     for favicon in favicons:
+        # Determine which cache file (if any) contains this favicon
+        favicon.cache_source = html_util.get_favicon_cache_source(
+            metadata.url,
+            favicon.href
+        )
+        
+        # Try to get image size
         if size := url_util.get_image_size(favicon.href):
             favicon.width = size.width
             favicon.height = size.height
             favicon.image_type = size.image_type
+            valid_favicons.append(favicon)
+        elif favicon.cache_source['file'] is not None:
+            # Cached favicon but failed to load - include it anyway
+            # so users can see invalid cache entries
+            favicon.width = 0
+            favicon.height = 0
+            favicon.image_type = "invalid"
+            valid_favicons.append(favicon)
+        # else: non-cached favicon that doesn't exist - exclude it
+    
+    favicons = valid_favicons
 
     # Sort favicons.
     favicons = html_util.sort_favicon_links(favicons, include='all')
 
     # Add back the cached favicon at the start.
     if cache_favicon:
+        cache_favicon.cache_source = html_util.get_favicon_cache_source(
+            metadata.url,
+            cache_favicon.href
+        )
+        
+        # Try to get image size, but include even if it fails
         if size := url_util.get_image_size(cache_favicon.href):
             cache_favicon.width = size.width
             cache_favicon.height = size.height
             cache_favicon.image_type = size.image_type
+        else:
+            # Cached favicon failed to load - mark as invalid but include it
+            cache_favicon.width = 0
+            cache_favicon.height = 0
+            cache_favicon.image_type = "invalid"
+        
         favicons.insert(0, cache_favicon)
-    elif favicons:
+    
+    # Auto-cache the top favicon if none is cached and we have valid favicons
+    if not cache_favicon and favicons:
         # Add the top favicon as the cached favicon.
         html_util.add_favicon_to_cache(
             metadata.cache_key,
             favicons[0].href,
         )
 
+    # Load cache file data for display
+    cache_files = {
+        'overrides': {
+            'name': 'User Overrides',
+            'path': str(html_util.FAVICON_OVERRIDES.absolute()),
+            'precedence': 1,
+            'entries': html_util._load_yaml_with_cache(html_util.FAVICON_OVERRIDES),
+        },
+        'defaults': {
+            'name': 'App Defaults',
+            'path': str(html_util.FAVICON_DEFAULTS.absolute()),
+            'precedence': 2,
+            'entries': html_util._load_yaml_with_cache(html_util.FAVICON_DEFAULTS),
+        },
+        'discovered': {
+            'name': 'Auto-Discovered',
+            'path': str(html_util.FAVICON_LOCAL_CACHE.absolute()),
+            'precedence': 3,
+            'entries': html_util._load_yaml_with_cache(html_util.FAVICON_LOCAL_CACHE),
+        }
+    }
+    
+    # Add entry counts
+    for cache_info in cache_files.values():
+        cache_info['count'] = len(cache_info['entries'])
+
     template = template_env.get_template('mirror-favicons.html')
     rendered_html = template.render({
         'favicons': favicons,
         'url': metadata.url,
         'cache_key': metadata.cache_key,
+        'cache_files': cache_files,
     })
 
     resp = make_response(rendered_html)
     return resp
+
+
+@app.route('/add-favicon-override', methods=['POST'])
+def add_favicon_override():
+    """Add a favicon override to the user override file.
+    
+    Accepts JSON with:
+    - favicon_url: The URL of the favicon to cache
+    - page_url: The URL of the page
+    - scope: 'domain' or 'path'
+    
+    Returns JSON with:
+    - success: bool
+    - cache_key: The key used (if successful)
+    - error: Error message (if failed)
+    """
+    try:
+        data = request.get_json()
+        favicon_url = data.get('favicon_url')
+        page_url = data.get('page_url')
+        scope = data.get('scope', 'domain')
+        
+        if not favicon_url or not page_url:
+            return json.dumps({
+                'success': False,
+                'error': 'Missing favicon_url or page_url'
+            }), 400, {'Content-Type': 'application/json'}
+        
+        # Parse the URL to determine cache key
+        parsed = urlparse(page_url)
+        
+        # Normalize netloc: always remove www. prefix for consistency
+        netloc = parsed.netloc
+        if netloc.startswith("www."):
+            netloc = netloc[4:]
+        
+        if scope == 'path':
+            # Use domain + first path segment
+            path_part = parsed.path
+            if path_part.startswith("/"):
+                path_part = path_part[1:]
+            if len(path_part) > 0:
+                path_part = path_part.split("/")[0]
+                cache_key = f"{netloc}/{path_part}"
+            else:
+                cache_key = netloc
+        else:
+            # Use domain only
+            cache_key = netloc
+        
+        # Read current file to preserve header comments
+        header_lines = []
+        if html_util.FAVICON_OVERRIDES.exists():
+            with open(html_util.FAVICON_OVERRIDES, 'r') as f:
+                for line in f:
+                    if line.strip().startswith('#') or line.strip() == '':
+                        header_lines.append(line)
+                    else:
+                        # Stop when we hit the first non-comment, non-empty line
+                        break
+        
+        # Load current overrides
+        overrides = html_util._load_yaml_with_cache(html_util.FAVICON_OVERRIDES)
+        
+        # Add the new override
+        overrides[cache_key] = favicon_url
+        
+        # Write back to file with preserved header
+        with open(html_util.FAVICON_OVERRIDES, "w") as f:
+            # Write header comments first
+            for line in header_lines:
+                f.write(line)
+            # Write YAML data in sorted order
+            yaml.dump(overrides, f, sort_keys=True)
+        
+        # Invalidate in-memory cache
+        file_path_str = str(html_util.FAVICON_OVERRIDES)
+        if file_path_str in html_util._favicon_yaml_cache:
+            del html_util._favicon_yaml_cache[file_path_str]
+        
+        return json.dumps({
+            'success': True,
+            'cache_key': cache_key
+        }), 200, {'Content-Type': 'application/json'}
+        
+    except Exception as e:
+        return json.dumps({
+            'success': False,
+            'error': str(e)
+        }), 500, {'Content-Type': 'application/json'}
 
 
 @app.route('/convert-ico-to-png', methods=['GET'])
@@ -347,10 +499,6 @@ def get_mirror_links():
         ),
     })
 
-    # Add a base64 encoded version of the html to use for the copy button.
-    for link in links:
-        link["html_b64"] = base64.b64encode(link["html"].encode()).decode()
-
     template = template_env.get_template('mirror-links.html')
     rendered_html = template.render({
         'title': metadata.title,
@@ -360,7 +508,6 @@ def get_mirror_links():
         'urls': urls,
         'links': links,
         'favicon': metadata.favicon_url,
-        'clip_b64': links[0]["html_b64"],
     })
 
     resp = make_response(rendered_html)

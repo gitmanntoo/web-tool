@@ -276,6 +276,69 @@ def get_favicon_cache(page_url) -> RelLink:
     return None
 
 
+def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
+    """Determine which cache file contains this favicon.
+    
+    Checks all three cache files in precedence order to see if the favicon
+    is already cached for this URL.
+    
+    Args:
+        page_url: The URL of the page being displayed
+        favicon_href: The favicon URL to look up
+        
+    Returns:
+        dict with:
+        - 'file': 'override' | 'default' | 'discovered' | None
+        - 'cache_key': The key used in the cache file (or None)
+        - 'precedence': 1 (highest) | 2 | 3 (lowest) | None
+    """
+    # Load caches using cached loader (respects mtime and TTL)
+    discovered_cache = _load_yaml_with_cache(FAVICON_LOCAL_CACHE)
+    defaults_cache = _load_yaml_with_cache(FAVICON_DEFAULTS)
+    overrides_cache = _load_yaml_with_cache(FAVICON_OVERRIDES)
+
+    # Generate search paths for the page URL
+    search_paths = []
+    parsed = urlparse(page_url)
+
+    # Get the first part of the path
+    path_part = parsed.path
+    if path_part.startswith("/"):
+        path_part = path_part[1:]
+    if len(path_part) > 0:
+        path_part = path_part.split("/")[0]
+        search_paths.append(f"{parsed.netloc}/{path_part}")
+
+    # Split the netloc into parts and add paths until there are just two parts
+    tokens = parsed.netloc.split(".")
+    while len(tokens) > 1:
+        search_paths.append(".".join(tokens))
+        tokens.pop(0)
+
+    # Search in order of precedence: overrides, defaults, discovered
+    for cache_dict, cache_file, precedence in [
+        (overrides_cache, "override", 1),
+        (defaults_cache, "default", 2),
+        (discovered_cache, "discovered", 3)
+    ]:
+        for search_path in search_paths:
+            if cached_favicon := cache_dict.get(search_path):
+                # Check if this cached favicon matches the one we're looking for
+                if cached_favicon == favicon_href:
+                    return {
+                        'file': cache_file,
+                        'cache_key': search_path,
+                        'precedence': precedence
+                    }
+    
+    # Not found in any cache
+    return {
+        'file': None,
+        'cache_key': None,
+        'precedence': None
+    }
+
+
 def add_favicon_to_cache(cache_key, favicon_link):
     """Add the favicon link to the auto-discovered cache.
     
@@ -500,7 +563,7 @@ def sort_favicon_links(
     key_precedence = {
         "cache": 999,
         "image": 500,
-        "ico": 400,
+        "ico": 500,  # ICO same priority as PNG now
         "svg": 300,
         "ico-conversion": 200,
         "svg-conversion": 100,
@@ -534,16 +597,21 @@ def sort_favicon_links(
             area = x.width * x.height
             distance = abs(area - target_area)
             
-            # Penalize upscaling (smaller than target) more than downscaling
+            # Strongly prefer downscaling over upscaling
+            # Add large penalty for upscaling to ensure larger images come first
             if area < target_area:
-                distance = int(distance * 1.2)
+                distance = distance * 10
         else:
             # Unknown size - assign high distance (low priority)
             distance = 999999
 
-        # Return composite key: group (descending), distance (ascending)
-        # Format: "999_000000400" for 20x20 cached favicon
-        return f"{group_key:03d}_{distance:09d}"
+        # Invert distance so larger values = closer match (for reverse sort)
+        # Max distance is 999999, so inverted = 999999 - distance
+        inverted_distance = 999999 - distance
+
+        # Return composite key: group (descending), inverted distance (descending)
+        # Format: "999_999599" for a 20x20 cached favicon
+        return f"{group_key:03d}_{inverted_distance:06d}"
 
     # Sort by key in reverse (higher group_key first, lower distance first within group)
     return sorted(favicons, key=lambda x: key_fn(x), reverse=True)

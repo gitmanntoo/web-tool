@@ -3,15 +3,6 @@
 <head>
     <title>Mirror Links</title>
     <link rel="stylesheet" href="/static/default.css">
-    <script>
-        function copyToClipboard(html) {
-            // Decode the base64 encoded HTML
-            const decodedHtml = atob(html);
-            navigator.clipboard.writeText(decodedHtml).then(() => {
-                console.log('HTML copied to clipboard');
-            });
-        }
-    </script>
 </head>
 <body>
     <h2>Metadata</h2>
@@ -36,15 +27,24 @@
         <h3>{{ link['header'] }}</h3>
         {{ link['html'] }}<br />
         {{ link['html']|e }}<br />
-        <button class="copy-btn" onclick="copyToClipboard('{{ link['html_b64'] }}')">Copy</button><br />
+        <button class="copy-btn" data-html="{{ link['html']|e }}">Copy</button><br />
     {% endfor %}
 
   <script>
+    // Add click listeners to all copy buttons
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            navigator.clipboard.writeText(btn.dataset.html).then(() => {
+                console.log('HTML copied to clipboard');
+            });
+        });
+    });
+
+    // Auto-copy first link on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Copy the text from the source element to the clipboard.
-        const x = '{{ clip_b64 }}';
-        if (x != '')  {
-            navigator.clipboard.writeText(atob(x));
+        const firstBtn = document.querySelector('.copy-btn');
+        if (firstBtn && firstBtn.dataset.html) {
+            navigator.clipboard.writeText(firstBtn.dataset.html);
         }
     });
   </script>

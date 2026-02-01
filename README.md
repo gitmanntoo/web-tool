@@ -65,7 +65,7 @@ web-tool uses a three-tier favicon cache system:
 1. **User Overrides** (`static/favicon-overrides.yml`) - Highest priority
    - Manual customizations that always take precedence
    - Edit this file to set your preferred favicons for specific sites
-   - Format: `domain.com: https://example.com/path/to/favicon.png`
+   - Format: `cache_key: favicon_url`
 
 2. **App Defaults** (`static/favicon.yml`) - Medium priority
    - Curated defaults distributed with the application
@@ -77,6 +77,42 @@ web-tool uses a three-tier favicon cache system:
 
 When looking up a favicon, web-tool searches from most specific to least specific:
 `netloc/path` → `subdomain.domain.tld` → `domain.tld`, checking overrides first, then defaults, then auto-discovered cache.
+
+### Managing Favicon Overrides
+
+**Via UI (Recommended):**
+- Navigate to `/mirror-favicons?url=<page_url>` to see all available favicons for a page
+- Click "Add to Overrides" button to add domain or path-based overrides
+- Changes take effect immediately
+
+**Via File Edit:**
+
+Edit `static/favicon-overrides.yml` directly:
+
+```yaml
+# Domain-level override (applies to all pages on domain)
+google.com: https://www.google.com/favicon.ico
+
+# Path-level override (applies to specific section)
+github.com/microsoft: https://github.githubassets.com/favicons/favicon.png
+```
+
+**Cache Key Rules:**
+- **Domain only**: `example.com` - applies to all pages on the domain
+- **Domain + path**: `example.com/docs` - applies to specific section (first path segment)
+- www prefix is automatically normalized (`www.example.com` → `example.com`)
+- More specific keys take precedence (path > subdomain > domain)
+
+**Examples:**
+```yaml
+# Domain-level
+ibm.com: https://www.ibm.com/favicon.ico
+github.com: https://github.githubassets.com/favicons/favicon.svg
+
+# Path-level
+docs.python.org/3: https://docs.python.org/3/_static/py.svg
+stackoverflow.com/questions: https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico
+```
 
 ## Debug
 

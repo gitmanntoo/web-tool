@@ -3,28 +3,270 @@
 <head>
     <title>Mirror Favicons</title>
     <link rel="stylesheet" href="/static/default.css">
+    <style>
+        .cache-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+            color: white;
+        }
+        .cache-override {
+            background-color: #0066cc;
+        }
+        .cache-default {
+            background-color: #28a745;
+        }
+        .cache-discovered {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .cache-none {
+            background-color: #6c757d;
+        }
+        .cache-invalid {
+            background-color: #dc3545;
+        }
+        .cache-key-info {
+            font-size: 12px;
+            color: #666;
+            margin-left: 8px;
+        }
+        .favicon-entry {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .favicon-entry.invalid {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+        }
+        .override-form {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 3px;
+        }
+        .override-form label {
+            display: block;
+            margin: 5px 0;
+            font-size: 13px;
+        }
+        .override-form input[type="radio"] {
+            margin-right: 5px;
+        }
+        .override-form button {
+            margin-top: 8px;
+            padding: 5px 12px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .override-form button:hover {
+            background-color: #0052a3;
+        }
+        .override-form button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .override-success {
+            color: #28a745;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .override-error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .cache-panel {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .cache-panel h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .cache-file-list {
+            margin: 10px 0;
+        }
+        .cache-file-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 4px solid #6c757d;
+            background-color: white;
+        }
+        .cache-file-item.precedence-1 {
+            border-left-color: #0066cc;
+        }
+        .cache-file-item.precedence-2 {
+            border-left-color: #28a745;
+        }
+        .cache-file-item.precedence-3 {
+            border-left-color: #ffc107;
+        }
+        .cache-file-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .cache-file-path {
+            font-size: 11px;
+            color: #666;
+            font-family: monospace;
+        }
+        .cache-file-stats {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+    </style>
+    <script>
+        function addOverride(faviconHref, pageUrl, formId) {
+            const form = document.getElementById(formId);
+            const scope = form.querySelector('input[name="scope"]:checked').value;
+            const messageEl = form.querySelector('.override-message');
+            const button = form.querySelector('button');
+            
+            button.disabled = true;
+            messageEl.textContent = 'Adding override...';
+            messageEl.className = 'override-success';
+            
+            fetch('/add-favicon-override', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    favicon_url: faviconHref,
+                    page_url: pageUrl,
+                    scope: scope
+                })
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    messageEl.textContent = '✓ Override added: ' + data.cache_key;
+                    messageEl.className = 'override-success';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    messageEl.textContent = '✗ Error: ' + data.error;
+                    messageEl.className = 'override-error';
+                    button.disabled = false;
+                }
+            })
+            .catch(err => {
+                messageEl.textContent = '✗ Error: ' + err.message;
+                messageEl.className = 'override-error';
+                button.disabled = false;
+            });
+        }
+    </script>
 </head>
 <body>
-    <strong>URL: </strong>{{ url|e }}<br />
+    <h1>Favicon Browser</h1>
+    
+    <div class="cache-panel">
+        <h2>Three-Tier Cache System</h2>
+        <p>Favicons are searched in order of precedence (highest to lowest):</p>
+        <div class="cache-file-list">
+            {% for key in ['overrides', 'defaults', 'discovered'] %}
+            {% set cache = cache_files[key] %}
+            <div class="cache-file-item precedence-{{ cache.precedence }}">
+                <div class="cache-file-name">
+                    {{ cache.precedence }}. {{ cache.name }}
+                    <span class="cache-badge cache-{{ key }}">{{ cache.count }} entries</span>
+                </div>
+                <div class="cache-file-path">{{ cache.path }}</div>
+                <div class="cache-file-stats">
+                    {% if cache.precedence == 1 %}
+                        Manual overrides - highest priority, editable via this UI or directly
+                    {% elif cache.precedence == 2 %}
+                        App defaults - curated favicons distributed with the app
+                    {% else %}
+                        Auto-discovered - favicons cached on first use
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+            <strong>Current URL:</strong> {{ url|e }}
+        </p>
+    </div>
+    
+    <h2>Available Favicons (sorted by preference)</h2>
     {% for f in favicons %}
-    <hr /
-    <p>
+    <div class="favicon-entry{% if f.image_type == 'invalid' %} invalid{% endif %}">
         <p>
-            {% if f.cache_key %}
-            <a href="{{ f.href }}"><strong>{{ f.cache_key }}: {{ f.href|e }}</strong></a>
+            <a href="{{ f.href }}">{{ f.href|e }}</a>
+            
+            {% if f.cache_source.file %}
+                {% if f.cache_source.file == 'override' %}
+                    <span class="cache-badge cache-override">OVERRIDE</span>
+                {% elif f.cache_source.file == 'default' %}
+                    <span class="cache-badge cache-default">DEFAULT</span>
+                {% elif f.cache_source.file == 'discovered' %}
+                    <span class="cache-badge cache-discovered">DISCOVERED</span>
+                {% endif %}
+                <span class="cache-key-info">cached as: {{ f.cache_source.cache_key }}</span>
             {% else %}
-            <a href="{{ f.href }}">{{ cache_key }}: {{ f.href|e }}</a><br />
-            <pre>{{ cache_key }}: {{ f.href|e }}</pre>
+                <span class="cache-badge cache-none">NOT CACHED</span>
+            {% endif %}
+            
+            {% if f.image_type == 'invalid' %}
+                <span class="cache-badge cache-invalid">INVALID - FAILED TO LOAD</span>
             {% endif %}
         </p>
+        
         {% if f.href != f.resolved_href %}
         <p>Resolves to: <a href="{{ f.resolved_href }}">{{ f.resolved_href|e }}</a></p>
         {% endif %}
-        <p>Image Type: {{ f.image_type }} </p>
-        <p><img src="{{ f.href }}" width="20" /> 20x20</p>
-        <p><img src="{{ f.href }}"/> {{ f.width }}x{{ f.height }}</p>
-    </p>
+        
+        <p>Image Type: {{ f.image_type }} | Size: {{ f.width }}x{{ f.height }}</p>
+        
+        {% if f.image_type != 'invalid' %}
+        <p>
+            <img src="{{ f.href }}" width="20" alt="20x20 preview" /> 20x20 preview
+        </p>
+        <p>
+            <img src="{{ f.href }}" alt="Full size"/> Full size ({{ f.width }}x{{ f.height }})
+        </p>
+        {% else %}
+        <p><em>Image failed to load - URL may be broken or inaccessible</em></p>
+        {% endif %}
+        
+        {% if not f.cache_source.file or f.cache_source.file != 'override' %}
+        <div class="override-form" id="form-{{ loop.index }}">
+            <strong>Add Override:</strong>
+            <label>
+                <input type="radio" name="scope" value="domain" checked>
+                Domain only ({{ url.split('/')[2].split('.')[-2:] | join('.') }})
+            </label>
+            {% if url.split('/')|length > 3 and url.split('/')[3] %}
+            <label>
+                <input type="radio" name="scope" value="path">
+                Domain + first path ({{ url.split('/')[2] }}/{{ url.split('/')[3] }})
+            </label>
+            {% endif %}
+            <button onclick="addOverride('{{ f.href|e }}', '{{ url|e }}', 'form-{{ loop.index }}')">
+                Add to Overrides
+            </button>
+            <div class="override-message"></div>
+        </div>
+        {% endif %}
+    </div>
     {% endfor %}
 </body>
 </html>
-
