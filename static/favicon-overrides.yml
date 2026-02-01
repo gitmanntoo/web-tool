@@ -1,0 +1,15 @@
+# User-defined favicon overrides
+#
+# This file is for manual favicon mappings that should take precedence over
+# both app defaults (favicon.yml) and auto-discovered favicons (local-cache/favicon.yml).
+#
+# Format:
+#   domain.com: https://example.com/path/to/favicon.png
+#   domain.com/path: https://example.com/path/to/specific-favicon.png
+#
+# Keys are matched from most specific (domain.com/path) to least specific (domain.com).
+# The lookup tries: netloc/path → subdomain.domain.tld → domain.tld
+#
+# Example:
+#   github.com: https://github.githubassets.com/favicons/favicon-dark.png
+#   docs.python.org: https://docs.python.org/3/_static/py.svg

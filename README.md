@@ -58,6 +58,26 @@ docker run -d --restart always -p 8532:8532 -v $(pwd)/web-tool:/data --name web-
 - [Pillow](https://pillow.readthedocs.io/en/stable/) for ICO conversion.
 - [Prism](https://prismjs.com/index.html) for syntax highlighting in HTML pages.
 
+## Favicon Configuration
+
+web-tool uses a three-tier favicon cache system:
+
+1. **User Overrides** (`static/favicon-overrides.yml`) - Highest priority
+   - Manual customizations that always take precedence
+   - Edit this file to set your preferred favicons for specific sites
+   - Format: `domain.com: https://example.com/path/to/favicon.png`
+
+2. **App Defaults** (`static/favicon.yml`) - Medium priority
+   - Curated defaults distributed with the application
+   - Updated with new releases
+
+3. **Auto-discovered** (`local-cache/favicon.yml` or `/data/favicon.yml` in container) - Lowest priority
+   - Dynamically discovered favicons automatically cached on first use
+   - Persists across restarts
+
+When looking up a favicon, web-tool searches from most specific to least specific:
+`netloc/path` → `subdomain.domain.tld` → `domain.tld`, checking overrides first, then defaults, then auto-discovered cache.
+
 ## Debug
 
 Container detection status and clipboard proxy testing are available at:
@@ -74,3 +94,8 @@ Container detection status and clipboard proxy testing are available at:
     - Interactive test page for the clipboard proxy functionality.
     - Simulates what happens when a bookmarklet successfully captures clipboard data.
     - Submit test data through the proxy to verify `/clip-collector` and `/mirror-clip` work correctly.
+
+- <a href="http://localhost:8532/debug/favicon-files" target="_blank">favicon files</a>
+    - Returns JSON showing the three-tier favicon cache system in precedence order.
+    - Displays file paths, existence, size, modification time, entry count, and in-memory cache status.
+    - Shows sample entries from each cache file (overrides, defaults, auto-discovered).

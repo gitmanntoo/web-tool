@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from flask import Flask, abort, request, make_response, redirect, Response
 from jinja2 import Environment, FileSystemLoader
 import markdown
+import yaml
 
 from library import util
 from library import docker_util
@@ -88,7 +89,17 @@ def clip_to_post():
         # Redirect to the web-tool.py endpoint given in the target query parameter.
         target = request.args.get("target")
         if target:
-            new_url = f"http://{request.host}/{target}?{request.query_string.decode()}"
+            # Build URL without the target parameter
+            from urllib.parse import urlencode
+            
+            # Get all query params except 'target'
+            params = {k: v for k, v in request.args.items() if k != 'target'}
+            query_string = urlencode(params, doseq=True) if params else ''
+            
+            new_url = f"http://{request.host}/{target}"
+            if query_string:
+                new_url += f"?{query_string}"
+            
             return redirect(new_url)
 
     template = template_env.get_template('clip-proxy.html')
@@ -593,6 +604,118 @@ def debug_clipboard_proxy():
     """
     
     return html
+
+
+@app.route("/debug/favicon-files", methods=["GET", ])
+def debug_favicon_files():
+    """Show favicon cache files in precedence order.
+    
+    Displays the three-tier favicon cache system:
+    1. User overrides (highest priority)
+    2. App defaults (medium priority)
+    3. Auto-discovered cache (lowest priority)
+    
+    For each file, shows:
+    - Precedence level
+    - File path
+    - File existence
+    - File size
+    - Last modification time
+    - Number of entries
+    - In-memory cache status
+    - Sample entries
+    """
+    from library import html_util
+    
+    files_info = []
+    
+    # Define files in precedence order (highest to lowest)
+    cache_files = [
+        {
+            'name': 'User Overrides',
+            'precedence': 1,
+            'path': html_util.FAVICON_OVERRIDES,
+            'description': 'Manual customizations - highest priority',
+        },
+        {
+            'name': 'App Defaults',
+            'precedence': 2,
+            'path': html_util.FAVICON_DEFAULTS,
+            'description': 'Curated defaults distributed with app',
+        },
+        {
+            'name': 'Auto-Discovered Cache',
+            'precedence': 3,
+            'path': html_util.FAVICON_LOCAL_CACHE,
+            'description': 'Dynamically discovered favicons - lowest priority',
+        },
+    ]
+    
+    for cache_file in cache_files:
+        path = cache_file['path']
+        path_str = str(path)
+        
+        info = {
+            'name': cache_file['name'],
+            'precedence': cache_file['precedence'],
+            'description': cache_file['description'],
+            'absolute_path': str(path.absolute()),
+            'exists': path.exists(),
+        }
+        
+        if path.exists():
+            stat = path.stat()
+            info['size_bytes'] = stat.st_size
+            info['modified_at'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stat.st_mtime))
+            info['mtime'] = stat.st_mtime
+            
+            # Check in-memory cache status
+            cache_entry = html_util._favicon_yaml_cache.get(path_str)
+            if cache_entry:
+                cached_mtime = cache_entry.get('mtime', 0)
+                loaded_at = cache_entry.get('loaded_at', 0)
+                age_seconds = time.time() - loaded_at
+                
+                info['in_memory_cache'] = {
+                    'cached': True,
+                    'cached_mtime': cached_mtime,
+                    'loaded_at': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(loaded_at)),
+                    'age_seconds': round(age_seconds, 1),
+                    'is_fresh': (cached_mtime == stat.st_mtime and age_seconds < html_util.FAVICON_CACHE_TTL),
+                }
+            else:
+                info['in_memory_cache'] = {'cached': False}
+            
+            # Load the file contents
+            try:
+                with open(path, 'r') as f:
+                    data = yaml.safe_load(f) or {}
+                
+                info['entry_count'] = len(data)
+                
+                # Get sample entries (first 5)
+                sample_entries = []
+                for i, (url, favicon_data) in enumerate(data.items()):
+                    if i >= 5:
+                        break
+                    sample_entries.append({
+                        'url': url,
+                        'favicon': favicon_data,
+                    })
+                
+                info['sample_entries'] = sample_entries
+                info['has_more_entries'] = len(data) > 5
+                
+            except Exception as e:
+                info['error'] = str(e)
+        
+        files_info.append(info)
+    
+    return {
+        'cache_files': files_info,
+        'cache_ttl_seconds': html_util.FAVICON_CACHE_TTL,
+        'note': 'Files are listed in precedence order (highest to lowest)',
+    }
 
 
 if __name__ == "__main__":
