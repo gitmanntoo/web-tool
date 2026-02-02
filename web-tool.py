@@ -561,6 +561,51 @@ def get_mirror_links():
     return resp
 
 
+@app.route("/debug/title-variants", methods=["GET", "POST"])
+def debug_title_variants():
+    """
+    Debug endpoint to test title variant generation.
+    """
+    title_variant_list = []
+    input_title = ""
+    
+    if request.method == "POST":
+        input_title = request.form.get('title', '')
+        
+        if input_title:
+            # Generate title variants
+            title_obj = util.TitleVariants(input_title)
+            
+            title_variants_data = [
+                (title_obj.original, 'Original'),
+                (title_obj.ascii_and_emojis, 'ASCII + Emoji'),
+                (title_obj.ascii_only, 'ASCII Only'),
+                (title_obj.path_safe, 'Path Safe'),
+            ]
+            
+            seen_labels = set()
+            seen_values = set()
+            for title_value, label in title_variants_data:
+                if label not in seen_labels:
+                    is_duplicate = title_value in seen_values
+                    title_variant_list.append({
+                        'value': title_value,
+                        'label': label,
+                        'is_duplicate': is_duplicate
+                    })
+                    seen_labels.add(label)
+                    seen_values.add(title_value)
+    
+    template = template_env.get_template('debug-title-variants.html')
+    rendered_html = template.render({
+        'input_title': input_title,
+        'title_variants': title_variant_list,
+    })
+    
+    resp = make_response(rendered_html)
+    return resp
+
+
 @app.route("/mirror-text", methods=["GET", "POST"])
 def get_mirror_text():
     """

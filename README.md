@@ -135,3 +135,8 @@ Container detection status and clipboard proxy testing are available at:
     - Returns JSON showing the three-tier favicon cache system in precedence order.
     - Displays file paths, existence, size, modification time, entry count, and in-memory cache status.
     - Shows sample entries from each cache file (overrides, defaults, auto-discovered).
+
+- <a href="http://localhost:8532/debug/title-variants" target="_blank">title variants</a>
+    - Interactive test page for generating title string variants.
+    - Enter any title string and click Generate to see all variants (Original, ASCII + Emoji, ASCII Only, Path Safe).
+    - Duplicate variants are visually indicated with reduced opacity and gray background.
