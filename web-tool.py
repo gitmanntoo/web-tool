@@ -606,6 +606,70 @@ def debug_title_variants():
     return resp
 
 
+@app.route("/debug/url-variants", methods=["GET", "POST"])
+def debug_url_variants():
+    """
+    Debug endpoint to test URL variant generation.
+    """
+    url_variant_list = []
+    input_url = ""
+    
+    if request.method == "POST":
+        input_url = request.form.get('url', '')
+        
+        if input_url:
+            # Parse the URL
+            from urllib.parse import urlparse, urlunparse
+            parsed_url = urlparse(input_url)
+            
+            # Generate URL variants similar to metadata properties
+            url_original = input_url
+            
+            url_with_fragment = urlunparse((
+                parsed_url.scheme,
+                parsed_url.netloc,
+                parsed_url.path, '', '', parsed_url.fragment)).rstrip('/')
+            
+            url_clean = urlunparse((
+                parsed_url.scheme,
+                parsed_url.netloc,
+                parsed_url.path, '', '', '')).rstrip('/')
+            
+            url_root = url_util.get_url_root(input_url)
+            url_host = url_util.get_url_host(input_url)
+            
+            url_variants_data = [
+                (url_original, 'Original'),
+                (url_with_fragment, 'With Fragment'),
+                (url_clean, 'Clean'),
+                (url_root, 'Root'),
+                (url_host, 'Host'),
+            ]
+            
+            seen_labels = set()
+            seen_values = set()
+            for url_value, label in url_variants_data:
+                if url_value:
+                    if label not in seen_labels:
+                        is_duplicate = url_value in seen_values
+                        url_variant_list.append({
+                            'url': url_value,
+                            'label': label,
+                            'is_duplicate': is_duplicate
+                        })
+                        seen_labels.add(label)
+                        seen_values.add(url_value)
+    
+    template = template_env.get_template('debug-url-variants.html')
+    rendered_html = template.render({
+        'input_url': input_url,
+        'url_variants': url_variant_list,
+    })
+    
+    resp = make_response(rendered_html)
+    return resp
+
+
 @app.route("/mirror-text", methods=["GET", "POST"])
 def get_mirror_text():
     """

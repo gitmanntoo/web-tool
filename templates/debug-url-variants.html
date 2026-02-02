@@ -1,32 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Debug Title Variants</title>
+    <title>Debug URL Variants</title>
     <link rel="stylesheet" href="/static/default.css">
     <link rel="stylesheet" href="/static/mirror.css">
 </head>
 <body>
-    <h1>Debug Title Variants</h1>
+    <h1>Debug URL Variants</h1>
     
     <div class="metadata-panel">
         <h2>Input</h2>
         <form method="POST">
             <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" name="title" value="{{ input_title|e }}" placeholder="Enter title string..." style="flex: 1; padding: 8px; font-size: 14px;">
+                <input type="text" name="url" value="{{ input_url|e }}" placeholder="Enter URL..." style="flex: 1; padding: 8px; font-size: 14px;">
                 <button type="submit" style="padding: 8px 16px; font-size: 14px;">Generate</button>
             </div>
         </form>
     </div>
     
-    {% if title_variants %}
+    {% if url_variants %}
     <div class="metadata-panel">
-        <h2>Title Variants</h2>
+        <h2>URL Variants</h2>
         <div class="url-list">
-            {% for variant in title_variants %}
+            {% for variant in url_variants %}
                 <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
-                    <button class="copy-btn" data-html="{{ variant.value|e }}">Copy</button>
+                    <button class="copy-btn" data-html="{{ variant.url|e }}">Copy</button>
                     <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
-                    <span>{{ variant.value|e }}</span>
+                    <span><a href="{{ variant.url|e }}">{{ variant.url|e }}</a></span>
                 </div>
             {% endfor %}
         </div>

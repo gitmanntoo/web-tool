@@ -200,6 +200,23 @@
             }
         }
 
+        // Function to show tooltip
+        function showTooltip(btn, message) {
+            const tooltip = document.createElement('span');
+            tooltip.textContent = message;
+            tooltip.style.cssText = 'position: absolute; background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; z-index: 1000; pointer-events: none;';
+            
+            const rect = btn.getBoundingClientRect();
+            tooltip.style.left = rect.left + 'px';
+            tooltip.style.top = (rect.top - 30) + 'px';
+            
+            document.body.appendChild(tooltip);
+            
+            setTimeout(() => {
+                tooltip.remove();
+            }, 1500);
+        }
+
         // Function to attach copy button listeners
         function attachCopyListeners() {
             document.querySelectorAll('.copy-btn').forEach(btn => {
@@ -207,6 +224,7 @@
                     if (btn.dataset.html) {
                         navigator.clipboard.writeText(btn.dataset.html).then(() => {
                             console.log('HTML copied to clipboard');
+                            showTooltip(btn, 'Copied!');
                         });
                     }
                 });

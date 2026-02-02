@@ -140,3 +140,8 @@ Container detection status and clipboard proxy testing are available at:
     - Interactive test page for generating title string variants.
     - Enter any title string and click Generate to see all variants (Original, ASCII + Emoji, ASCII Only, Path Safe).
     - Duplicate variants are visually indicated with reduced opacity and gray background.
+
+- <a href="http://localhost:8532/debug/url-variants" target="_blank">url variants</a>
+    - Interactive test page for generating URL variants.
+    - Enter any URL and click Generate to see all variants (Original, With Fragment, Clean, Root, Host).
+    - Duplicate variants are visually indicated with reduced opacity and gray background.
