@@ -447,31 +447,29 @@ def get_mirror_links():
     """
     metadata = util.get_page_metadata()
 
-    # build urls with labels
+    # build urls with labels - always start with Original
     url_variants = []
-    url_map = {
-        metadata.url: 'Original',
-        metadata.url_with_fragment: 'With Fragment',
-        metadata.url_clean: 'Clean',
-        metadata.url_root: 'Root',
-        metadata.url_host: 'Host',
-    }
-    
-    seen_urls = set()
-    ordered_urls = [
-        metadata.url,
-        metadata.url_with_fragment,
-        metadata.url_clean,
-        metadata.url_root,
-        metadata.url_host,
+    url_variants_data = [
+        (metadata.url, 'Original'),
+        (metadata.url_with_fragment, 'With Fragment'),
+        (metadata.url_clean, 'Clean'),
+        (metadata.url_root, 'Root'),
+        (metadata.url_host, 'Host'),
     ]
-    for url in ordered_urls:
-        if url and url not in seen_urls:
-            url_variants.append({
-                'url': url,
-                'label': url_map.get(url, 'URL')
-            })
-            seen_urls.add(url)
+    
+    seen_labels = set()
+    seen_values = set()
+    for url, label in url_variants_data:
+        if url:
+            if label not in seen_labels:
+                is_duplicate = url in seen_values
+                url_variants.append({
+                    'url': url,
+                    'label': label,
+                    'is_duplicate': is_duplicate
+                })
+                seen_labels.add(label)
+                seen_values.add(url)
 
     # build links
     links = []
@@ -480,25 +478,29 @@ def get_mirror_links():
     if not metadata.title:
         metadata.title = "link"
 
-    # Generate title variants with deduplication
+    # Generate title variants - always start with Original
     title_obj = util.TitleVariants(metadata.title)
     
     title_variant_list = []
-    title_map = {
-        title_obj.original: 'Original',
-        title_obj.ascii_and_emojis: 'ASCII + Emoji',
-        title_obj.ascii_only: 'ASCII Only',
-        title_obj.path_safe: 'Path Safe',
-    }
+    title_variants_data = [
+        (title_obj.original, 'Original'),
+        (title_obj.ascii_and_emojis, 'ASCII + Emoji'),
+        (title_obj.ascii_only, 'ASCII Only'),
+        (title_obj.path_safe, 'Path Safe'),
+    ]
     
-    seen_titles = set()
-    for title_value in [title_obj.original, title_obj.ascii_and_emojis, title_obj.ascii_only, title_obj.path_safe]:
-        if title_value not in seen_titles:
+    seen_labels = set()
+    seen_values = set()
+    for title_value, label in title_variants_data:
+        if label not in seen_labels:
+            is_duplicate = title_value in seen_values
             title_variant_list.append({
                 'value': title_value,
-                'label': title_map[title_value]
+                'label': label,
+                'is_duplicate': is_duplicate
             })
-            seen_titles.add(title_value)
+            seen_labels.add(label)
+            seen_values.add(title_value)
 
     if metadata.favicons:
         if metadata.fragment_title:

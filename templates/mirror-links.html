@@ -36,7 +36,7 @@
         <h2>Title</h2>
         <div class="url-list">
             {% for variant in title_variants %}
-                <div class="url-item">
+                <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
                     <input type="radio" name="title_variant" value="title{{ loop.index0 }}" data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
                     <button class="copy-btn" data-html="{{ variant.value|e }}">Copy</button>
                     <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
@@ -74,7 +74,7 @@
         <h2>URL</h2>
         <div class="url-list">
             {% for variant in url_variants %}
-                <div class="url-item">
+                <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
                     <input type="radio" name="url_variant" value="url{{ loop.index0 }}" data-text="{{ variant.url|e }}" {% if loop.first %}checked{% endif %}>
                     <button class="copy-btn" data-html="{{ variant.url|e }}">Copy</button>
                     <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
