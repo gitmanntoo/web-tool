@@ -5,16 +5,15 @@ Tests URL parsing, validation, and retrieval functions.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from library.url_util import (
-    get_user_agent,
-    SerializedResponseError,
     SerializedResponse,
+    SerializedResponseError,
     get_top_domain_name,
-    get_url_root,
     get_url_host,
+    get_url_root,
+    get_user_agent,
     make_absolute_urls,
-    DEFAULT_USER_AGENT,
 )
 
 
@@ -65,27 +64,21 @@ class TestSerializedResponse:
     def test_has_required_fields(self):
         """Test that SerializedResponse has required fields."""
         resp = SerializedResponse(source_url="http://example.com")
-        assert hasattr(resp, 'source_url')
-        assert hasattr(resp, 'resolved_url')
-        assert hasattr(resp, 'status_code')
-        assert hasattr(resp, 'headers')
-        assert hasattr(resp, 'content')
-        assert hasattr(resp, 'error')
+        assert hasattr(resp, "source_url")
+        assert hasattr(resp, "resolved_url")
+        assert hasattr(resp, "status_code")
+        assert hasattr(resp, "headers")
+        assert hasattr(resp, "content")
+        assert hasattr(resp, "error")
 
     def test_error_field_can_be_set(self):
         """Test that error field can be set."""
-        resp = SerializedResponse(
-            source_url="http://example.com",
-            error="Test error"
-        )
+        resp = SerializedResponse(source_url="http://example.com", error="Test error")
         assert resp.error == "Test error"
 
     def test_content_type_field(self):
         """Test content_type field."""
-        resp = SerializedResponse(
-            source_url="http://example.com",
-            content_type="text/html"
-        )
+        resp = SerializedResponse(source_url="http://example.com", content_type="text/html")
         assert resp.content_type == "text/html"
 
 
@@ -172,43 +165,28 @@ class TestMakeAbsoluteUrls:
 
     def test_absolute_url_unchanged(self):
         """Test that absolute URLs are unchanged."""
-        result = make_absolute_urls(
-            "http://example.com/page",
-            "http://other.com/other"
-        )
+        result = make_absolute_urls("http://example.com/page", "http://other.com/other")
         assert result == "http://other.com/other"
 
     def test_relative_path_made_absolute(self):
         """Test that relative paths are made absolute."""
-        result = make_absolute_urls(
-            "http://example.com/page/index.html",
-            "../other/page.html"
-        )
+        result = make_absolute_urls("http://example.com/page/index.html", "../other/page.html")
         assert result.startswith("http://example.com")
 
     def test_relative_root_path(self):
         """Test relative path from root."""
-        result = make_absolute_urls(
-            "http://example.com/page/index.html",
-            "/other/page.html"
-        )
+        result = make_absolute_urls("http://example.com/page/index.html", "/other/page.html")
         assert result == "http://example.com/other/page.html"
 
     def test_current_directory_relative(self):
         """Test current directory relative path."""
-        result = make_absolute_urls(
-            "http://example.com/page/index.html",
-            "./other.html"
-        )
+        result = make_absolute_urls("http://example.com/page/index.html", "./other.html")
         assert "example.com" in result
         assert "other.html" in result
 
     def test_same_page_reference(self):
         """Test same-page reference."""
-        result = make_absolute_urls(
-            "http://example.com/page.html",
-            "#anchor"
-        )
+        result = make_absolute_urls("http://example.com/page.html", "#anchor")
         # Should reference the same page with anchor
         assert "example.com" in result
 

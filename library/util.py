@@ -1,30 +1,28 @@
 import base64
-from dataclasses import dataclass
-import fitz
 import html
 import io
 import json
 import logging
-import psutil
 import sys
 import time
-import tldextract
+from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import urlparse, urlunparse
 from pprint import pprint
+from urllib.parse import urlparse, urlunparse
 
+import fitz
+import jsmin
+import psutil
+import pyperclip
+import tldextract
+import yaml
 from anyascii import anyascii
 from bs4 import BeautifulSoup
-from flask import abort, request, make_response, Response
+from flask import Response, abort, make_response, request
 from jinja2 import Environment, FileSystemLoader
-import jsmin
-import pyperclip
-import yaml
 
-from library import html_util
-from library import url_util
+from library import html_util, url_util
 from library.html_util import RelLink
-
 
 STATIC_DIR = Path("static")
 TEMPLATE_DIR = Path("templates")
@@ -42,77 +40,72 @@ CLIP_CACHE_MEMORY_LIMIT_PCT = 0.5  # Maximum 50% of available memory
 
 def cleanup_clip_cache():
     """Remove expired batches and enforce size limits on clip_cache.
-    
+
     Removes:
     - Batches older than CLIP_CACHE_TTL_SECONDS
     - Oldest batches if count exceeds CLIP_CACHE_MAX_BATCHES
     - Oldest batches if memory usage exceeds CLIP_CACHE_MEMORY_LIMIT_PCT of available memory
-    
+
     Note: Memory check only happens during cleanup, allowing in-progress operations to complete.
     """
     current_time = time.time()
-    
+
     # Remove expired batches
     expired_batch_ids = [
-        batch_id for batch_id, batch_data in clip_cache.items()
-        if current_time - batch_data.get('created_at', 0) > CLIP_CACHE_TTL_SECONDS
+        batch_id
+        for batch_id, batch_data in clip_cache.items()
+        if current_time - batch_data.get("created_at", 0) > CLIP_CACHE_TTL_SECONDS
     ]
-    
+
     for batch_id in expired_batch_ids:
         del clip_cache[batch_id]
         logging.info(f"Removed expired clip_cache batch: {batch_id}")
-    
+
     # Enforce max batch limit by removing oldest
     if len(clip_cache) > CLIP_CACHE_MAX_BATCHES:
         # Sort by creation time and remove oldest
-        sorted_batches = sorted(
-            clip_cache.items(),
-            key=lambda x: x[1].get('created_at', 0)
-        )
-        
+        sorted_batches = sorted(clip_cache.items(), key=lambda x: x[1].get("created_at", 0))
+
         num_to_remove = len(clip_cache) - CLIP_CACHE_MAX_BATCHES
         for i in range(num_to_remove):
             batch_id = sorted_batches[i][0]
             del clip_cache[batch_id]
             logging.info(f"Removed old clip_cache batch (size limit): {batch_id}")
-    
+
     # Enforce memory limit by removing oldest batches
     try:
         # Get available memory
         memory = psutil.virtual_memory()
         memory_limit = memory.available * CLIP_CACHE_MEMORY_LIMIT_PCT
-        
+
         # Calculate cache size
         cache_size = sys.getsizeof(clip_cache)
         for batch_data in clip_cache.values():
             cache_size += sys.getsizeof(batch_data)
-            cache_size += sys.getsizeof(batch_data.get('chunks', {}))
-            for chunk in batch_data.get('chunks', {}).values():
+            cache_size += sys.getsizeof(batch_data.get("chunks", {}))
+            for chunk in batch_data.get("chunks", {}).values():
                 cache_size += sys.getsizeof(chunk)
-        
+
         # Remove oldest batches if over limit
         if cache_size > memory_limit and clip_cache:
             logging.info(
                 f"Clip cache size ({cache_size:,} bytes) exceeds memory limit "
                 f"({memory_limit:,.0f} bytes). Removing oldest batches."
             )
-            
-            sorted_batches = sorted(
-                clip_cache.items(),
-                key=lambda x: x[1].get('created_at', 0)
-            )
-            
+
+            sorted_batches = sorted(clip_cache.items(), key=lambda x: x[1].get("created_at", 0))
+
             while cache_size > memory_limit and sorted_batches:
                 batch_id = sorted_batches.pop(0)[0]
                 del clip_cache[batch_id]
                 logging.info(f"Removed old clip_cache batch (memory limit): {batch_id}")
-                
+
                 # Recalculate cache size
                 cache_size = sys.getsizeof(clip_cache)
                 for batch_data in clip_cache.values():
                     cache_size += sys.getsizeof(batch_data)
-                    cache_size += sys.getsizeof(batch_data.get('chunks', {}))
-                    for chunk in batch_data.get('chunks', {}).values():
+                    cache_size += sys.getsizeof(batch_data.get("chunks", {}))
+                    for chunk in batch_data.get("chunks", {}).values():
                         cache_size += sys.getsizeof(chunk)
     except Exception as e:
         logging.warning(f"Error during memory-based clip_cache cleanup: {e}")
@@ -121,11 +114,11 @@ def cleanup_clip_cache():
 @dataclass
 class MirrorData:
     clipboard: str
-    url: str = ''
-    title: str = ''
-    userAgent: str = ''
-    cookieString: str = ''
-    html: str = ''
+    url: str = ""
+    title: str = ""
+    userAgent: str = ""
+    cookieString: str = ""
+    html: str = ""
     htmlSize: int = 0
 
     def __post_init__(self):
@@ -136,12 +129,12 @@ class MirrorData:
         try:
             data = json.loads(self.clipboard)
             if isinstance(data, dict):
-                self.url = data.get('url', '')
-                self.title = data.get('title', '')
-                self.userAgent = data.get('userAgent', '')
-                self.cookieString = data.get('cookieString', '')
-                self.html = data.get('html', '')
-                self.htmlSize = data.get('htmlSize', 0)
+                self.url = data.get("url", "")
+                self.title = data.get("title", "")
+                self.userAgent = data.get("userAgent", "")
+                self.cookieString = data.get("cookieString", "")
+                self.html = data.get("html", "")
+                self.htmlSize = data.get("htmlSize", 0)
                 if not self.htmlSize and self.html:
                     self.htmlSize = len(self.html)
         except json.JSONDecodeError:
@@ -168,20 +161,21 @@ class PageMetadata:
         content_type: Content type of the page
         mirror_data: MirrorData object containing processed clipboard data
     """
+
     request: request = None
-    url: str = ''
+    url: str = ""
     parsed_url: urlparse = None
-    clean_url: str = ''
-    title: str = ''
+    clean_url: str = ""
+    title: str = ""
     headers: dict = None
-    batch_id: str = ''
+    batch_id: str = ""
     text_length: int = 0
-    output_format: str = 'html'
-    clipboard_error: str = ''
-    content_type: str = ''
+    output_format: str = "html"
+    clipboard_error: str = ""
+    content_type: str = ""
     mirror_data: MirrorData = None
     soup: BeautifulSoup = None
-    fragment_text: str = ''
+    fragment_text: str = ""
     favicons: list[RelLink] = None
     page_content: url_util.SerializedResponse = None
 
@@ -194,7 +188,7 @@ class PageMetadata:
         self.parsed_url = urlparse(self.url)
         self.title = self.request.args.get("title", "")
         self.headers = dict(self.request.headers)
-        self.batch_id = self.request.args.get('batchId', '')
+        self.batch_id = self.request.args.get("batchId", "")
         self.text_length = int(self.request.args.get("textLength", 0))
         self.output_format = self.request.args.get("format", "html")
         self.clipboard_error = self.request.args.get("clipboardError", "")
@@ -211,68 +205,70 @@ class PageMetadata:
         """
         Returns the URL with the without fragment or query string.
         """
-        return urlunparse((
-            self.parsed_url.scheme,
-            self.parsed_url.netloc,
-            self.parsed_url.path, '', '', '')).rstrip('/')
+        return urlunparse(
+            (self.parsed_url.scheme, self.parsed_url.netloc, self.parsed_url.path, "", "", "")
+        ).rstrip("/")
 
     @property
     def url_with_fragment(self) -> str:
         """
         Returns the URL with fragment but without query string.
         """
-        return urlunparse((
-            self.parsed_url.scheme,
-            self.parsed_url.netloc,
-            self.parsed_url.path, '', '', self.parsed_url.fragment)).rstrip('/')
+        return urlunparse(
+            (
+                self.parsed_url.scheme,
+                self.parsed_url.netloc,
+                self.parsed_url.path,
+                "",
+                "",
+                self.parsed_url.fragment,
+            )
+        ).rstrip("/")
 
     @property
     def url_root(self) -> str:
         """
         Returns the URL with the first path segment.
         """
-        path_tokens = self.parsed_url.path.split('/')
-        root_path = ''
+        path_tokens = self.parsed_url.path.split("/")
+        root_path = ""
         if len(path_tokens) > 1:
             root_path = path_tokens[1]
 
-        return urlunparse((
-            self.parsed_url.scheme,
-            self.parsed_url.netloc,
-            root_path, '', '', '')).rstrip('/')
+        return urlunparse(
+            (self.parsed_url.scheme, self.parsed_url.netloc, root_path, "", "", "")
+        ).rstrip("/")
 
     @property
     def url_host(self) -> str:
         """
         Returns the URL with the host.
         """
-        return urlunparse((
-            self.parsed_url.scheme,
-            self.parsed_url.netloc,
-            '', '', '', '')).rstrip('/')
+        return urlunparse((self.parsed_url.scheme, self.parsed_url.netloc, "", "", "", "")).rstrip(
+            "/"
+        )
 
     @property
     def url_domain(self):
         extracted = tldextract.extract(self.parsed_url.netloc)
 
         # Return domain name starting with www if subdomain is 'www'
-        if extracted.subdomain == 'www':
-            return f'{extracted.subdomain}.{extracted.domain}.{extracted.suffix}'
+        if extracted.subdomain == "www":
+            return f"{extracted.subdomain}.{extracted.domain}.{extracted.suffix}"
         else:
-            return f'{extracted.domain}.{extracted.suffix}'
+            return f"{extracted.domain}.{extracted.suffix}"
 
     @property
     def cache_key(self):
         """
         Returns the cache key for the page. Used for favicon caching.
         """
-        path_tokens = self.parsed_url.path.split('/')
-        root_path = ''
+        path_tokens = self.parsed_url.path.split("/")
+        root_path = ""
         if len(path_tokens) > 1:
             root_path = path_tokens[1]
 
-        return f'{self.parsed_url.netloc}/{root_path}'
-
+        return f"{self.parsed_url.netloc}/{root_path}"
 
     @property
     def favicon(self):
@@ -287,7 +283,10 @@ class PageMetadata:
         """Get the favicon as a base64 encoded data URL."""
         if not self.favicon or not self.favicon.content:
             return None
-        return f"data:{self.favicon.image_type};base64,{base64.b64encode(self.favicon.content).decode()}"
+        return (
+            f"data:{self.favicon.image_type};base64,"
+            f"{base64.b64encode(self.favicon.content).decode()}"
+        )
 
     @property
     def urls(self) -> list[str]:
@@ -299,7 +298,7 @@ class PageMetadata:
             self.url_root,
             self.url_host,
         ):
-            if u.endswith('/'):
+            if u.endswith("/"):
                 u = u[:-1]
 
             if u not in urls:
@@ -320,8 +319,8 @@ class PageMetadata:
             # Collect chunks from the cache.
             all_chunks = []
             batch_data = clip_cache[self.batch_id]
-            chunks = batch_data.get('chunks', {})
-            
+            chunks = batch_data.get("chunks", {})
+
             for chunk_number in sorted(chunks.keys()):
                 all_chunks.append(chunks[chunk_number])
 
@@ -345,8 +344,7 @@ class PageMetadata:
             return
 
         try:
-            self.soup = BeautifulSoup(
-                self.mirror_data.html, "html.parser")
+            self.soup = BeautifulSoup(self.mirror_data.html, "html.parser")
         except Exception:
             pass
 
@@ -385,7 +383,7 @@ class PageMetadata:
             heading_text = anchor.parent.get_text(strip=True)
             anchor_text = anchor.get_text(strip=True)
             if anchor_text and heading_text.endswith(anchor_text):
-                heading_text = heading_text[:-len(anchor_text)].strip()
+                heading_text = heading_text[: -len(anchor_text)].strip()
             if heading_text:
                 return heading_text
         return None
@@ -399,7 +397,7 @@ class PageMetadata:
             if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
                 if text := next_elem.text.strip():
                     return text
-        
+
         # Try name attribute (older HTML)
         element = self.soup.find(attrs={"name": self.parsed_url.fragment})
         if element:
@@ -430,13 +428,13 @@ class PageMetadata:
         anchor = self._find_fragment_anchor()
         if not anchor:
             return None
-        
+
         # Check previous sibling
         prev = anchor.find_previous_sibling()
         if prev and prev.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
             if text := prev.text.strip():
                 return text
-        
+
         # Check next sibling
         next_elem = anchor.find_next_sibling()
         if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
@@ -447,15 +445,21 @@ class PageMetadata:
     def _find_fragment_anchor(self):
         """Find anchor tag with href matching the fragment."""
         # Look for anchor with fragment as href
-        anchor = self.soup.find(href=f'#{self.parsed_url.fragment}')
+        anchor = self.soup.find(href=f"#{self.parsed_url.fragment}")
         if anchor:
             return anchor
-        
+
         # Look for anchor with full URL as href
-        url_with_fragment = urlunparse((
-            self.parsed_url.scheme,
-            self.parsed_url.netloc,
-            self.parsed_url.path, '', '', self.parsed_url.fragment))
+        url_with_fragment = urlunparse(
+            (
+                self.parsed_url.scheme,
+                self.parsed_url.netloc,
+                self.parsed_url.path,
+                "",
+                "",
+                self.parsed_url.fragment,
+            )
+        )
         return self.soup.find(href=url_with_fragment)
 
     def resolve_fragment_text(self):
@@ -494,10 +498,10 @@ class PageMetadata:
 
     @property
     def fragment_title(self) -> str:
-        if f :=self.fragment_text.rstrip('¶'):
-            return f'{f} - {self.title}'
+        if f := self.fragment_text.rstrip("¶"):
+            return f"{f} - {self.title}"
 
-        return ''
+        return ""
 
     def resolve_favicons(self):
         self.favicons = html_util.get_favicon_links(
@@ -532,14 +536,14 @@ def get_javascript_file(filename: str, mode: str, template_env=None, format: str
             abort(503)  # Service unavailable if the template environment is not set
 
         template_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-        template = template_env.get_template('mirror.js')
+        template = template_env.get_template("mirror.js")
         contents = template.render(
             path=filename,
             format=format,
         )
     else:
         try:
-            with open(STATIC_DIR / "javascript" / f"{filename}.js", "r") as f:
+            with open(STATIC_DIR / "javascript" / f"{filename}.js") as f:
                 contents = f.read()
         except FileNotFoundError:
             abort(404)  # Not found if the file does not exist
@@ -567,7 +571,7 @@ def parse_cookie_string(cookie_string, url):
     cookie_string = cookie_string.strip()
     if not cookie_string:
         return []
-    
+
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
 
@@ -575,7 +579,7 @@ def parse_cookie_string(cookie_string, url):
     for cookie in cookie_string.split(";"):
         tokens = cookie.split("=", 1)
         c = {
-            "name": tokens[0].strip(), 
+            "name": tokens[0].strip(),
             "value": "",
             "domain": domain,
             "path": "/",
@@ -602,7 +606,7 @@ def handle_clipboard_error(metadata: PageMetadata):
     if not metadata.content_type:
         metadata.page_content = url_util.get_url(metadata.url)
         if metadata.page_content.status_code != 200:
-            metadata.content_type = 'unknown/unknown'
+            metadata.content_type = "unknown/unknown"
         else:
             metadata.content_type = metadata.page_content.content_type
 
@@ -612,17 +616,17 @@ def handle_clipboard_error(metadata: PageMetadata):
             pdf_stream = io.BytesIO(metadata.page_content.content)
             doc = fitz.open("pdf", pdf_stream.read())
             pprint(doc.metadata)
-            metadata.title = doc.metadata.get('title', '')
+            metadata.title = doc.metadata.get("title", "")
 
     if not metadata.title:
-        metadata.title = f'{metadata.content_type} - {metadata.url}'
+        metadata.title = f"{metadata.content_type} - {metadata.url}"
 
     return metadata
 
 
 def get_page_metadata() -> PageMetadata:
     """
-    Return the metadata for the page. The page contents are read from the 
+    Return the metadata for the page. The page contents are read from the
     clipboard through the clip_cache.
     - If a clipboard error occurred, the URL may be pointing to a document (e.g. PDF)
         - In this case, attempt to extract information from the document itself.
@@ -698,10 +702,10 @@ def plain_text_response(
 ):
     """
     Return a "plain text" response.
-    - If format is `yaml` or `json`, the page_text is rendered with the 
+    - If format is `yaml` or `json`, the page_text is rendered with the
       appropriate content-type if text matches the format.
         - If text is not valid `yaml` or `json`, the page_text is rendered using `text`.
-    - The `html` format wraps the page_text in a `<pre><code>` tag with the 
+    - The `html` format wraps the page_text in a `<pre><code>` tag with the
       appropriate Prism.js class for the `language`.
 
     Args:
@@ -724,7 +728,7 @@ def plain_text_response(
             if format == "yaml":
                 return Response(
                     response=yaml.dump(page_text, sort_keys=False),
-                    status=200,                    
+                    status=200,
                     mimetype="text/yaml",
                 )
             elif format == "json":
@@ -744,17 +748,19 @@ def plain_text_response(
             mimetype="text/plain",
         )
 
-    template = template_env.get_template('plain_text.html')
+    template = template_env.get_template("plain_text.html")
 
     # Base64 encode the page text so that it can be safely embedded in the HTML.
     clip_b64 = base64.b64encode(page_text.encode()).decode()
 
-    rendered_html = template.render({
-        "page_title": page_title,
-        "page_text": page_text,
-        "clip_b64": clip_b64,
-        "language_class": LANGUAGE_TO_PRISM_CLASS.get(language, ""),
-    })
+    rendered_html = template.render(
+        {
+            "page_title": page_title,
+            "page_text": page_text,
+            "clip_b64": clip_b64,
+            "language_class": LANGUAGE_TO_PRISM_CLASS.get(language, ""),
+        }
+    )
 
     resp = make_response(rendered_html)
     return resp
@@ -780,17 +786,19 @@ def text_with_ascii_and_emojis(text: str) -> str:
             # Check common emoji ranges
             code = ord(char)
             # Emoji ranges: Emoticons, Transport, Miscellaneous Symbols, etc.
-            if (0x1F300 <= code <= 0x1F9FF or  # Emoji blocks (most comprehensive)
-                0x2600 <= code <= 0x26FF or    # Miscellaneous Symbols
-                0x2700 <= code <= 0x27BF or    # Dingbats
-                0x1F000 <= code <= 0x1F02F):   # Mahjong Tiles, Domino Tiles
+            if (
+                0x1F300 <= code <= 0x1F9FF  # Emoji blocks (most comprehensive)
+                or 0x2600 <= code <= 0x26FF  # Miscellaneous Symbols
+                or 0x2700 <= code <= 0x27BF  # Dingbats
+                or 0x1F000 <= code <= 0x1F02F
+            ):  # Mahjong Tiles, Domino Tiles
                 result.append(char)
             else:
                 # Convert non-emoji unicode to ASCII
                 result.append(anyascii(char))
         else:
             result.append(char)
-    return ''.join(result)
+    return "".join(result)
 
 
 def text_ascii_only(text: str) -> str:
@@ -802,57 +810,57 @@ def text_ascii_only(text: str) -> str:
 
 
 def path_safe_filename(text: str, replacement: str = "_") -> str:
-    """
+    r"""
     Convert text to a path-safe filename that works on macOS, Linux, and Windows.
-    
+
     Removes/replaces characters that are invalid or problematic in filenames:
     - Windows: < > : " / \ | ? *
     - Unix: / (null is also invalid but rare in text)
     - macOS: : (treated as path separator, though HFS+ uses it)
     - All: control characters, leading/trailing spaces/dots
-    
+
     Args:
         text: The text to convert
         replacement: Character to use for invalid characters (default: underscore)
-    
+
     Returns:
         A filename-safe string
     """
     import re
-    
+
     # First convert to ASCII to remove unicode/emojis
     safe = anyascii(text)
-    
+
     # Remove/replace invalid filename characters
     # Invalid on Windows: < > : " / \ | ? *
     # Invalid on Unix: / and null
     # Invalid on macOS: : (path separator in classic Mac OS)
     invalid_chars = r'[<>:"/\\|?*\x00@]'  # Added @ for safety in edge cases
     safe = re.sub(invalid_chars, replacement, safe)
-    
+
     # Remove control characters
-    safe = re.sub(r'[\x01-\x1f]', '', safe)
-    
+    safe = re.sub(r"[\x01-\x1f]", "", safe)
+
     # Remove leading/trailing spaces and dots (problematic on Windows)
-    safe = safe.strip('. ')
-    
+    safe = safe.strip(". ")
+
     # Remove consecutive replacements (e.g., multiple underscores)
-    safe = re.sub(f'{re.escape(replacement)}+', replacement, safe)
-    
+    safe = re.sub(f"{re.escape(replacement)}+", replacement, safe)
+
     # Ensure filename is not empty
     if not safe or safe == replacement:
-        safe = 'untitled'
-    
+        safe = "untitled"
+
     return safe
 
 
 class TitleVariants:
     """Container for title variants with different transformations."""
-    
+
     def __init__(self, original: str):
         """
         Generate all title variants from an original title string.
-        
+
         Args:
             original: The original title text
         """
@@ -860,7 +868,7 @@ class TitleVariants:
         self.ascii_and_emojis = text_with_ascii_and_emojis(original)
         self.ascii_only = text_ascii_only(original)
         self.path_safe = path_safe_filename(original)
-    
+
     def __repr__(self) -> str:
         return (
             f"TitleVariants(\n"

@@ -1,14 +1,13 @@
+import re
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
-import re
 from typing import Any
 from urllib.parse import urlparse
-import yaml
 
-from bs4 import BeautifulSoup, element
 import esprima
+import yaml
+from bs4 import BeautifulSoup, element
 from magika import Magika
 from nltk.corpus import wordnet as wn
 from nltk.corpus import words
@@ -44,13 +43,11 @@ START_TAG_REGEX = re.compile(r"<([a-zA-Z]+[1-6]?)", flags=re.MULTILINE)
 END_TAG_REGEX = re.compile(r"<\/([a-zA-Z]+[1-6]?)>", flags=re.MULTILINE)
 
 # Attribute keys to capture.
-ATTRS_KEYS = set(
-    ('href', 'src', 'alt', 'title', 'caption', 'aria-label', 'longdesc')
-)
+ATTRS_KEYS = set(("href", "src", "alt", "title", "caption", "aria-label", "longdesc"))
 
 # HTML tag names that are always kept without stripping whitespace.
-ROLLUP_TAGS = set(('span', 'kbd', 'dd', 'dt', 'code', 'pre'))
-KEEP_TAGS = ROLLUP_TAGS | set(('br', 'hr', 'p'))
+ROLLUP_TAGS = set(("span", "kbd", "dd", "dt", "code", "pre"))
+KEEP_TAGS = ROLLUP_TAGS | set(("br", "hr", "p"))
 
 
 def split_special_tag(s: str) -> tuple[str, str]:
@@ -60,7 +57,7 @@ def split_special_tag(s: str) -> tuple[str, str]:
     if tag in SPECIAL_TAGS:
         return tag, other
 
-    return '', s
+    return "", s
 
 
 # Build set of nltk words for lookups.
@@ -90,7 +87,7 @@ def strip_quotes(s: str) -> str:
 
 
 def eval_script_text(s: str) -> str:
-    """Return a clean version of text with entities evaluated. 
+    """Return a clean version of text with entities evaluated.
     This is useful from text from script tags.
     """
 
@@ -101,7 +98,7 @@ def eval_script_text(s: str) -> str:
         # Try double quotes.
         yaml_text = f'data: "{new_s}"'
         x = yaml.load(yaml_text, Loader=yaml.Loader)
-        return x['data']
+        return x["data"]
     except Exception:
         pass
 
@@ -109,7 +106,7 @@ def eval_script_text(s: str) -> str:
         # Try single quotes.
         yaml_text = f"data: '{new_s}'"
         x = yaml.load(yaml_text, Loader=yaml.Loader)
-        return x['data']
+        return x["data"]
     except Exception:
         pass
 
@@ -141,10 +138,10 @@ def like_html(s: str) -> bool:
     # Collect opening and closing tags.
     tags = {}
     for m in START_TAG_REGEX.finditer(s):
-        tags[m.start()] = ('<', m.group(1))
+        tags[m.start()] = ("<", m.group(1))
 
     for m in END_TAG_REGEX.finditer(s):
-        tags[m.start()] = ('>', m.group(1))
+        tags[m.start()] = (">", m.group(1))
 
     if len(tags) < 2:
         return False
@@ -156,9 +153,9 @@ def like_html(s: str) -> bool:
         op, name = tags[k]
         name = name.lower()
 
-        if op == '<':
+        if op == "<":
             tag_stack.append(name)
-        elif op == '>':
+        elif op == ">":
             last = tag_stack.pop()
             while last != name and len(tag_stack) > 0:
                 unmatched.append(last)
@@ -245,6 +242,7 @@ def categorize_word(s: str) -> WordCategory:
 @dataclass
 class SoupToken:
     """A single token from an element string."""
+
     text: str
     word_category: WordCategory = None
 
@@ -259,7 +257,8 @@ class SoupToken:
 @dataclass
 class SoupLine:
     """A single line of text from a SoupElem."""
-    parent: 'SoupElem'
+
+    parent: "SoupElem"
     name: str
     text: str
     keep: bool = True
@@ -274,10 +273,10 @@ class SoupLine:
         """Analyze the text after initialization."""
 
         # Keep anything that is not from a script by default.
-        if self.name == 'script.String':
+        if self.name == "script.String":
             self.keep = False
         elif self.parent is not None:
-            if self.parent.name == 'option':
+            if self.parent.name == "option":
                 self.keep = False
 
         # Strip whitespace except for special tags.
@@ -290,7 +289,7 @@ class SoupLine:
                 return
 
         # Additional analysis for script.String
-        if self.name == 'script.String':
+        if self.name == "script.String":
             # Count unicode major categories in text.
             longest_run_str = unicode_util.longest_run(self.text)
             if is_word(longest_run_str) or like_email(longest_run_str) or like_url(longest_run_str):
@@ -299,10 +298,8 @@ class SoupLine:
                 self.longest_run = len(longest_run_str)
 
             self.category_counter = unicode_util.count_categories(self.text)
-            self.category_tensor = unicode_util.category_tensor(
-                self.category_counter)
-            self.standard_dist = unicode_util.standard_distance(
-                self.category_counter)
+            self.category_tensor = unicode_util.category_tensor(self.category_counter)
+            self.standard_dist = unicode_util.standard_distance(self.category_counter)
 
             self.word_count = 0
             tokens = self.text.split()
@@ -315,8 +312,7 @@ class SoupLine:
             # are satisfied.
             if self.longest_run > MAX_WORD_LEN:
                 self.keep = False
-            elif (self.word_count > 2 and self.standard_dist < 0.4
-                    and self.word_pct() > 0.5):
+            elif self.word_count > 2 and self.standard_dist < 0.4 and self.word_pct() > 0.5:
                 self.keep = True
 
     def word_pct(self) -> float:
@@ -331,8 +327,9 @@ class SoupLine:
 @dataclass
 class SoupElem:
     """A string token from a soup tree."""
+
     depth: int
-    parent: 'SoupElem'
+    parent: "SoupElem"
     name: str
     text: str
     keep: bool = True
@@ -360,14 +357,14 @@ class SoupElem:
         elif self.name in KEEP_TAGS:
             self.keep = True
             self.text = "\n"
-        elif self.name == 'script.String':
+        elif self.name == "script.String":
             self.keep = False
 
         for line in self.text.splitlines():
             new_line = SoupLine(self.parent, self.name, line)
             self.lines.append(new_line)
 
-            if self.name == 'script.String':
+            if self.name == "script.String":
                 self.word_count += new_line.word_count
                 self.token_count += len(new_line.tokens)
                 self.category_counter.update(new_line.category_counter)
@@ -395,9 +392,8 @@ class SoupElem:
                 elif new_line.keep:
                     self.keep = True
 
-        if self.name == 'script.String':
-            self.category_tensor = unicode_util.category_tensor(
-                self.category_counter)
+        if self.name == "script.String":
+            self.category_tensor = unicode_util.category_tensor(self.category_counter)
 
             m = mgk.identify_bytes(self.text.encode())
             self.magika_type = f"{m.output.group}/{m.output.ct_label}"
@@ -424,7 +420,7 @@ class SoupElem:
             return NONE_TAG
 
         # Check for attributes.
-        if self.name not in ('link', 'script'):
+        if self.name not in ("link", "script"):
             attr_list = []
             for k in ATTRS_KEYS:
                 if k in self.attrs:
@@ -436,10 +432,10 @@ class SoupElem:
                 return f"{self.name} {' '.join(attr_list)}".strip()
 
         return self.name
-    
+
     def line_count(self) -> int:
         return len(self.lines)
-    
+
     def category_str(self) -> str:
         return unicode_util.category_str(self.category_counter)
 
@@ -466,9 +462,12 @@ def walk_soup_tree_strings(
 
     tree_elem = []
 
-    if elem.name == 'script':
-        script_parent =  SoupElem(
-            depth, parent, elem.name, "",
+    if elem.name == "script":
+        script_parent = SoupElem(
+            depth,
+            parent,
+            elem.name,
+            "",
             attrs=elem.attrs,
         )
         tree_elem.append(script_parent)
@@ -485,10 +484,7 @@ def walk_soup_tree_strings(
                             tok_value = eval_script_text(tok_value)
 
                             script_string_elem = SoupElem(
-                                depth+1,
-                                script_parent,
-                                'script.String',
-                                tok_value
+                                depth + 1, script_parent, "script.String", tok_value
                             )
 
                             # Try to parse text as HTML?
@@ -497,7 +493,8 @@ def walk_soup_tree_strings(
                                 # Probable HTML.
                                 script_soup = BeautifulSoup(tok_value, "html.parser")
                                 script_elem = walk_soup_tree_strings(
-                                    script_soup, depth + 2,
+                                    script_soup,
+                                    depth + 2,
                                     parent=script_string_elem,
                                     rollup=rollup,
                                 )
@@ -508,17 +505,14 @@ def walk_soup_tree_strings(
                                 script_string_elem.text = tok_value
                                 tree_elem.extend(script_elem)
             except Exception:
-                tree_elem.append(
-                    SoupElem(
-                        depth+1,
-                        script_parent,
-                        'script.String',
-                        elem_text)
-                )
+                tree_elem.append(SoupElem(depth + 1, script_parent, "script.String", elem_text))
 
-    if hasattr(elem, 'children'):
+    if hasattr(elem, "children"):
         this_elem = SoupElem(
-            depth, parent, elem.name, "",
+            depth,
+            parent,
+            elem.name,
+            "",
             attrs=elem.attrs,
         )
         tree_elem.append(this_elem)
@@ -527,7 +521,8 @@ def walk_soup_tree_strings(
         child_elem_collector = []
         for child_index, child in enumerate(elem.children):
             child_elem = walk_soup_tree_strings(
-                child, depth + 1,
+                child,
+                depth + 1,
                 parent=parent,
                 rollup=rollup,
             )
@@ -537,13 +532,13 @@ def walk_soup_tree_strings(
         if rollup and this_elem.name in ROLLUP_TAGS:
             collect_text = []
             for el in child_elem_collector:
-                if el.name == 'div':
-                    collect_text.append(' ')
+                if el.name == "div":
+                    collect_text.append(" ")
                 else:
                     collect_text.append(el.text)
 
             this_elem.text = "".join(collect_text)
-            if this_elem.name in ('code', 'pre'):
+            if this_elem.name in ("code", "pre"):
                 this_elem.text += "\n"
         else:
             tree_elem.extend(child_elem_collector)

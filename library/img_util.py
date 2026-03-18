@@ -1,6 +1,6 @@
-from io import BytesIO
-from functools import lru_cache
 import logging
+from functools import lru_cache
+from io import BytesIO
 
 from cairosvg import svg2png
 from magika import Magika
@@ -14,6 +14,7 @@ mgk = Magika()
 # SVG conversion width and height.
 SVG_WIDTH = 256
 SVG_HEIGHT = 256
+
 
 @lru_cache(maxsize=64)
 def convert_ico(href: str, to_format: str = "PNG") -> bytes | None:
@@ -47,7 +48,7 @@ def convert_ico(href: str, to_format: str = "PNG") -> bytes | None:
 
 
 @lru_cache(maxsize=64)
-def convert_svg(href: str, to_format: str = 'PNG') -> bytes:
+def convert_svg(href: str, to_format: str = "PNG") -> bytes:
     """Convert an SVG image to another format (default PNG)
 
     Returns a bytes object containing the converted image.

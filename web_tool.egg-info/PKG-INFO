@@ -25,6 +25,7 @@ Provides-Extra: dev
 Requires-Dist: ipykernel>=6.29.5; extra == "dev"
 Requires-Dist: pytest>=7.4.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: ruff>=0.9.0; extra == "dev"
 Dynamic: license-file
 
 # web-tool
@@ -164,3 +165,13 @@ Container detection status and clipboard proxy testing are available at:
     - Returns JSON showing the three-tier favicon cache system in precedence order.
     - Displays file paths, existence, size, modification time, entry count, and in-memory cache status.
     - Shows sample entries from each cache file (overrides, defaults, auto-discovered).
+
+- <a href="http://localhost:8532/debug/title-variants" target="_blank">title variants</a>
+    - Interactive test page for generating title string variants.
+    - Enter any title string and click Generate to see all variants (Original, ASCII + Emoji, ASCII Only, Path Safe).
+    - Duplicate variants are visually indicated with reduced opacity and gray background.
+
+- <a href="http://localhost:8532/debug/url-variants" target="_blank">url variants</a>
+    - Interactive test page for generating URL variants.
+    - Enter any URL and click Generate to see all variants (Original, With Fragment, Clean, Root, Host).
+    - Duplicate variants are visually indicated with reduced opacity and gray background.
