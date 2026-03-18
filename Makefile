@@ -1,4 +1,6 @@
-.PHONY: help install dev lint format check test clean
+DOCKER_IMAGE = dockmann/web-tool:latest
+
+.PHONY: help install dev lint format check test clean docker-run docker-build docker-buildx docker-push docker-stop docker-clean
 
 .DEFAULT_GOAL := help
 
@@ -25,8 +27,14 @@ help:
 	@echo ""
 	@echo "Utilities:"
 	@echo "  make clean      - Remove temporary files and cache"
-	@echo "  make run        - Run the application"
-	@echo "  make docker     - Build Docker image"
+	@echo ""
+	@echo "Docker:"
+	@echo "  make docker-run    - Run the published Docker image"
+	@echo "  make docker-build  - Build Docker image for current platform"
+	@echo "  make docker-buildx - Build multi-platform image (amd64/arm64)"
+	@echo "  make docker-push   - Build and push multi-platform image"
+	@echo "  make docker-stop   - Stop running container"
+	@echo "  make docker-clean  - Stop container and prune build cache"
 
 # Install with all dependencies
 install:
@@ -91,12 +99,33 @@ clean:
 	rm -rf .ruff_cache/
 	@echo "Clean complete!"
 
-# Run the application
-run:
-	@echo "Running the application..."
-	./run-it.sh
+# Run the published Docker image
+docker-run:
+	@echo "Running Docker container from $(DOCKER_IMAGE)..."
+	docker run -it --rm -p 8532:8532 --name web-tool $(DOCKER_IMAGE)
 
-# Build Docker image
-docker:
-	@echo "Building Docker image..."
-	docker build -t web-tool .
+# Build Docker image for current platform
+docker-build:
+	@echo "Building Docker image $(DOCKER_IMAGE)..."
+	docker build -t $(DOCKER_IMAGE) .
+
+# Build multi-platform image (amd64/arm64)
+docker-buildx:
+	@echo "Building multi-platform Docker image $(DOCKER_IMAGE)..."
+	docker buildx build --platform linux/amd64,linux/arm64 --tag $(DOCKER_IMAGE) .
+
+# Build and push multi-platform image
+docker-push:
+	@echo "Building and pushing multi-platform Docker image $(DOCKER_IMAGE)..."
+	docker buildx build --platform linux/amd64,linux/arm64 --tag $(DOCKER_IMAGE) --push .
+
+# Stop running container
+docker-stop:
+	@echo "Stopping web-tool container..."
+	-docker stop web-tool 2>/dev/null || true
+	-docker rm web-tool 2>/dev/null || true
+
+# Stop container and prune build cache
+docker-clean: docker-stop
+	@echo "Pruning Docker build cache..."
+	docker buildx prune -f
