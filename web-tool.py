@@ -184,7 +184,7 @@ def mirror_html_source():
     # If clip is valid JSON, extract the HTML and prettify it.
     html_text = ""
     if metadata.soup:
-        html_text = metadata.soup.prettify()
+        html_text = html_util.prettify_html(str(metadata.soup))
         return util.plain_text_response(
             template_env,
             "HTML Source",

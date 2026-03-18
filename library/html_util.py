@@ -8,8 +8,36 @@ import pyperclip
 import yaml
 from bs4 import BeautifulSoup
 from flask import request
+from lxml import html as lxml_html
 
 from library import docker_util, img_util, url_util
+
+
+def prettify_html(html_text: str) -> str:
+    """Pretty-print HTML using lxml to avoid BeautifulSoup prettify issues.
+
+    BeautifulSoup's prettify() can produce invalid HTML in certain cases,
+    particularly around self-closing tags, void elements, and script content.
+    This function uses lxml for robust pretty-printing.
+
+    Args:
+        html_text: Raw HTML string to prettify
+
+    Returns:
+        Prettified HTML string. If parsing fails, returns original text.
+    """
+    if not html_text or not isinstance(html_text, str):
+        return html_text
+
+    try:
+        root = lxml_html.fromstring(html_text)
+        return lxml_html.tostring(
+            root,
+            pretty_print=True,
+            encoding="unicode"
+        )
+    except Exception:
+        return html_text
 
 FAVICON_WIDTH = 20
 
@@ -148,8 +176,7 @@ def get_page_metadata(
 
     # Prettify HTML
     if meta.html:
-        soup = BeautifulSoup(meta.html, "html.parser")
-        meta.html = soup.prettify()
+        meta.html = prettify_html(meta.html)
 
     # Extract favicon links from the HTML page sorted by optimal size.
     favicon_links = get_favicon_links(meta.url, meta.html)
