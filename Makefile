@@ -1,6 +1,6 @@
 DOCKER_IMAGE = dockmann/web-tool:latest
 
-.PHONY: help install dev lint format check test testcov testv docs check-imports clean docker-run docker-build docker-buildx docker-push docker-stop docker-clean
+.PHONY: help install dev run lint format check test testcov testv docs check-imports clean docker-run docker-build docker-buildx docker-push docker-stop docker-clean
 
 .DEFAULT_GOAL := help
 
@@ -11,6 +11,7 @@ help:
 	@echo "Development:"
 	@echo "  make install    - Install project with all dependencies"
 	@echo "  make dev        - Install development dependencies"
+	@echo "  make run        - Run the application locally"
 	@echo ""
 	@echo "Linting & Formatting:"
 	@echo "  make lint       - Run ruff linting checks"
@@ -45,6 +46,11 @@ install:
 dev:
 	@echo "Installing development dependencies..."
 	uv pip install -e ".[dev]"
+
+# Run the application locally
+run:
+	@echo "Running web-tool..."
+	uv run python web-tool.py
 
 # Run all linting checks
 lint:
