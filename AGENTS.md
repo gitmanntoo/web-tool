@@ -31,8 +31,7 @@ web-tool/
 ├── web-tool.py           # Flask application entry point
 ├── Dockerfile            # Docker container definition
 ├── pyproject.toml        # Python project dependencies
-├── pytest.ini            # Pytest configuration
-└── run-it.sh             # Local development script
+└── pytest.ini            # Pytest configuration
 ```
 
 ## Build, Test, and Development Commands
@@ -51,7 +50,7 @@ uv pip install pytest pytest-cov
 
 ```bash
 # Local development (uses uv and local cache)
-./run-it.sh
+uv run python web-tool.py
 
 # With Docker
 docker pull dockmann/web-tool
