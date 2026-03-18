@@ -43,10 +43,10 @@ uv run pytest -k "emoji" -v
 ### Code Quality
 
 ```bash
-# Format code (black + isort)
+# Format code with ruff
 make format
 
-# Run linters (flake8 + pylint)
+# Run ruff linting
 make lint
 
 # Run all quality checks
@@ -146,5 +146,5 @@ When URLs contain fragments (`#anchor`), the system attempts to find associated 
 ## Constraints
 
 - **Python Version**: Strictly 3.11 (not 3.12)
-- **Line Length**: 100 characters (black configuration)
+- **Line Length**: 100 characters (ruff configuration)
 - **Test Coverage Target**: 80%+ for new features
