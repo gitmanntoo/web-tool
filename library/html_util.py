@@ -1,17 +1,15 @@
-from dataclasses import dataclass, field
 import json
-from pathlib import Path
 import time
-from urllib.parse import urlparse, urlunparse, urlencode
+from dataclasses import dataclass, field
+from pathlib import Path
+from urllib.parse import urlencode, urlparse, urlunparse
 
-from bs4 import BeautifulSoup
-from flask import request
 import pyperclip
 import yaml
+from bs4 import BeautifulSoup
+from flask import request
 
-from library import docker_util
-from library import img_util
-from library import url_util
+from library import docker_util, img_util, url_util
 
 FAVICON_WIDTH = 20
 
@@ -72,15 +70,15 @@ class RelLink:
 
     def validate(self) -> bool:
         """Lazily fetch the href and get image details.
-        
+
         Returns True if valid, False otherwise.
         Only makes HTTP request on first call.
         """
         if self._validated:
             return self.is_valid()
-        
+
         self._validated = True
-        
+
         try:
             resp = url_util.get_url(self.href)
             self.resolved_href = resp.resolved_url
@@ -92,7 +90,7 @@ class RelLink:
                 return True
         except Exception:
             pass
-        
+
         return False
 
     def is_valid(self) -> bool:
@@ -115,9 +113,7 @@ class PageMetadata:
 
 
 def get_page_metadata(
-    meta: PageMetadata = None,
-    max_favicon_links: int = 1,
-    favicon_width: int = FAVICON_WIDTH
+    meta: PageMetadata = None, max_favicon_links: int = 1, favicon_width: int = FAVICON_WIDTH
 ) -> PageMetadata:
     """Add metadata to PageMetadata object."""
 
@@ -140,11 +136,10 @@ def get_page_metadata(
 
     # Reconstruct the URL without the query and fragment.
     parsed = urlparse(meta.url)
-    meta.clean_url = urlunparse(
-        (parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
+    meta.clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
 
     # Get the host from the URL
-    meta.host_url = f'{parsed.scheme}://{parsed.netloc}'
+    meta.host_url = f"{parsed.scheme}://{parsed.netloc}"
     meta.host = parsed.netloc
 
     # If an error occurred, do not attempt to parse the HTML.
@@ -153,14 +148,13 @@ def get_page_metadata(
 
     # Prettify HTML
     if meta.html:
-        soup = BeautifulSoup(meta.html, 'html.parser')
+        soup = BeautifulSoup(meta.html, "html.parser")
         meta.html = soup.prettify()
 
     # Extract favicon links from the HTML page sorted by optimal size.
     favicon_links = get_favicon_links(meta.url, meta.html)
-    sorted_links = sort_favicon_links(
-        favicon_links, favicon_width, max_favicon_links)
-    
+    sorted_links = sort_favicon_links(favicon_links, favicon_width, max_favicon_links)
+
     # Validate only the top candidates (lazy validation)
     meta.favicons = validate_top_candidates(sorted_links, max_count=max_favicon_links)
 
@@ -169,62 +163,61 @@ def get_page_metadata(
 
 def _load_yaml_with_cache(file_path: Path) -> dict:
     """Load YAML file with in-memory caching, mtime check, and TTL.
-    
+
     Cache is invalidated if:
     - File modification time (mtime) has changed
     - TTL has expired
-    
+
     Args:
         file_path: Path to YAML file
-        
+
     Returns:
         dict: Loaded YAML data, or empty dict if file doesn't exist
     """
     if not file_path.exists():
         return {}
-    
+
     current_time = time.time()
     file_path_str = str(file_path)
-    
+
     # Get current file mtime
     try:
         current_mtime = file_path.stat().st_mtime
     except OSError:
         return {}
-    
+
     # Check if we have a cached version
     if file_path_str in _favicon_yaml_cache:
         cached = _favicon_yaml_cache[file_path_str]
-        cached_mtime = cached.get('mtime', 0)
-        loaded_at = cached.get('loaded_at', 0)
-        
+        cached_mtime = cached.get("mtime", 0)
+        loaded_at = cached.get("loaded_at", 0)
+
         # Check if cache is still valid (mtime unchanged and TTL not expired)
-        if (cached_mtime == current_mtime and 
-            current_time - loaded_at < FAVICON_CACHE_TTL):
-            return cached.get('data', {})
-    
+        if cached_mtime == current_mtime and current_time - loaded_at < FAVICON_CACHE_TTL:
+            return cached.get("data", {})
+
     # Load fresh data
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path) as f:
             data = yaml.safe_load(f)
             if not isinstance(data, dict):
                 data = {}
     except Exception:
         data = {}
-    
+
     # Update cache
     _favicon_yaml_cache[file_path_str] = {
-        'data': data,
-        'mtime': current_mtime,
-        'loaded_at': current_time
+        "data": data,
+        "mtime": current_mtime,
+        "loaded_at": current_time,
     }
-    
+
     return data
 
 
 def get_favicon_cache(page_url) -> RelLink:
     """Get the favicon cache for the page URL.
-    
+
     Searches three-tier cache with precedence:
     1. User overrides (favicon-overrides.yml) - highest priority
     2. App defaults (favicon.yml) - medium priority
@@ -261,7 +254,7 @@ def get_favicon_cache(page_url) -> RelLink:
     for cache_dict, cache_name in [
         (overrides_cache, "override"),
         (defaults_cache, "default"),
-        (discovered_cache, "discovered")
+        (discovered_cache, "discovered"),
     ]:
         for s in search_paths:
             if favicon := cache_dict.get(s):
@@ -278,14 +271,14 @@ def get_favicon_cache(page_url) -> RelLink:
 
 def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
     """Determine which cache file contains this favicon.
-    
+
     Checks all three cache files in precedence order to see if the favicon
     is already cached for this URL.
-    
+
     Args:
         page_url: The URL of the page being displayed
         favicon_href: The favicon URL to look up
-        
+
     Returns:
         dict with:
         - 'file': 'override' | 'default' | 'discovered' | None
@@ -319,29 +312,21 @@ def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
     for cache_dict, cache_file, precedence in [
         (overrides_cache, "override", 1),
         (defaults_cache, "default", 2),
-        (discovered_cache, "discovered", 3)
+        (discovered_cache, "discovered", 3),
     ]:
         for search_path in search_paths:
             if cached_favicon := cache_dict.get(search_path):
                 # Check if this cached favicon matches the one we're looking for
                 if cached_favicon == favicon_href:
-                    return {
-                        'file': cache_file,
-                        'cache_key': search_path,
-                        'precedence': precedence
-                    }
-    
+                    return {"file": cache_file, "cache_key": search_path, "precedence": precedence}
+
     # Not found in any cache
-    return {
-        'file': None,
-        'cache_key': None,
-        'precedence': None
-    }
+    return {"file": None, "cache_key": None, "precedence": None}
 
 
 def add_favicon_to_cache(cache_key, favicon_link):
     """Add the favicon link to the auto-discovered cache.
-    
+
     Only writes to local-cache/favicon.yml (auto-discovered cache).
     User overrides should be manually added to static/favicon-overrides.yml.
     Invalidates in-memory cache for local cache file.
@@ -356,18 +341,16 @@ def add_favicon_to_cache(cache_key, favicon_link):
     # Write cache in sorted order.
     with open(FAVICON_LOCAL_CACHE, "w") as f:
         yaml.dump(cache, f, sort_keys=True)
-    
+
     # Invalidate in-memory cache so next load picks up the change
     file_path_str = str(FAVICON_LOCAL_CACHE)
     if file_path_str in _favicon_yaml_cache:
         del _favicon_yaml_cache[file_path_str]
 
 
-def get_favicon_links(
-    page_url: str, soup: BeautifulSoup, include=None
-) -> list[RelLink]:
+def get_favicon_links(page_url: str, soup: BeautifulSoup, include=None) -> list[RelLink]:
     """Get the favicon links for the page URL.
-    
+
     Discovers native favicon formats first. Only creates ICO/SVG→PNG conversions
     if no other formats (PNG, JPEG, etc.) are available, ensuring compatibility
     with platforms like Obsidian markdown that have trouble with ICO/SVG.
@@ -380,19 +363,19 @@ def get_favicon_links(
 
     if cached_url := get_favicon_cache(page_url):
         links.append(cached_url)
-        if include != 'all':
+        if include != "all":
             return links
         seen.add(cached_url.href)
 
     if not soup:
         return links
 
-    head = soup.find('head')
+    head = soup.find("head")
 
     # Try to find links in <head>.
     if head:
-        for link in head.find_all('link'):
-            href = link.get('href')
+        for link in head.find_all("link"):
+            href = link.get("href")
             if not href:
                 continue
 
@@ -401,8 +384,8 @@ def get_favicon_links(
                 continue
             seen.add(href)
 
-            sizes = link.get('sizes')
-            rel = link.get('rel')
+            sizes = link.get("sizes")
+            rel = link.get("rel")
 
             # Make sure rel is a list.
             if not isinstance(rel, list):
@@ -423,7 +406,7 @@ def get_favicon_links(
 
     # Fallback to common favicon files.
     parsed = urlparse(page_url)
-    page_host = urlunparse((parsed.scheme, parsed.netloc, '', '', '', ''))
+    page_host = urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
 
     for f in COMMON_FAVICON_FILES:
         # Add common favicon paths (will validate lazily)
@@ -439,11 +422,9 @@ def get_favicon_links(
 
     # Check if we have any non-ICO/non-SVG formats available
     has_non_ico_svg = any(
-        link.image_type not in ("image/ico", "image/svg")
-        for link in links
-        if link.image_type
+        link.image_type not in ("image/ico", "image/svg") for link in links if link.image_type
     )
-    
+
     # Only create conversions if ICO/SVG are the only formats available
     # This ensures compatibility with Obsidian markdown which has trouble with ICO/SVG
     if not has_non_ico_svg:
@@ -473,7 +454,7 @@ def get_favicon_links(
                     )
                     if r.is_valid():
                         conversion_links.append(r)
-        
+
         # Add conversion links to the result
         links.extend(conversion_links)
 
@@ -483,19 +464,19 @@ def get_favicon_links(
 
 def validate_top_candidates(links: list[RelLink], max_count: int = 1) -> list[RelLink]:
     """Validate only the top N favicon candidates.
-    
+
     Iterates through sorted links and validates them one at a time until
     we have max_count valid favicons. Stops early to avoid unnecessary HTTP requests.
-    
+
     Args:
         links: Sorted list of favicon links (best first)
         max_count: Maximum number of valid favicons to return
-        
+
     Returns:
         List of validated favicon links (up to max_count)
     """
     validated = []
-    
+
     for link in links:
         # Cached links are always valid (skip validation)
         if link.cache_key:
@@ -503,13 +484,13 @@ def validate_top_candidates(links: list[RelLink], max_count: int = 1) -> list[Re
             if len(validated) >= max_count:
                 break
             continue
-        
+
         # Validate this link (makes HTTP request on first call)
         if link.validate():
             validated.append(link)
             if len(validated) >= max_count:
                 break
-    
+
     return validated
 
 
@@ -525,9 +506,7 @@ def get_common_favicon_links(page_url):
 
 
 def sort_favicon_links(
-    favicons: list[RelLink],
-    favicon_width: int = FAVICON_WIDTH,
-    include: str = None
+    favicons: list[RelLink], favicon_width: int = FAVICON_WIDTH, include: str = None
 ) -> list[RelLink]:
     """Sort favicons to prefer those closest to target size.
 
@@ -538,15 +517,15 @@ def sort_favicon_links(
     300. SVG
     200. ICO conversion
     100. SVG conversion
-    
+
     Within each precedence group, favicons are sorted by distance from target area.
     Slightly larger favicons are preferred over smaller ones (downscaling > upscaling).
-    
+
     Args:
         favicons: List of favicon links to sort
         favicon_width: Target width in pixels (default: 20)
         include: If "all", include all favicons; otherwise return only best match
-    
+
     Returns:
         Sorted list of favicon links
     """
@@ -559,7 +538,7 @@ def sort_favicon_links(
         if include != "all":
             # Return cache immediately.
             return favicons[:1]
-        
+
     key_precedence = {
         "cache": 999,
         "image": 500,
@@ -596,7 +575,7 @@ def sort_favicon_links(
         if x.width is not None and x.height is not None:
             area = x.width * x.height
             distance = abs(area - target_area)
-            
+
             # Strongly prefer downscaling over upscaling
             # Add large penalty for upscaling to ensure larger images come first
             if area < target_area:

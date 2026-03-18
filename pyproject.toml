@@ -57,7 +57,11 @@ select = [
     "W",   # pycodestyle warnings
     "UP",  # pyupgrade
 ]
-ignore = []
+ignore = [
+    "W293",  # Blank line contains whitespace (common in docstrings)
+    "W291",  # Trailing whitespace (handled by formatter)
+    "N815",  # Variable in class scope should not be mixedCase (API field names)
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -69,5 +73,4 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ruff.lint.isort]
-profile = "black"
 known-first-party = ["library"]

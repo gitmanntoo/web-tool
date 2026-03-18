@@ -16,11 +16,12 @@ To run tests:
 """
 
 import pytest
+
 from library.util import (
-    text_with_ascii_and_emojis,
-    text_ascii_only,
-    path_safe_filename,
     TitleVariants,
+    path_safe_filename,
+    text_ascii_only,
+    text_with_ascii_and_emojis,
 )
 
 
@@ -212,14 +213,14 @@ class TestPathSafeFilename:
         assert all(ord(c) < 128 for c in result)
         assert ":" not in result  # Colons replaced
         assert "/" not in result  # Slashes replaced
-        
+
         # Email as filename
         result = path_safe_filename("user@example.com")
         assert "@" not in result  # @ is removed for safety
-        
+
         # Complex title
         result = path_safe_filename("My Document (Final) [2024].txt")
-        assert all(c not in result for c in ['<', '>', ':', '"', '/', '\\', '|', '?', '*'])
+        assert all(c not in result for c in ["<", ">", ":", '"', "/", "\\", "|", "?", "*"])
 
 
 class TestTitleVariants:
@@ -279,9 +280,9 @@ class TestTitleVariants:
 
     def test_path_safe_is_valid_filename(self):
         """Path safe variant should not contain invalid filename characters."""
-        tv = TitleVariants("My <File>: Document? \"Final\" |Edition*")
+        tv = TitleVariants('My <File>: Document? "Final" |Edition*')
         result = tv.path_safe
-        assert all(c not in result for c in ['<', '>', ':', '"', '/', '\\', '|', '?', '*'])
+        assert all(c not in result for c in ["<", ">", ":", '"', "/", "\\", "|", "?", "*"])
 
 
 class TestEdgeCases:

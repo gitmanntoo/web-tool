@@ -1,23 +1,26 @@
-from io import BytesIO
-from dataclasses import dataclass
-from functools import lru_cache
 import logging
 import time
+import urllib.parse
+from dataclasses import dataclass
+from functools import lru_cache
+from io import BytesIO
+from urllib.parse import urljoin
 
+import requests
+import tldextract
 from flask import request
 from magika import Magika
 from PIL import Image
-import requests
-import tldextract
-import urllib.parse
-from urllib.parse import urljoin
 
 from library import url_util
 
 DEFAULT_TIMEOUT = 5
 
 # Brave Browser
-DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+)
 
 # Initialize Magika for response type detection.
 mgk = Magika()
@@ -34,7 +37,8 @@ def get_user_agent() -> str:
 
 
 class SerializedResponseError(Exception):
-    """SerializedResponseError is raised when a SerializedResponse object has the error attribute set."""
+    """Raised when a SerializedResponse object has the error attribute set."""
+
     pass
 
 
@@ -54,7 +58,7 @@ class SerializedResponse:
     cookies: dict = None
     content: bytes = None
     encoding: str = None
-    
+
     # Common headers.
     content_type: str = None
     content_length: int = None
@@ -116,10 +120,10 @@ class SerializedResponse:
 
         if self.resolved_url:
             out["resolved_url"] = self.resolved_url
-            out["status_code"] =  self.status_code
-            out["headers"] =  self.headers
-            out["content_type"] =  self.content_type
-            out["content_length"] =  self.content_length
+            out["status_code"] = self.status_code
+            out["headers"] = self.headers
+            out["content_type"] = self.content_type
+            out["content_length"] = self.content_length
 
         if self.m_group:
             out["m_group"] = self.m_group
@@ -180,10 +184,7 @@ def get_url(url: str) -> SerializedResponse:
 
     out = SerializedResponse(source_url=url)
     try:
-        resp = requests.get(
-            url,
-            headers={"User-Agent": get_user_agent()},
-            timeout=DEFAULT_TIMEOUT)
+        resp = requests.get(url, headers={"User-Agent": get_user_agent()}, timeout=DEFAULT_TIMEOUT)
         resp.raise_for_status()
         out.from_response(resp)
     except requests.exceptions.RequestException as e:
@@ -204,10 +205,7 @@ def head_url(url: str) -> SerializedResponse:
 
     out = SerializedResponse(source_url=url)
     try:
-        resp = requests.head(
-            url,
-            headers={"User-Agent": get_user_agent()},
-            timeout=DEFAULT_TIMEOUT)
+        resp = requests.head(url, headers={"User-Agent": get_user_agent()}, timeout=DEFAULT_TIMEOUT)
         resp.raise_for_status()
         out.from_response(resp)
     except requests.exceptions.RequestException as e:
@@ -262,10 +260,10 @@ def get_top_domain_name(url):
     extracted = tldextract.extract(subdomain)
 
     # Return domain name starting with www if subdomain is 'www'
-    if extracted.subdomain == 'www':
-        return f'{extracted.subdomain}.{extracted.domain}.{extracted.suffix}'
+    if extracted.subdomain == "www":
+        return f"{extracted.subdomain}.{extracted.domain}.{extracted.suffix}"
     else:
-        return f'{extracted.domain}.{extracted.suffix}'
+        return f"{extracted.domain}.{extracted.suffix}"
 
 
 @dataclass
@@ -286,10 +284,7 @@ def get_image_size(url):
     try:
         resp = url_util.get_url(url)
         if resp.status_code == 200:
-            return ImageSize(
-                resp.image_width,
-                resp.image_height,
-                resp.get_type())
+            return ImageSize(resp.image_width, resp.image_height, resp.get_type())
     except Exception as e:
         # Any exceptions are ignored.
         logging.warning(e)
@@ -353,9 +348,7 @@ def make_absolute_urls(page_url, linked_url):
     """Convert relative URLs to absolute URLs."""
 
     # If the URL is already absolute, return it as is.
-    if linked_url.startswith('http://') or linked_url.startswith('https://'):
+    if linked_url.startswith("http://") or linked_url.startswith("https://"):
         return linked_url
     else:
         return str(urljoin(page_url, linked_url))
-
-

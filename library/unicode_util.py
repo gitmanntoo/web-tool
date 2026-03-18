@@ -1,72 +1,73 @@
-from collections import Counter, OrderedDict
 import unicodedata
+from collections import Counter, OrderedDict
 
-
-# Define a dictionary of unicode category names 
+# Define a dictionary of unicode category names
 # From: [Chapter 4 – Unicode 16.0.0](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G124142)
 GENERAL_CATEGORY_NAMES = {
-    'Lu': 'Letter, Uppercase',
-    'Ll': 'Letter, Lowercase',
-    'Lt': 'Letter, Titlecase',
-    'Lm': 'Letter, Modifier',
-    'Lo': 'Letter, Other',
-    'Mn': 'Mark, Nonspacing',
-    'Mc': 'Mark, Spacing Combining',
-    'Me': 'Mark, Enclosing',
-    'Nd': 'Number, Decimal Digit',
-    'Nl': 'Number, Letter',
-    'No': 'Number, Other',
-    'Zs': 'Separator, Space',
-    'Zl': 'Separator, Line',
-    'Zp': 'Separator, Paragraph',
-    'Cc': 'Other, Control',
-    'Cf': 'Other, Format',
-    'Cs': 'Other, Surrogate',
-    'Co': 'Other, Private Use',
-    'Cn': 'Other, Not Assigned',
-    'Sm': 'Symbol, Math',
-    'Sc': 'Symbol, Currency',
-    'Sk': 'Symbol, Modifier',
-    'So': 'Symbol, Other',
-    'Pc': 'Punctuation, Connector',
-    'Pd': 'Punctuation, Dash',
-    'Ps': 'Punctuation, Open',
-    'Pe': 'Punctuation, Close',
-    'Pi': 'Punctuation, Initial Quote',
-    'Pf': 'Punctuation, Final Quote',
-    'Po': 'Punctuation, Other'
+    "Lu": "Letter, Uppercase",
+    "Ll": "Letter, Lowercase",
+    "Lt": "Letter, Titlecase",
+    "Lm": "Letter, Modifier",
+    "Lo": "Letter, Other",
+    "Mn": "Mark, Nonspacing",
+    "Mc": "Mark, Spacing Combining",
+    "Me": "Mark, Enclosing",
+    "Nd": "Number, Decimal Digit",
+    "Nl": "Number, Letter",
+    "No": "Number, Other",
+    "Zs": "Separator, Space",
+    "Zl": "Separator, Line",
+    "Zp": "Separator, Paragraph",
+    "Cc": "Other, Control",
+    "Cf": "Other, Format",
+    "Cs": "Other, Surrogate",
+    "Co": "Other, Private Use",
+    "Cn": "Other, Not Assigned",
+    "Sm": "Symbol, Math",
+    "Sc": "Symbol, Currency",
+    "Sk": "Symbol, Modifier",
+    "So": "Symbol, Other",
+    "Pc": "Punctuation, Connector",
+    "Pd": "Punctuation, Dash",
+    "Ps": "Punctuation, Open",
+    "Pe": "Punctuation, Close",
+    "Pi": "Punctuation, Initial Quote",
+    "Pf": "Punctuation, Final Quote",
+    "Po": "Punctuation, Other",
 }
 
 # Category names from most to least frequent in languages.
-CATEGORY_NAMES = OrderedDict([
-    ('L', 'Letter'),
-    ('Z', 'Separator'),
-    ('P', 'Punctuation'),
-    ('S', 'Symbol'),
-    ('N', 'Number'),
-    ('M', 'Mark'),
-    ('C', 'Other'),
-])
+CATEGORY_NAMES = OrderedDict(
+    [
+        ("L", "Letter"),
+        ("Z", "Separator"),
+        ("P", "Punctuation"),
+        ("S", "Symbol"),
+        ("N", "Number"),
+        ("M", "Mark"),
+        ("C", "Other"),
+    ]
+)
 
 # Typical values for english tensor.
-STANDARD_TENSOR = [0.85, 0.12, 0.3, 0, 0, 0, 0, ]
+STANDARD_TENSOR = [
+    0.85,
+    0.12,
+    0.3,
+    0,
+    0,
+    0,
+    0,
+]
 
 # Map from GENERAL_CATEGORY to parent CATEGORY.
-CATEGORY_MAP = {
-    x:x[0] for x in GENERAL_CATEGORY_NAMES
-}
+CATEGORY_MAP = {x: x[0] for x in GENERAL_CATEGORY_NAMES}
 
 # Define some sets for faster categorization.
 # Alphanumeric characters.
-ALNUM = {
-    x for x in GENERAL_CATEGORY_NAMES
-    if x[0] in ('L', 'N')
-}
+ALNUM = {x for x in GENERAL_CATEGORY_NAMES if x[0] in ("L", "N")}
 
-NOT_ALNUM = {
-    x for x in GENERAL_CATEGORY_NAMES
-    if x not in ALNUM
-}
+NOT_ALNUM = {x for x in GENERAL_CATEGORY_NAMES if x not in ALNUM}
 
 
 def is_alnum(c: str) -> bool:
@@ -98,7 +99,7 @@ def strip_not_alnum(s: str) -> str:
         end -= 1
 
     # Return the stripped string
-    return s[start:end+1]
+    return s[start : end + 1]
 
 
 def count_categories(s: str) -> Counter:
@@ -117,7 +118,7 @@ def longest_run(s: str) -> str:
     current_run_str = []
     for c in s:
         cat = unicodedata.category(c)
-        if CATEGORY_MAP[cat] == 'Z':
+        if CATEGORY_MAP[cat] == "Z":
             if len(current_run_str) > len(longest_run_str):
                 longest_run_str = current_run_str[:]
             current_run_str = []
@@ -127,7 +128,7 @@ def longest_run(s: str) -> str:
     if len(current_run_str) > len(longest_run_str):
         longest_run_str = current_run_str[:]
 
-    return ''.join(longest_run_str)
+    return "".join(longest_run_str)
 
 
 def category_tensor(c: Counter) -> list[float]:
@@ -144,8 +145,7 @@ def category_tensor(c: Counter) -> list[float]:
 
 
 def category_str(c: Counter) -> str:
-    """Convert categories into a string with each value between 0 and 99.
-    """
+    """Convert categories into a string with each value between 0 and 99."""
 
     tensor = category_tensor(c)
     out_pct = []
@@ -159,7 +159,7 @@ def category_str(c: Counter) -> str:
 
 
 def standard_distance(c: Counter) -> float:
-    """Calculate the Euclidian distance between the counts 
+    """Calculate the Euclidian distance between the counts
     and the STANDARD_TENSOR.
     """
     cat_tensor = category_tensor(c)
@@ -170,4 +170,4 @@ def standard_distance(c: Counter) -> float:
         s += (t - STANDARD_TENSOR[i]) ** 2
 
     # Return square root of sum.
-    return s ** 0.5
+    return s**0.5

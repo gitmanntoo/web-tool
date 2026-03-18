@@ -4,16 +4,17 @@ Tests for library/html_util.py
 Tests HTML parsing, favicon discovery, and metadata extraction.
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+
+import pytest
+
 from library.html_util import (
-    RelLink,
-    FAVICON_REL,
     COMMON_FAVICON_FILES,
+    FAVICON_REL,
     FAVICON_WIDTH,
     ICO_TO_PNG_PATH,
     SVG_TO_PNG_PATH,
+    RelLink,
 )
 
 
@@ -37,7 +38,7 @@ class TestRelLink:
             cache_key="example.com",
             height=16,
             width=16,
-            image_type="image/x-icon"
+            image_type="image/x-icon",
         )
         assert link.href == "http://example.com/favicon.ico"
         assert link.rel == "icon"
@@ -110,18 +111,21 @@ class TestFaviconCacheStructure:
     def test_favicon_overrides_path_exists(self):
         """Test that favicon overrides path is defined."""
         from library.html_util import FAVICON_OVERRIDES
+
         assert FAVICON_OVERRIDES is not None
         assert isinstance(FAVICON_OVERRIDES, Path)
 
     def test_favicon_defaults_path_exists(self):
         """Test that favicon defaults path is defined."""
         from library.html_util import FAVICON_DEFAULTS
+
         assert FAVICON_DEFAULTS is not None
         assert isinstance(FAVICON_DEFAULTS, Path)
 
     def test_favicon_local_cache_path_exists(self):
         """Test that favicon local cache path is defined."""
         from library.html_util import FAVICON_LOCAL_CACHE
+
         assert FAVICON_LOCAL_CACHE is not None
         assert isinstance(FAVICON_LOCAL_CACHE, Path)
 
@@ -174,14 +178,8 @@ class TestRelLinkComparison:
 
     def test_two_links_with_different_cache_keys(self):
         """Test comparing cache keys."""
-        link1 = RelLink(
-            href="http://example.com/favicon.ico",
-            cache_key="example.com"
-        )
-        link2 = RelLink(
-            href="http://example.com/favicon.ico",
-            cache_key="www.example.com"
-        )
+        link1 = RelLink(href="http://example.com/favicon.ico", cache_key="example.com")
+        link2 = RelLink(href="http://example.com/favicon.ico", cache_key="www.example.com")
         assert link1.cache_key != link2.cache_key
 
 

@@ -5,23 +5,23 @@ Tests text processing, parsing, and utility functions.
 """
 
 import pytest
+
 from library.text_util import (
-    split_special_tag,
-    nvl,
-    strip_quotes,
-    eval_script_text,
-    is_word,
-    like_html,
-    like_email,
-    like_url,
-    remove_repeated_lines,
-    categorize_word,
-    WordCategory,
-    NONE_TAG,
+    BODY_TAG,
     CODE_TAG,
     HEAD_TAG,
-    BODY_TAG,
     TEXT_TAG,
+    WordCategory,
+    categorize_word,
+    eval_script_text,
+    is_word,
+    like_email,
+    like_html,
+    like_url,
+    nvl,
+    remove_repeated_lines,
+    split_special_tag,
+    strip_quotes,
 )
 
 
@@ -123,7 +123,7 @@ class TestStripQuotes:
 
     def test_mismatched_quotes_not_removed(self):
         """Test that mismatched quotes are not removed."""
-        assert strip_quotes('"hello\'') == '"hello\''
+        assert strip_quotes("\"hello'") == "\"hello'"
         assert strip_quotes("'hello\"") == "'hello\""
 
     def test_empty_string(self):
@@ -216,7 +216,8 @@ class TestLikeHtml:
 
     def test_text_with_angle_brackets_not_html(self):
         """Test that angle brackets without valid tags are not HTML."""
-        assert like_html("5 < 10") is False or like_html("5 < 10") is True  # May vary by implementation
+        result = like_html("5 < 10")
+        assert result is False or result is True  # May vary by implementation
 
 
 class TestLikeEmail:
