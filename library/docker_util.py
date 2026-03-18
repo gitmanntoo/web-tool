@@ -25,10 +25,17 @@ def is_running_in_container():
         except OSError:
             pass
 
-    hostname = subprocess.check_output(["hostname"]).decode("utf-8").strip()
+    try:
+        hostname = subprocess.check_output(["hostname"]).decode("utf-8").strip()
+    except (OSError, subprocess.SubprocessError):
+        hostname = ""
     if hostname.startswith("docker-") or hostname.startswith("container-"):
         return True
-    uname_output = subprocess.check_output(["uname", "-a"]).decode("utf-8").strip()
+
+    try:
+        uname_output = subprocess.check_output(["uname", "-a"]).decode("utf-8").strip()
+    except (OSError, subprocess.SubprocessError):
+        uname_output = ""
     if "docker" in uname_output or "container" in uname_output:
         return True
     return False
