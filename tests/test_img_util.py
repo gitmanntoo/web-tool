@@ -218,9 +218,16 @@ class TestImageConversionIntegration:
 
     def test_cache_size_limits(self):
         """Test that caches have reasonable size limits."""
-        # Get cache info and verify both have cache_info attribute
-        assert convert_ico.cache_info()
-        assert convert_svg.cache_info()
+        ico_info = convert_ico.cache_info()
+        svg_info = convert_svg.cache_info()
+
+        # Both cache_info objects should expose a finite maxsize (configured via lru_cache)
+        assert hasattr(ico_info, "maxsize")
+        assert hasattr(svg_info, "maxsize")
+
+        # Expect both caches to use the configured maximum size (e.g., 64 entries)
+        assert ico_info.maxsize == 64
+        assert svg_info.maxsize == 64
 
 
 class TestImageConversionEdgeCases:
