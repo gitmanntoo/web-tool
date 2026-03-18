@@ -216,8 +216,9 @@ class TestLikeHtml:
 
     def test_text_with_angle_brackets_not_html(self):
         """Test that angle brackets without valid tags are not HTML."""
-        result = like_html("5 < 10")
-        assert result is False or result is True  # May vary by implementation
+        # "5 < 10" contains an angle bracket but no valid HTML tag name after '<',
+        # so like_html should deterministically return False.
+        assert like_html("5 < 10") is False
 
 
 class TestLikeEmail:
