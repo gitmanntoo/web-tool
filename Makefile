@@ -1,6 +1,6 @@
 DOCKER_IMAGE = dockmann/web-tool:latest
 
-.PHONY: help install dev lint format check test clean docker-run docker-build docker-buildx docker-push docker-stop docker-clean
+.PHONY: help install dev lint format check test testcov testv docs check-imports clean docker-run docker-build docker-buildx docker-push docker-stop docker-clean
 
 .DEFAULT_GOAL := help
 
