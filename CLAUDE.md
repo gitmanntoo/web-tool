@@ -15,7 +15,7 @@ Web-tool is a Flask-based utility service that extracts information from web pag
 uv pip install -e ".[dev]"
 
 # Run the application locally
-./run-it.sh
+uv run python web-tool.py
 
 # Run with Docker
 docker run -d --restart always -p 8532:8532 -v $(pwd)/web-tool:/data --name web-tool dockmann/web-tool
