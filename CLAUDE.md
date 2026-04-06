@@ -2,149 +2,51 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Development Commands
 
-Web-tool is a Flask-based utility service that extracts information from web pages through browser bookmarklets. It runs on port 8532 by default and provides endpoints for content extraction, transformation, and caching.
+### Setup & Running
+- **Install dependencies**: `make install`
+- **Run application**: `make run` (starts the web-tool locally via `uv run python web-tool.py`)
+- **Development dependencies**: `make dev`
 
-## Common Commands
+### Quality & Testing
+- **Lint code**: `make lint` (uses ruff)
+- **Format code**: `make format` (uses ruff)
+- **All quality checks**: `make check` (lint + format + import sorting)
+- **Run all tests**: `make test` (via `uv run pytest`)
+- **Run tests with coverage**: `make testcov`
+- **Run tests with verbose output**: `make testv`
+- **Run a specific test file**: `uv run pytest tests/test_filename.py -v`
+- **Run a specific test class**: `uv run pytest tests/test_filename.py::TestClassName -v`
 
-### Development
+### Docker
+- **Run published image**: `make docker-run`
+- **Build image**: `make docker-build`
+- **Stop container**: `make docker-stop`
 
-```bash
-# Install dependencies (uses uv)
-uv pip install -e ".[dev]"
+## Architecture & Project Structure
 
-# Run the application locally
-uv run python web-tool.py
+The `web-tool` is a utility for extracting and processing information from web pages, primarily interacting with the user via browser bookmarklets.
 
-# Run with Docker
-docker run -d --restart always -p 8532:8532 -v $(pwd)/web-tool:/data --name web-tool dockmann/web-tool
-```
+### High-Level Flow
+1. **Client-Side**: Bookmarklets (`static/js/*.js`) capture page data and copy it to the clipboard.
+2. **Server-Side**: A Flask application (`web-tool.py`) processes the captured data via various endpoints (e.g., `/clip-collector`, `/mirror-clip`).
+3. **Processing**: The `library/` directory contains the core logic for HTML parsing, text extraction, and favicon management.
 
-### Testing
+### Key Components
+- **Core Application**: `web-tool.py` - The main entry point and Flask server.
+- **Logic Library**: `library/` - Contains the business logic, utility functions, and helper classes.
+- **Favicon System**: Implements a three-tier cache for favicons:
+    1. `static/favicon-overrides.yml` (User Overrides - Highest priority)
+    2. `static/favicon.yml` (App Defaults - Medium priority)
+    3. `local-cache/favicon.yml` or `/data/favicon.yml` (Auto-discovered - Lowest priority)
+- **Static Assets**: `static/` contains JavaScript for bookmarklets, CSS, and favicon configurations.
+- **Templates**: `templates/` contains HTML templates for the web interface.
 
-```bash
-# Run all tests
-uv run pytest
-
-# Run specific test file
-uv run pytest tests/test_title_variants.py -v
-
-# Run specific test class
-uv run pytest tests/test_title_variants.py::TestAsciiAndEmojis -v
-
-# Run with coverage
-uv run pytest tests/ --cov=library --cov-report=html
-
-# Run tests matching a pattern
-uv run pytest -k "emoji" -v
-```
-
-### Code Quality
-
-```bash
-# Format code with ruff
-make format
-
-# Run ruff linting
-make lint
-
-# Run all quality checks
-make check
-
-# Clean temporary files
-make clean
-```
-
-## Architecture
-
-### Core Pattern: Capture-and-Process
-
-The application follows a bookmarklet-driven workflow:
-
-1. **Capture Phase**: Browser bookmarklets capture page metadata (URL, title, HTML) via JavaScript
-2. **Transmission Phase**: Large data is split into chunks and sent to clipboard collection endpoints
-3. **Processing Phase**: Server endpoints retrieve and process data from the clipboard cache
-4. **Output Phase**: Results are returned in multiple formats (HTML, JSON, plain text)
-
-### Clipboard System
-
-A batch-based cache handles large payloads that exceed clipboard limits:
-
-- **POST /clip-collector**: Receives numbered chunks with a batchId UUID
-- **GET /mirror-clip**: Reconstructs full clipboard from cached chunks
-- **TTL**: 10 minutes (`CLIP_CACHE_TTL_SECONDS`)
-- **Limits**: 100 batches max, memory-capped at 50% of available RAM
-- **Container vs Local**: In containers, uses proxy-based clipboard access; locally uses `pyperclip`
-
-### Text Extraction Pipeline
-
-Two extraction methods are available:
-
-1. **NLP-based** (`/mirror-text`): Uses NLTK to intelligently filter content, includes script tags with readable text, removes boilerplate via word/token analysis
-2. **Simple** (`/mirror-soup-text`): Uses BeautifulSoup's `get_text()`, excludes script/style tags, faster but less comprehensive
-
-### Favicon Cache System
-
-Three-tier hierarchical lookup (highest to lowest priority):
-
-1. **User Overrides** (`static/favicon-overrides.yml`): Manual customizations
-2. **App Defaults** (`static/favicon.yml`): Distributed defaults
-3. **Auto-Discovered** (`local-cache/favicon.yml` or `/data/favicon.yml` in container): Dynamically cached
-
-**Cache Key Rules**:
-- Domain-only: `example.com` applies to all pages on domain
-- Path-specific: `example.com/docs` applies to specific sections
-- `www.` prefix is normalized away
-- More specific keys take precedence
-
-### Key Modules
-
-| Module | Purpose |
-|--------|---------|
-| `web-tool.py` | Flask application with all endpoints |
-| `library/util.py` | PageMetadata, MirrorData, TitleVariants, clipboard cache |
-| `library/text_util.py` | NLP-based text extraction, content filtering |
-| `library/html_util.py` | Favicon discovery, HTML parsing, cache management |
-| `library/url_util.py` | URL fetching, parsing, image size detection |
-| `library/img_util.py` | ICO/SVG to PNG conversion |
-| `library/unicode_util.py` | ASCII conversion, emoji handling, path-safe filenames |
-| `library/docker_util.py` | Container detection |
-
-### Title Variant Generation
-
-The `TitleVariants` class generates four variants for each page title:
-
-- **Original**: Unchanged
-- **ASCII + Emoji**: Unicode converted to ASCII, emojis preserved
-- **ASCII Only**: Full ASCII conversion (emojis → text equivalents)
-- **Path Safe**: Valid filename (invalid chars removed, unicode converted)
-
-### URL Variant Generation
-
-Pages generate multiple URL variants for different use cases:
-
-- **Original**: Full URL with query string
-- **With Fragment**: Includes anchor hash
-- **Clean**: No query string or fragment
-- **Root**: First path segment only
-- **Host**: Domain and protocol only
-
-### Fragment Text Extraction
-
-When URLs contain fragments (`#anchor`), the system attempts to find associated content through multiple strategies: heading elements with matching IDs, anchor tags inside headings, wrapper sections, sibling headings, etc.
-
-## Key Dependencies
-
-- **BeautifulSoup**: HTML parsing
-- **NLTK**: Natural language processing for intelligent text filtering
-- **Magika**: Content type detection for text filtering
-- **CairoSVG/Pillow**: Image conversion (ICO/SVG → PNG)
-- **Flask/Jinja2**: Web framework and templating
-- **pyperclip**: Local clipboard access (non-container only)
-
-## Constraints
-
-- **Python Version**: Strictly 3.11 (not 3.12)
-- **Line Length**: 100 characters (ruff configuration)
-- **Test Coverage Target**: 80%+ for new features
+### Technical Stack
+- **Backend**: Python 3.11, Flask
+- **HTML Parsing**: BeautifulSoup4, lxml
+- **Image/SVG Processing**: CairoSVG, Pillow, Magika
+- **Text Processing**: NLTK, anyascii
+- **Package Management**: `uv`
+- **Linting/Formatting**: Ruff

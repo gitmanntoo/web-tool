@@ -9,25 +9,14 @@
     <h1>Mirror Links</h1>
     
     <div class="metadata-panel">
-        <h2>Links</h2>
+        <h2>Link</h2>
         <div class="url-list">
             <div class="url-item" style="flex-direction: column; align-items: flex-start;">
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <input type="radio" name="link_variant" value="default" checked>
-                    <button class="copy-btn" id="default-link-copy">Copy</button>
-                    <span style="min-width: 100px;"><strong>Default</strong></span>
-                    <span id="default-link-display"></span>
+                    <button class="copy-btn" id="main-link-copy">Copy</button>
+                    <span id="main-link-display"></span>
                 </div>
-                <div style="margin-left: 140px; color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="default-link-html"></div>
-            </div>
-            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <input type="radio" name="link_variant" value="custom">
-                    <button class="copy-btn" id="custom-link-copy">Copy</button>
-                    <span style="min-width: 100px;"><strong>Custom</strong></span>
-                    <span id="custom-link-display"></span>
-                </div>
-                <div style="margin-left: 140px; color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="custom-link-html"></div>
+                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="main-link-html"></div>
             </div>
         </div>
     </div>
@@ -73,9 +62,14 @@
     <div class="metadata-panel">
         <h2>URL</h2>
         <div class="url-list">
+            {% set ns = namespace(found_default=false) %}
             {% for variant in url_variants %}
+                {% set is_default = variant.label == 'Clean' %}
+                {% if is_default and not ns.found_default %}
+                    {% set ns.found_default = true %}
+                {% endif %}
                 <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
-                    <input type="radio" name="url_variant" value="url{{ loop.index0 }}" data-text="{{ variant.url|e }}" {% if loop.first %}checked{% endif %}>
+                    <input type="radio" name="url_variant" value="url{{ loop.index0 }}" data-text="{{ variant.url|e }}" {% if is_default or (loop.first and not ns.found_default) %}checked{% endif %}>
                     <button class="copy-btn" data-html="{{ variant.url|e }}">Copy</button>
                     <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
                     <span><a href="{{ variant.url }}">{{ variant.url|e }}</a></span>
@@ -134,6 +128,14 @@
             favicon: {% if favicon %}'{{ favicon|e }}'{% else %}null{% endif %}
         };
 
+        // State tracking
+        const state = {
+            title: defaultValues.title,
+            fragmentText: '',
+            url: '',
+            favicon: true
+        };
+
         // Function to escape HTML for display
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -144,58 +146,32 @@
         // Function to build a link
         function buildLink(title, fragmentText, url, includeFavicon) {
             let html = '';
-            
+
             // Add favicon if requested
             if (includeFavicon && defaultValues.favicon) {
                 html += `<img src="${escapeHtml(defaultValues.favicon)}" width="20" alt="Favicon" /> `;
             }
-            
+
             // Add link with appropriate text
             const linkText = fragmentText ? `${fragmentText} - ${title}` : title;
             html += `<a target="_blank" href="${escapeHtml(url)}">${escapeHtml(linkText)}</a>`;
-            
+
             return html;
         }
 
-        // Function to update links
-        function updateLinks() {
-            // Build default link (always uses original values)
-            const defaultLink = buildLink(
-                defaultValues.title,
-                defaultValues.fragmentText,
-                defaultValues.url,
-                true // always include favicon for default
-            );
-            
-            // Display default link
-            document.getElementById('default-link-display').innerHTML = defaultLink;
-            document.getElementById('default-link-html').textContent = defaultLink;
-            document.getElementById('default-link-copy').dataset.html = defaultLink;
-            
-            // Build custom link from selections
-            const titleRadio = document.querySelector('input[name="title_variant"]:checked');
-            const title = titleRadio ? titleRadio.dataset.text : defaultValues.title;
-            
-            const fragmentRadio = document.querySelector('input[name="fragment_variant"]:checked');
-            const fragmentText = fragmentRadio ? fragmentRadio.dataset.text : '';
-            
-            const urlRadio = document.querySelector('input[name="url_variant"]:checked');
-            const url = urlRadio ? urlRadio.dataset.text : defaultValues.url;
-            
-            const faviconCheckbox = document.getElementById('include_favicon');
-            const includeFavicon = faviconCheckbox ? faviconCheckbox.checked : false;
-            
-            const customLink = buildLink(title, fragmentText, url, includeFavicon);
-            
-            // Display custom link
-            document.getElementById('custom-link-display').innerHTML = customLink;
-            document.getElementById('custom-link-html').textContent = customLink;
-            document.getElementById('custom-link-copy').dataset.html = customLink;
-            
-            // Auto-copy custom link when selections change
+        // Function to render the current state to the DOM
+        function render() {
+            const activeLink = buildLink(state.title, state.fragmentText, state.url, state.favicon);
+
+            // Update display elements
+            document.getElementById('main-link-display').innerHTML = activeLink;
+            document.getElementById('main-link-html').textContent = activeLink;
+            document.getElementById('main-link-copy').dataset.html = activeLink;
+
+            // Auto-copy to clipboard
             if (linksInitialized) {
-                navigator.clipboard.writeText(customLink).then(() => {
-                    console.log('Custom link copied to clipboard');
+                navigator.clipboard.writeText(activeLink).then(() => {
+                    console.log('Link copied to clipboard');
                 });
             }
         }
@@ -205,13 +181,13 @@
             const tooltip = document.createElement('span');
             tooltip.textContent = message;
             tooltip.style.cssText = 'position: absolute; background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; z-index: 1000; pointer-events: none;';
-            
+
             const rect = btn.getBoundingClientRect();
             tooltip.style.left = rect.left + 'px';
             tooltip.style.top = (rect.top - 30) + 'px';
-            
+
             document.body.appendChild(tooltip);
-            
+
             setTimeout(() => {
                 tooltip.remove();
             }, 1500);
@@ -236,26 +212,50 @@
 
         // Attach listeners on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Build initial links
-            updateLinks();
-            
+            // Sync initial state from DOM
+            const titleRadio = document.querySelector('input[name="title_variant"]:checked');
+            state.title = titleRadio ? titleRadio.dataset.text : defaultValues.title;
+
+            const fragmentRadio = document.querySelector('input[name="fragment_variant"]:checked');
+            state.fragmentText = fragmentRadio ? fragmentRadio.dataset.text : '';
+
+            const urlRadio = document.querySelector('input[name="url_variant"]:checked');
+            state.url = urlRadio ? urlRadio.dataset.text : defaultValues.url;
+
+            const faviconCheckbox = document.getElementById('include_favicon');
+            state.favicon = faviconCheckbox ? faviconCheckbox.checked : false;
+
+            // Initial render
+            render();
+
             // Attach copy listeners
             attachCopyListeners();
-            
-            // Auto-copy default link on page load
+
+            // Initial auto-copy
             setTimeout(() => {
-                const defaultLink = document.getElementById('default-link-copy').dataset.html;
-                if (defaultLink) {
-                    navigator.clipboard.writeText(defaultLink).then(() => {
-                        console.log('Default link copied to clipboard');
+                const initialLink = document.getElementById('main-link-copy').dataset.html;
+                if (initialLink) {
+                    navigator.clipboard.writeText(initialLink).then(() => {
+                        console.log('Initial link copied to clipboard');
                         linksInitialized = true;
                     });
                 }
             }, 100);
-            
-            // Listen for changes to update custom link
-            document.querySelectorAll('input[type="radio"]:not([name="link_variant"]), input[type="checkbox"]').forEach(input => {
-                input.addEventListener('change', updateLinks);
+
+            // Listen for changes to update state and render
+            document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    if (input.name === 'title_variant') {
+                        state.title = input.dataset.text;
+                    } else if (input.name === 'fragment_variant') {
+                        state.fragmentText = input.dataset.text;
+                    } else if (input.name === 'url_variant') {
+                        state.url = input.dataset.text;
+                    } else if (input.id === 'include_favicon') {
+                        state.favicon = input.checked;
+                    }
+                    render();
+                });
             });
         });
     </script>

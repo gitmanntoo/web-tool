@@ -37,14 +37,14 @@ help:
 	@echo "  make docker-stop   - Stop running container"
 	@echo "  make docker-clean  - Stop container and prune build cache"
 
-# Install with all dependencies
+# Install with runtime dependencies only
 install:
-	@echo "Installing project with all dependencies..."
-	uv pip install -e ".[dev]"
+	@echo "Installing project with runtime dependencies..."
+	uv pip install -e .
 
-# Install development dependencies
+# Install with all dependencies (including dev)
 dev:
-	@echo "Installing development dependencies..."
+	@echo "Installing project with development dependencies..."
 	uv pip install -e ".[dev]"
 
 # Run the application locally

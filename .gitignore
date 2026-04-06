@@ -63,3 +63,4 @@ venv.bak/
 # Project specific
 local-cache/
 .env
+uv.lock
