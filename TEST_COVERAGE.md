@@ -16,12 +16,12 @@ tests/
 ├── test_unicode_util.py         # Unicode utility tests (~20 tests)
 ├── test_text_util.py            # Text processing tests (~30 tests)
 ├── test_url_util.py             # URL parsing tests (~15 tests)
-├── test_html_util.py            # HTML/favicon tests (~20 tests)
+├── test_html_util.py            # HTML/favicon tests (~35 tests)
 ├── test_docker_util.py          # Container detection tests (~15 tests)
-└── test_img_util.py             # Image conversion tests (~20 tests)
+└── test_img_util.py             # Image conversion tests (~30 tests)
 ```
 
-**Total: ~160+ test cases across 8 test modules**
+**Total: ~210+ test cases across 8 test modules**
 
 ## Module-by-Module Coverage
 
@@ -83,7 +83,7 @@ tests/
 - HTTPS/HTTP protocol handling
 - Error handling and defaults
 
-### 4. `test_html_util.py` (~20 tests)
+### 4. `test_html_util.py` (~35 tests)
 **Purpose:** Test HTML parsing, favicon discovery, and metadata
 
 **Test Classes:**
@@ -92,12 +92,17 @@ tests/
 - `TestFaviconCacheStructure` (3 tests) - Cache path configuration
 - `TestRelLinkValidation` (5 tests) - Link validation logic
 - `TestRelLinkComparison` (3 tests) - Link comparison
+- `TestRelLinkInlineImage` (3 tests) - inline_image field handling
+- `TestGetFaviconCacheDictFormat` (3 tests) - Dict-format cache entries
+- `TestGetFaviconCacheSource` (3 tests) - Cache source detection with dict format
 
 **Coverage:**
 - Favicon link representation and validation
 - Cache configuration (overrides, defaults, auto-discovered)
 - Link metadata (rel, sizes, dimensions)
 - Favicon constants and paths
+- Inline base64 image storage in cache
+- Dict-format cache entry handling
 
 ### 5. `test_docker_util.py` (~15 tests)
 **Purpose:** Test container detection logic
@@ -120,7 +125,7 @@ tests/
 - Exception handling for missing/unreadable files
 - Integration with actual system
 
-### 6. `test_img_util.py` (~20 tests)
+### 6. `test_img_util.py` (~30 tests)
 **Purpose:** Test image conversion utilities
 
 **Test Classes:**
@@ -129,6 +134,8 @@ tests/
 - `TestConvertSvg` (8 tests) - SVG to PNG conversion
 - `TestImageConversionIntegration` (4 tests) - Integration tests
 - `TestImageConversionEdgeCases` (4 tests) - Edge cases
+- `TestEncodeFaviconInline` (10 tests) - Favicon inline base64 encoding
+- `TestEncodeFaviconInlineIntegration` (2 tests) - Integration tests
 
 **Coverage:**
 - Function signatures and parameters
@@ -136,6 +143,7 @@ tests/
 - Error handling (network errors, invalid formats)
 - Format conversion options
 - Empty and malformed input handling
+- Favicon inline base64 encoding with height-based resizing
 
 ### 7. `test_title_variants.py` (~40 tests)
 **Purpose:** Test title variant generation (existing tests)
