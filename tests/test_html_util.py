@@ -5,13 +5,14 @@ Tests HTML parsing, favicon discovery, and metadata extraction.
 """
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from library.html_util import (
     COMMON_FAVICON_FILES,
     FAVICON_REL,
-    FAVICON_WIDTH,
+    FAVICON_HEIGHT,
     ICO_TO_PNG_PATH,
     SVG_TO_PNG_PATH,
     RelLink,
@@ -90,9 +91,9 @@ class TestFaviconConstants:
         """Test that COMMON_FAVICON_FILES is a list."""
         assert isinstance(COMMON_FAVICON_FILES, list)
 
-    def test_favicon_width_is_positive(self):
-        """Test that FAVICON_WIDTH is positive."""
-        assert FAVICON_WIDTH > 0
+    def test_favicon_height_is_positive(self):
+        """Test that FAVICON_HEIGHT is positive."""
+        assert FAVICON_HEIGHT > 0
 
     def test_ico_to_png_path_is_string(self):
         """Test that ICO_TO_PNG_PATH is a string."""
@@ -181,6 +182,162 @@ class TestRelLinkComparison:
         link1 = RelLink(href="http://example.com/favicon.ico", cache_key="example.com")
         link2 = RelLink(href="http://example.com/favicon.ico", cache_key="www.example.com")
         assert link1.cache_key != link2.cache_key
+
+
+class TestRelLinkInlineImage:
+    """Tests for RelLink inline_image field."""
+
+    def test_inline_image_defaults_to_none(self):
+        """Test that inline_image defaults to None."""
+        link = RelLink(href="http://example.com/favicon.ico")
+        assert link.inline_image is None
+
+    def test_inline_image_can_be_set(self):
+        """Test that inline_image can be set."""
+        link = RelLink(href="http://example.com/favicon.ico")
+        link.inline_image = "data:image/png;base64,abc123"
+        assert link.inline_image == "data:image/png;base64,abc123"
+
+    def test_inline_image_with_all_fields(self):
+        """Test initialization with inline_image."""
+        inline_data = "data:image/png;base64,xyz789"
+        link = RelLink(
+            href="http://example.com/favicon.ico",
+            cache_key="example.com",
+            height=20,
+            width=20,
+            image_type="image/png",
+            inline_image=inline_data,
+        )
+        assert link.inline_image == inline_data
+
+
+class TestGetFaviconCacheDictFormat:
+    """Tests for get_favicon_cache handling dict-format cache entries."""
+
+    @patch("library.html_util._load_yaml_with_cache")
+    def test_get_favicon_cache_with_string_entry(self, mock_load_cache):
+        """Test that string-format cache entries work correctly."""
+        from library.html_util import get_favicon_cache
+
+        # Setup mock to return string-format entry
+        mock_load_cache.side_effect = [
+            {},  # overrides_cache
+            {},  # defaults_cache
+            {"example.com": "http://example.com/favicon.ico"},  # discovered_cache
+        ]
+
+        result = get_favicon_cache("http://example.com/some/path")
+
+        assert result is not None
+        assert result.href == "http://example.com/favicon.ico"
+        assert result.inline_image is None
+
+    @patch("library.html_util._load_yaml_with_cache")
+    def test_get_favicon_cache_with_dict_entry(self, mock_load_cache):
+        """Test that dict-format cache entries with inline data work correctly."""
+        from library.html_util import get_favicon_cache
+
+        inline_data = "data:image/png;base64,abc123"
+        # Setup mock to return dict-format entry with inline
+        mock_load_cache.side_effect = [
+            {
+                "example.com": {
+                    "url": "http://example.com/favicon.png",
+                    "inline_image": inline_data,
+                }
+            },  # overrides_cache
+            {},  # defaults_cache
+            {},  # discovered_cache
+        ]
+
+        result = get_favicon_cache("http://example.com/some/path")
+
+        assert result is not None
+        assert result.href == "http://example.com/favicon.png"
+        assert result.inline_image == inline_data
+
+    @patch("library.html_util._load_yaml_with_cache")
+    def test_get_favicon_cache_with_dict_entry_no_inline(self, mock_load_cache):
+        """Test that dict-format entry without inline sets inline_image to None."""
+        from library.html_util import get_favicon_cache
+
+        # Setup mock to return dict-format entry without inline
+        mock_load_cache.side_effect = [
+            {"example.com": {"url": "http://example.com/favicon.png"}},  # overrides_cache
+            {},  # defaults_cache
+            {},  # discovered_cache
+        ]
+
+        result = get_favicon_cache("http://example.com/some/path")
+
+        assert result is not None
+        assert result.href == "http://example.com/favicon.png"
+        assert result.inline_image is None
+
+
+class TestGetFaviconCacheSource:
+    """Tests for get_favicon_cache_source handling dict-format cache entries."""
+
+    @patch("library.html_util._load_yaml_with_cache")
+    def test_get_favicon_cache_source_with_string_entry(self, mock_load_cache):
+        """Test that string-format cache entries work correctly."""
+        from library.html_util import get_favicon_cache_source
+
+        # Function calls loaders in order: discovered, defaults, overrides
+        mock_load_cache.side_effect = [
+            {"example.com": "http://example.com/favicon.ico"},  # discovered_cache (called 1st)
+            {},  # defaults_cache (called 2nd)
+            {},  # overrides_cache (called 3rd)
+        ]
+
+        result = get_favicon_cache_source(
+            "http://example.com/path", "http://example.com/favicon.ico"
+        )
+
+        assert result["file"] == "discovered"
+        assert result["precedence"] == 3
+
+    @patch("library.html_util._load_yaml_with_cache")
+    def test_get_favicon_cache_source_with_dict_entry(self, mock_load_cache):
+        """Test that dict-format cache entries match correctly."""
+        from library.html_util import get_favicon_cache_source
+
+        # Function calls loaders in order: discovered, defaults, overrides
+        mock_load_cache.side_effect = [
+            {},  # discovered_cache (called 1st)
+            {},  # defaults_cache (called 2nd)
+            {
+                "example.com": {"url": "http://example.com/favicon.png", "inline_image": "data:xxx"}
+            },  # overrides_cache (called 3rd)
+        ]
+
+        result = get_favicon_cache_source(
+            "http://example.com/path", "http://example.com/favicon.png"
+        )
+
+        assert result["file"] == "override"
+        assert result["precedence"] == 1
+        assert result["cache_key"] == "example.com"
+
+    @patch("library.html_util._load_yaml_with_cache")
+    def test_get_favicon_cache_source_returns_not_found_for_mismatch(self, mock_load_cache):
+        """Test that get_favicon_cache_source returns not found when URL doesn't match."""
+        from library.html_util import get_favicon_cache_source
+
+        # Function calls loaders in order: discovered, defaults, overrides
+        mock_load_cache.side_effect = [
+            {},  # discovered_cache (called 1st)
+            {},  # defaults_cache (called 2nd)
+            {
+                "example.com": {"url": "http://example.com/favicon.png", "inline_image": "data:xxx"}
+            },  # overrides_cache (called 3rd)
+        ]
+
+        result = get_favicon_cache_source("http://example.com/path", "http://other.com/favicon.ico")
+
+        assert result["file"] is None
+        assert result["precedence"] is None
 
 
 if __name__ == "__main__":

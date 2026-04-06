@@ -31,15 +31,12 @@ def prettify_html(html_text: str) -> str:
 
     try:
         root = lxml_html.fromstring(html_text)
-        return lxml_html.tostring(
-            root,
-            pretty_print=True,
-            encoding="unicode"
-        )
+        return lxml_html.tostring(root, pretty_print=True, encoding="unicode")
     except Exception:
         return html_text
 
-FAVICON_WIDTH = 20
+
+FAVICON_HEIGHT = 20
 
 # Three-tier favicon cache system:
 # 1. User overrides (highest priority) - manual customizations
@@ -94,6 +91,7 @@ class RelLink:
     height: int = 0
     width: int = 0
     image_type: str = None
+    inline_image: str = None
     _validated: bool = False
 
     def validate(self) -> bool:
@@ -141,7 +139,7 @@ class PageMetadata:
 
 
 def get_page_metadata(
-    meta: PageMetadata = None, max_favicon_links: int = 1, favicon_width: int = FAVICON_WIDTH
+    meta: PageMetadata = None, max_favicon_links: int = 1, favicon_height: int = FAVICON_HEIGHT
 ) -> PageMetadata:
     """Add metadata to PageMetadata object."""
 
@@ -180,7 +178,7 @@ def get_page_metadata(
 
     # Extract favicon links from the HTML page sorted by optimal size.
     favicon_links = get_favicon_links(meta.url, meta.html)
-    sorted_links = sort_favicon_links(favicon_links, favicon_width, max_favicon_links)
+    sorted_links = sort_favicon_links(favicon_links, favicon_height, max_favicon_links)
 
     # Validate only the top candidates (lazy validation)
     meta.favicons = validate_top_candidates(sorted_links, max_count=max_favicon_links)
@@ -263,16 +261,21 @@ def get_favicon_cache(page_url) -> RelLink:
     search_paths = []
     parsed = urlparse(page_url)
 
+    # Normalize netloc by stripping www. prefix for consistent matching
+    netloc = parsed.netloc
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+
     # Get the first part of the path.
     path_part = parsed.path
     if path_part.startswith("/"):
         path_part = path_part[1:]
     if len(path_part) > 0:
         path_part = path_part.split("/")[0]
-        search_paths.append(f"{parsed.netloc}/{path_part}")
+        search_paths.append(f"{netloc}/{path_part}")
 
     # Split the netloc into parts and add paths until there are just two parts.
-    tokens = parsed.netloc.split(".")
+    tokens = netloc.split(".")
     while len(tokens) > 1:
         search_paths.append(".".join(tokens))
         tokens.pop(0)
@@ -284,11 +287,25 @@ def get_favicon_cache(page_url) -> RelLink:
         (discovered_cache, "discovered"),
     ]:
         for s in search_paths:
-            if favicon := cache_dict.get(s):
+            if cached := cache_dict.get(s):
+                # Handle both string and dict cache formats
+                if isinstance(cached, dict):
+                    # New format: {'url': url, 'inline_image': inline_data}
+                    href = cached.get("url", "")
+                    inline_image = cached.get("inline_image", None)
+                    # Skip entries with missing or empty URL
+                    if not href:
+                        continue
+                else:
+                    # Legacy format: plain URL string
+                    href = cached
+                    inline_image = None
+
                 # Cached favicons are pre-validated, no HTTP check needed
-                r = RelLink(favicon, cache_key=s)
+                r = RelLink(href, cache_key=s)
                 r._validated = True
-                r.resolved_href = favicon
+                r.resolved_href = href
+                r.inline_image = inline_image
                 # Mark as valid by setting a reasonable default type
                 r.image_type = "image/png"
                 return r
@@ -321,16 +338,21 @@ def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
     search_paths = []
     parsed = urlparse(page_url)
 
+    # Normalize netloc by stripping www. prefix for consistent matching
+    netloc = parsed.netloc
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+
     # Get the first part of the path
     path_part = parsed.path
     if path_part.startswith("/"):
         path_part = path_part[1:]
     if len(path_part) > 0:
         path_part = path_part.split("/")[0]
-        search_paths.append(f"{parsed.netloc}/{path_part}")
+        search_paths.append(f"{netloc}/{path_part}")
 
     # Split the netloc into parts and add paths until there are just two parts
-    tokens = parsed.netloc.split(".")
+    tokens = netloc.split(".")
     while len(tokens) > 1:
         search_paths.append(".".join(tokens))
         tokens.pop(0)
@@ -343,8 +365,13 @@ def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
     ]:
         for search_path in search_paths:
             if cached_favicon := cache_dict.get(search_path):
+                # Handle both string and dict cache formats
+                if isinstance(cached_favicon, dict):
+                    cached_url = cached_favicon.get("url", "")
+                else:
+                    cached_url = cached_favicon
                 # Check if this cached favicon matches the one we're looking for
-                if cached_favicon == favicon_href:
+                if cached_url == favicon_href:
                     return {"file": cache_file, "cache_key": search_path, "precedence": precedence}
 
     # Not found in any cache
@@ -533,7 +560,7 @@ def get_common_favicon_links(page_url):
 
 
 def sort_favicon_links(
-    favicons: list[RelLink], favicon_width: int = FAVICON_WIDTH, include: str = None
+    favicons: list[RelLink], favicon_height: int = FAVICON_HEIGHT, include: str = None
 ) -> list[RelLink]:
     """Sort favicons to prefer those closest to target size.
 
@@ -550,7 +577,7 @@ def sort_favicon_links(
 
     Args:
         favicons: List of favicon links to sort
-        favicon_width: Target width in pixels (default: 20)
+        favicon_height: Target height in pixels (default: 20)
         include: If "all", include all favicons; otherwise return only best match
 
     Returns:
@@ -575,8 +602,8 @@ def sort_favicon_links(
         "svg-conversion": 100,
     }
 
-    # Target area for optimal favicon size
-    target_area = favicon_width * favicon_width
+    # Target area for optimal favicon size (based on height)
+    target_area = favicon_height * favicon_height
 
     # Define a key function that returns the sorting key.
     def key_fn(x: RelLink):

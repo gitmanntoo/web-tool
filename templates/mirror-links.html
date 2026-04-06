@@ -81,11 +81,28 @@
     {% if favicon %}
     <div class="favicon-section">
         <h2>Favicon</h2>
-        <div class="favicon-display">
-            <input type="checkbox" id="include_favicon" checked>
-            <img src="{{ favicon }}" width="20" alt="Favicon" data-url="{{ favicon|e }}" />
-            <button class="copy-btn" data-html="{{ favicon|e }}">Copy</button>
-            <a href="{{ favicon }}">{{ favicon|e }}</a>
+        <div class="url-list">
+            <div class="url-item">
+                <input type="radio" name="favicon_option" value="none">
+                <span style="min-width: 100px;"><strong>None</strong></span>
+            </div>
+            {% if favicon_inline %}
+            <div class="url-item">
+                <input type="radio" name="favicon_option" value="inline" checked>
+                <button class="copy-btn" data-html="&lt;img src=&quot;{{ favicon_inline|e }}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
+                <span style="min-width: 100px;"><strong>Inline</strong></span>
+                <img src="{{ favicon_inline }}" height="20" alt="Favicon" />
+                <span>{{ favicon_inline|e }}</span>
+            </div>
+            {% else %}
+            <div class="url-item">
+                <input type="radio" name="favicon_option" value="url" checked>
+                <button class="copy-btn" data-html="{{ favicon|e }}">Copy</button>
+                <span style="min-width: 100px;"><strong>URL</strong></span>
+                <img src="{{ favicon }}" height="20" alt="Favicon" />
+                <span><a href="{{ favicon|e }}">{{ favicon|e }}</a></span>
+            </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}
@@ -125,7 +142,8 @@
             title: '{{ title_variants[0].value|e }}',
             fragmentText: {% if fragment %}'{{ fragment_text|e }}'{% else %}''{% endif %},
             url: '{{ url_variants[0].url|e }}',
-            favicon: {% if favicon %}'{{ favicon|e }}'{% else %}null{% endif %}
+            favicon: {% if favicon %}'{{ favicon|e }}'{% else %}null{% endif %},
+            faviconInline: {% if favicon_inline %}{{ favicon_inline|tojson }}{% else %}null{% endif %}
         };
 
         // State tracking
@@ -133,7 +151,7 @@
             title: defaultValues.title,
             fragmentText: '',
             url: '',
-            favicon: true
+            faviconOption: 'url'  // Will be overridden by DOMContentLoaded from checked radio
         };
 
         // Function to escape HTML for display
@@ -144,12 +162,14 @@
         }
 
         // Function to build a link
-        function buildLink(title, fragmentText, url, includeFavicon) {
+        function buildLink(title, fragmentText, url, faviconOption) {
             let html = '';
 
             // Add favicon if requested
-            if (includeFavicon && defaultValues.favicon) {
-                html += `<img src="${escapeHtml(defaultValues.favicon)}" width="20" alt="Favicon" /> `;
+            if (faviconOption === 'inline' && defaultValues.faviconInline) {
+                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="20" alt="Favicon" /> `;
+            } else if (faviconOption === 'url' && defaultValues.favicon) {
+                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="20" alt="Favicon" /> `;
             }
 
             // Add link with appropriate text
@@ -161,7 +181,7 @@
 
         // Function to render the current state to the DOM
         function render() {
-            const activeLink = buildLink(state.title, state.fragmentText, state.url, state.favicon);
+            const activeLink = buildLink(state.title, state.fragmentText, state.url, state.faviconOption);
 
             // Update display elements
             document.getElementById('main-link-display').innerHTML = activeLink;
@@ -222,8 +242,8 @@
             const urlRadio = document.querySelector('input[name="url_variant"]:checked');
             state.url = urlRadio ? urlRadio.dataset.text : defaultValues.url;
 
-            const faviconCheckbox = document.getElementById('include_favicon');
-            state.favicon = faviconCheckbox ? faviconCheckbox.checked : false;
+            const faviconRadio = document.querySelector('input[name="favicon_option"]:checked');
+            state.faviconOption = faviconRadio ? faviconRadio.value : 'none';
 
             // Initial render
             render();
@@ -251,8 +271,8 @@
                         state.fragmentText = input.dataset.text;
                     } else if (input.name === 'url_variant') {
                         state.url = input.dataset.text;
-                    } else if (input.id === 'include_favicon') {
-                        state.favicon = input.checked;
+                    } else if (input.name === 'favicon_option') {
+                        state.faviconOption = input.value;
                     }
                     render();
                 });

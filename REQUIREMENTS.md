@@ -433,6 +433,11 @@ For each segment, displays:
 - If no favicon cached: Automatically caches the top favicon for future use
 - Uses [favicon cache system](#favicon-system) with three-tier priority
 
+**Favicon Display:**
+- Favicon images use `height="20"` with aspect ratio preserved
+- Inline base64 option shown only when favicon is stored with inline data in cache
+- URL option copies just the URL; Inline option copies full `<img>` tag with base64 data
+
 **Implementation:** [web-tool.py](web-tool.py) - `get_mirror_links()` function; [library/util.py](library/util.py) - `TitleVariants` class; [library/url_util.py](library/url_util.py) - URL parsing functions
 
 ---
@@ -447,6 +452,8 @@ The favicon system uses a three-tier hierarchical cache:
    - Manual customizations edited by users
    - Domain-level: `example.com: https://example.com/favicon.ico`
    - Path-level: `example.com/docs: https://example.com/docs/favicon.ico`
+   - Inline format: `example.com: {url: "https://...", inline_image: "data:image/png;base64,..."}`
+   - The inline format stores a pre-sized (height=20) base64-encoded PNG for optimal link size
 
 2. **App Defaults** (`static/favicon.yml`) — Medium priority
    - Pre-configured favicons distributed with the application
@@ -500,7 +507,13 @@ Each favicon shows which cache file it comes from:
 **User Interface Elements:**
 - "Add to Overrides" button available for each favicon
 - Scope selector: Domain-level or Path-level override
+- "Save as inline" checkbox: Stores favicon as pre-sized (height=20) base64-encoded inline image
 - Real-time cache update feedback
+
+**mirror-favicons Page Display:**
+- INLINE badge shown for favicons stored with inline base64 data
+- Favicon previews use `height="20"` (aspect ratio preserved)
+- Shows both URL preview and inline base64 preview when available
 
 **Implementation:** [web-tool.py](web-tool.py) - `get_mirror_favicons()` function; [library/html_util.py](library/html_util.py) - `get_favicon_links()`, `sort_favicon_links()`, `add_favicon_to_cache()` functions
 
@@ -514,6 +527,7 @@ Each favicon shows which cache file it comes from:
 - `favicon_url` (required): URL of the favicon to cache
 - `page_url` (required): URL of the page (used to determine cache key)
 - `scope` (optional, default: `domain`): Cache scope - `domain` or `path`
+- `save_inline` (optional, default: `false`): If `true`, stores favicon as inline base64 (pre-sized to height=20)
 
 **Response (JSON):**
 
@@ -537,6 +551,7 @@ Each favicon shows which cache file it comes from:
 - Parses `page_url` to extract domain (and path if scope=`path`)
 - Normalizes domain by removing `www.` prefix
 - Loads existing overrides from `static/favicon-overrides.yml`
+- If `save_inline` is `true`, fetches the favicon image, resizes to height=20 (preserving aspect ratio), and stores as base64-encoded inline data
 - Adds/updates the new override
 - Writes file back, preserving header comments and YAML formatting
 - Invalidates in-memory cache to force reload on next request
