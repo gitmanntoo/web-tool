@@ -241,7 +241,9 @@ class TestGetFaviconCacheDictFormat:
         inline_data = "data:image/png;base64,abc123"
         # Setup mock to return dict-format entry with inline
         mock_load_cache.side_effect = [
-            {"example.com": {"url": "http://example.com/favicon.png", "inline": inline_data}},  # overrides_cache
+            {
+                "example.com": {"url": "http://example.com/favicon.png", "inline": inline_data}
+            },  # overrides_cache
             {},  # defaults_cache
             {},  # discovered_cache
         ]
@@ -286,7 +288,9 @@ class TestGetFaviconCacheSource:
             {},  # overrides_cache (called 3rd)
         ]
 
-        result = get_favicon_cache_source("http://example.com/path", "http://example.com/favicon.ico")
+        result = get_favicon_cache_source(
+            "http://example.com/path", "http://example.com/favicon.ico"
+        )
 
         assert result["file"] == "discovered"
         assert result["precedence"] == 3
@@ -300,10 +304,14 @@ class TestGetFaviconCacheSource:
         mock_load_cache.side_effect = [
             {},  # discovered_cache (called 1st)
             {},  # defaults_cache (called 2nd)
-            {"example.com": {"url": "http://example.com/favicon.png", "inline": "data:xxx"}},  # overrides_cache (called 3rd)
+            {
+                "example.com": {"url": "http://example.com/favicon.png", "inline": "data:xxx"}
+            },  # overrides_cache (called 3rd)
         ]
 
-        result = get_favicon_cache_source("http://example.com/path", "http://example.com/favicon.png")
+        result = get_favicon_cache_source(
+            "http://example.com/path", "http://example.com/favicon.png"
+        )
 
         assert result["file"] == "override"
         assert result["precedence"] == 1
@@ -318,7 +326,9 @@ class TestGetFaviconCacheSource:
         mock_load_cache.side_effect = [
             {},  # discovered_cache (called 1st)
             {},  # defaults_cache (called 2nd)
-            {"example.com": {"url": "http://example.com/favicon.png", "inline": "data:xxx"}},  # overrides_cache (called 3rd)
+            {
+                "example.com": {"url": "http://example.com/favicon.png", "inline": "data:xxx"}
+            },  # overrides_cache (called 3rd)
         ]
 
         result = get_favicon_cache_source("http://example.com/path", "http://other.com/favicon.ico")
