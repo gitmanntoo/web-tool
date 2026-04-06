@@ -387,7 +387,7 @@ def add_favicon_override():
             # Encode favicon inline (resized to height=20) and store as dict
             inline_data = img_util.encode_favicon_inline(favicon_url, html_util.FAVICON_HEIGHT)
             if inline_data:
-                overrides[cache_key] = {'url': favicon_url, 'inline': inline_data}
+                overrides[cache_key] = {'url': favicon_url, 'inline_image': inline_data}
             else:
                 # Fallback to URL if encoding fails
                 overrides[cache_key] = favicon_url

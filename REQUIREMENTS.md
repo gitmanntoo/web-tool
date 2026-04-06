@@ -452,7 +452,7 @@ The favicon system uses a three-tier hierarchical cache:
    - Manual customizations edited by users
    - Domain-level: `example.com: https://example.com/favicon.ico`
    - Path-level: `example.com/docs: https://example.com/docs/favicon.ico`
-   - Inline format: `example.com: {url: "https://...", inline: "data:image/png;base64,..."}`
+   - Inline format: `example.com: {url: "https://...", inline_image: "data:image/png;base64,..."}`
    - The inline format stores a pre-sized (height=20) base64-encoded PNG for optimal link size
 
 2. **App Defaults** (`static/favicon.yml`) — Medium priority

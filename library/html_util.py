@@ -285,9 +285,9 @@ def get_favicon_cache(page_url) -> RelLink:
             if cached := cache_dict.get(s):
                 # Handle both string and dict cache formats
                 if isinstance(cached, dict):
-                    # New format: {'url': url, 'inline': inline_data}
+                    # New format: {'url': url, 'inline_image': inline_data}
                     href = cached.get("url", "")
-                    inline_image = cached.get("inline", None)
+                    inline_image = cached.get("inline_image", None)
                 else:
                     # Legacy format: plain URL string
                     href = cached

@@ -142,7 +142,7 @@
             fragmentText: {% if fragment %}'{{ fragment_text|e }}'{% else %}''{% endif %},
             url: '{{ url_variants[0].url|e }}',
             favicon: {% if favicon %}'{{ favicon|e }}'{% else %}null{% endif %},
-            faviconInline: {% if favicon_inline %}'{{ favicon_inline|e }}'{% else %}null{% endif %}
+            faviconInline: {% if favicon_inline %}{{ favicon_inline|tojson }}{% else %}null{% endif %}
         };
 
         // State tracking

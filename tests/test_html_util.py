@@ -242,7 +242,10 @@ class TestGetFaviconCacheDictFormat:
         # Setup mock to return dict-format entry with inline
         mock_load_cache.side_effect = [
             {
-                "example.com": {"url": "http://example.com/favicon.png", "inline": inline_data}
+                "example.com": {
+                    "url": "http://example.com/favicon.png",
+                    "inline_image": inline_data,
+                }
             },  # overrides_cache
             {},  # defaults_cache
             {},  # discovered_cache
@@ -305,7 +308,7 @@ class TestGetFaviconCacheSource:
             {},  # discovered_cache (called 1st)
             {},  # defaults_cache (called 2nd)
             {
-                "example.com": {"url": "http://example.com/favicon.png", "inline": "data:xxx"}
+                "example.com": {"url": "http://example.com/favicon.png", "inline_image": "data:xxx"}
             },  # overrides_cache (called 3rd)
         ]
 
@@ -327,7 +330,7 @@ class TestGetFaviconCacheSource:
             {},  # discovered_cache (called 1st)
             {},  # defaults_cache (called 2nd)
             {
-                "example.com": {"url": "http://example.com/favicon.png", "inline": "data:xxx"}
+                "example.com": {"url": "http://example.com/favicon.png", "inline_image": "data:xxx"}
             },  # overrides_cache (called 3rd)
         ]
 
