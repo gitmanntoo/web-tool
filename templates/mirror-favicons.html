@@ -91,13 +91,13 @@
             {% if f.cache_source.file %}
                 {% if f.cache_source.file == 'override' %}
                     <span class="cache-badge cache-override">OVERRIDE</span>
-                    {% if f.inline_image %}
-                    <span class="cache-badge cache-override">INLINE</span>
-                    {% endif %}
                 {% elif f.cache_source.file == 'default' %}
                     <span class="cache-badge cache-default">DEFAULT</span>
                 {% elif f.cache_source.file == 'discovered' %}
                     <span class="cache-badge cache-discovered">DISCOVERED</span>
+                {% endif %}
+                {% if f.inline_image %}
+                <span class="cache-badge cache-override">INLINE</span>
                 {% endif %}
                 <span class="cache-key-info">cached as: {{ f.cache_source.cache_key }}</span>
             {% else %}
