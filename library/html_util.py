@@ -261,16 +261,21 @@ def get_favicon_cache(page_url) -> RelLink:
     search_paths = []
     parsed = urlparse(page_url)
 
+    # Normalize netloc by stripping www. prefix for consistent matching
+    netloc = parsed.netloc
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+
     # Get the first part of the path.
     path_part = parsed.path
     if path_part.startswith("/"):
         path_part = path_part[1:]
     if len(path_part) > 0:
         path_part = path_part.split("/")[0]
-        search_paths.append(f"{parsed.netloc}/{path_part}")
+        search_paths.append(f"{netloc}/{path_part}")
 
     # Split the netloc into parts and add paths until there are just two parts.
-    tokens = parsed.netloc.split(".")
+    tokens = netloc.split(".")
     while len(tokens) > 1:
         search_paths.append(".".join(tokens))
         tokens.pop(0)
@@ -333,16 +338,21 @@ def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
     search_paths = []
     parsed = urlparse(page_url)
 
+    # Normalize netloc by stripping www. prefix for consistent matching
+    netloc = parsed.netloc
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+
     # Get the first part of the path
     path_part = parsed.path
     if path_part.startswith("/"):
         path_part = path_part[1:]
     if len(path_part) > 0:
         path_part = path_part.split("/")[0]
-        search_paths.append(f"{parsed.netloc}/{path_part}")
+        search_paths.append(f"{netloc}/{path_part}")
 
     # Split the netloc into parts and add paths until there are just two parts
-    tokens = parsed.netloc.split(".")
+    tokens = netloc.split(".")
     while len(tokens) > 1:
         search_paths.append(".".join(tokens))
         tokens.pop(0)
