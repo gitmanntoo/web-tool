@@ -35,26 +35,20 @@
         </div>
     </div>
     
-    {% if fragment %}
+    {% if fragment_variants %}
     <div class="metadata-panel">
         <h2>Fragment</h2>
         <div class="url-list">
-            <div class="url-item">
-                <input type="radio" name="fragment_variant" value="none" data-text="" checked>
-                <span style="min-width: 100px;"><strong>None</strong></span>
-            </div>
-            <div class="url-item">
-                <input type="radio" name="fragment_variant" value="fragment" data-text="{{ fragment|e }}">
-                <button class="copy-btn" data-html="{{ fragment|e }}">Copy</button>
-                <span style="min-width: 100px;"><strong>Fragment</strong></span>
-                <span>{{ fragment|e }}</span>
-            </div>
-            <div class="url-item">
-                <input type="radio" name="fragment_variant" value="fragment_text" data-text="{{ fragment_text|e }}">
-                <button class="copy-btn" data-html="{{ fragment_text|e }}">Copy</button>
-                <span style="min-width: 100px;"><strong>Fragment Text</strong></span>
-                <span>{{ fragment_text|e }}</span>
-            </div>
+            {% for variant in fragment_variants %}
+                <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
+                    <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}" data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
+                    {% if variant.value %}
+                    <button class="copy-btn" data-html="{{ variant.value|e }}">Copy</button>
+                    {% endif %}
+                    <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
+                    <span>{{ variant.value|e }}</span>
+                </div>
+            {% endfor %}
         </div>
     </div>
     {% endif %}

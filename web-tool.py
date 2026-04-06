@@ -462,6 +462,26 @@ def get_mirror_links():
     """
     metadata = util.get_page_metadata()
 
+    # build fragment variants with duplicate detection
+    fragment_variants = []
+    fragment_variants_data = [
+        ('', 'None'),
+        (metadata.parsed_url.fragment if metadata.parsed_url else '', 'Fragment'),
+        (metadata.fragment_text, 'Fragment Text'),
+    ]
+
+    seen_values = set()
+    for fragment_value, label in fragment_variants_data:
+        # For 'None', use empty string as the value
+        value = fragment_value if label != 'None' else ''
+        is_duplicate = value in seen_values and label != 'None'
+        fragment_variants.append({
+            'value': value,
+            'label': label,
+            'is_duplicate': is_duplicate
+        })
+        seen_values.add(value)
+
     # build urls with labels - always start with Original
     url_variants = []
     url_variants_data = [
@@ -471,7 +491,7 @@ def get_mirror_links():
         (metadata.url_root, 'Root'),
         (metadata.url_host, 'Host'),
     ]
-    
+
     seen_labels = set()
     seen_values = set()
     for url, label in url_variants_data:
@@ -567,6 +587,7 @@ def get_mirror_links():
         'title_variants': title_variant_list,
         'fragment': metadata.parsed_url.fragment if metadata.parsed_url else '',
         'fragment_text': metadata.fragment_text,
+        'fragment_variants': fragment_variants,
         'content_type': metadata.content_type,
         'clipboard_error': metadata.clipboard_error,
         'user_agent': metadata.mirror_data.userAgent if metadata.mirror_data else '',
