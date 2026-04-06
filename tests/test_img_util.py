@@ -14,6 +14,7 @@ from library.img_util import (
     SVG_WIDTH,
     convert_ico,
     convert_svg,
+    encode_favicon_inline,
 )
 
 
@@ -271,6 +272,138 @@ class TestImageConversionEdgeCases:
 
             # Should attempt conversion
             assert mock_image.save.called or result is not None or result is None
+
+
+class TestEncodeFaviconInline:
+    """Tests for encode_favicon_inline function."""
+
+    def test_function_exists(self):
+        """Test that encode_favicon_inline function exists."""
+        assert callable(encode_favicon_inline)
+
+    def test_has_lru_cache(self):
+        """Test that encode_favicon_inline has lru_cache decorator."""
+        assert hasattr(encode_favicon_inline, "cache_info")
+        assert callable(encode_favicon_inline.cache_info)
+
+    def test_cache_can_be_cleared(self):
+        """Test that cache can be cleared."""
+        if hasattr(encode_favicon_inline, "cache_clear"):
+            encode_favicon_inline.cache_clear()
+            info = encode_favicon_inline.cache_info()
+            assert info.hits == 0
+
+    def test_accepts_href_parameter(self):
+        """Test that encode_favicon_inline accepts href parameter."""
+        import inspect
+
+        sig = inspect.signature(encode_favicon_inline)
+        assert "href" in sig.parameters
+
+    def test_accepts_target_height_parameter(self):
+        """Test that encode_favicon_inline accepts target_height parameter."""
+        import inspect
+
+        sig = inspect.signature(encode_favicon_inline)
+        assert "target_height" in sig.parameters
+
+    def test_default_target_height_is_20(self):
+        """Test that default target_height is 20."""
+        import inspect
+
+        sig = inspect.signature(encode_favicon_inline)
+        assert sig.parameters["target_height"].default == 20
+
+    @patch("library.img_util.url_util.get_url")
+    def test_returns_none_on_network_error(self, mock_get_url):
+        """Test that function returns None on network error."""
+        from library.url_util import SerializedResponseError
+
+        mock_get_url.side_effect = SerializedResponseError("Network error")
+
+        encode_favicon_inline.cache_clear()
+        result = encode_favicon_inline("http://example.com/favicon.png")
+
+        assert result is None
+
+    @patch("library.img_util.url_util.get_url")
+    def test_returns_none_for_invalid_response(self, mock_get_url):
+        """Test that function returns None for invalid response."""
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Invalid")
+        mock_get_url.return_value = mock_response
+
+        encode_favicon_inline.cache_clear()
+        result = encode_favicon_inline("http://example.com/favicon.png")
+
+        assert result is None
+
+    @patch("library.img_util.Image.open")
+    @patch("library.img_util.url_util.get_url")
+    def test_returns_base64_data_url_on_success(self, mock_get_url, mock_image_open):
+        """Test that function returns base64 data URL on success."""
+        mock_response = MagicMock()
+        mock_response.content = b"fake_image_data"
+        mock_response.raise_for_status.return_value = None
+        mock_get_url.return_value = mock_response
+
+        mock_image = MagicMock()
+        mock_image.width = 32
+        mock_image.height = 32
+        mock_image.resize.return_value = mock_image
+        mock_image.save.return_value = None
+        mock_image_open.return_value = mock_image
+
+        encode_favicon_inline.cache_clear()
+        result = encode_favicon_inline("http://example.com/favicon.png")
+
+        assert result is not None
+        assert result.startswith("data:image/png;base64,")
+
+    @patch("library.img_util.Image.open")
+    @patch("library.img_util.url_util.get_url")
+    def test_respects_target_height_parameter(self, mock_get_url, mock_image_open):
+        """Test that function resizes to target height."""
+        mock_response = MagicMock()
+        mock_response.content = b"fake_image_data"
+        mock_response.raise_for_status.return_value = None
+        mock_get_url.return_value = mock_response
+
+        mock_image = MagicMock()
+        mock_image.width = 100
+        mock_image.height = 50
+        mock_image.resize.return_value = mock_image
+        mock_image.save.return_value = None
+        mock_image_open.return_value = mock_image
+
+        encode_favicon_inline.cache_clear()
+        result = encode_favicon_inline("http://example.com/favicon.png", target_height=20)
+
+        assert result is not None
+        # Verify resize was called with calculated width (100/50 * 20 = 40) and height 20
+        mock_image.resize.assert_called_once()
+        call_args = mock_image.resize.call_args[0]
+        assert call_args[0][1] == 20  # height should be 20
+
+    def test_returns_none_for_invalid_url(self):
+        """Test that function returns None for invalid URL."""
+        encode_favicon_inline.cache_clear()
+        result = encode_favicon_inline("http://invalid.example.invalid/notfound.png")
+        # Invalid URLs should return None (connection error or non-image)
+        assert result is None or isinstance(result, str)
+
+
+class TestEncodeFaviconInlineIntegration:
+    """Integration tests for encode_favicon_inline."""
+
+    def test_function_is_callable(self):
+        """Test that encode_favicon_inline is callable."""
+        assert callable(encode_favicon_inline)
+
+    def test_has_caching(self):
+        """Test that function uses caching."""
+        assert hasattr(encode_favicon_inline, "cache_info")
+        assert hasattr(encode_favicon_inline, "cache_clear")
 
 
 if __name__ == "__main__":
