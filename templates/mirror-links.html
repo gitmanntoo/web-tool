@@ -86,20 +86,21 @@
                 <input type="radio" name="favicon_option" value="none">
                 <span style="min-width: 100px;"><strong>None</strong></span>
             </div>
+            {% if favicon_inline %}
+            <div class="url-item">
+                <input type="radio" name="favicon_option" value="inline" checked>
+                <button class="copy-btn" data-html="&lt;img src=&quot;{{ favicon_inline|e }}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
+                <span style="min-width: 100px;"><strong>Inline</strong></span>
+                <img src="{{ favicon_inline }}" height="20" alt="Favicon" />
+                <span>{{ favicon_inline|e }}</span>
+            </div>
+            {% else %}
             <div class="url-item">
                 <input type="radio" name="favicon_option" value="url" checked>
                 <button class="copy-btn" data-html="{{ favicon|e }}">Copy</button>
                 <span style="min-width: 100px;"><strong>URL</strong></span>
                 <img src="{{ favicon }}" height="20" alt="Favicon" />
                 <span><a href="{{ favicon|e }}">{{ favicon|e }}</a></span>
-            </div>
-            {% if favicon_inline %}
-            <div class="url-item">
-                <input type="radio" name="favicon_option" value="inline">
-                <button class="copy-btn" data-html="&lt;img src=&quot;{{ favicon_inline|e }}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
-                <span style="min-width: 100px;"><strong>Inline</strong></span>
-                <img src="{{ favicon_inline }}" height="20" alt="Favicon" />
-                <span>{{ favicon_inline|e }}</span>
             </div>
             {% endif %}
         </div>
@@ -150,7 +151,7 @@
             title: defaultValues.title,
             fragmentText: '',
             url: '',
-            faviconOption: defaultValues.faviconInline ? 'inline' : 'url'
+            faviconOption: 'url'  // Will be overridden by DOMContentLoaded from checked radio
         };
 
         // Function to escape HTML for display
