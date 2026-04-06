@@ -11,7 +11,7 @@ import pytest
 from library.html_util import (
     COMMON_FAVICON_FILES,
     FAVICON_REL,
-    FAVICON_WIDTH,
+    FAVICON_HEIGHT,
     ICO_TO_PNG_PATH,
     SVG_TO_PNG_PATH,
     RelLink,
@@ -90,9 +90,9 @@ class TestFaviconConstants:
         """Test that COMMON_FAVICON_FILES is a list."""
         assert isinstance(COMMON_FAVICON_FILES, list)
 
-    def test_favicon_width_is_positive(self):
-        """Test that FAVICON_WIDTH is positive."""
-        assert FAVICON_WIDTH > 0
+    def test_favicon_height_is_positive(self):
+        """Test that FAVICON_HEIGHT is positive."""
+        assert FAVICON_HEIGHT > 0
 
     def test_ico_to_png_path_is_string(self):
         """Test that ICO_TO_PNG_PATH is a string."""

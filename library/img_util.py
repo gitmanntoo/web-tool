@@ -1,3 +1,4 @@
+import base64
 import logging
 from functools import lru_cache
 from io import BytesIO
@@ -75,4 +76,46 @@ def convert_svg(href: str, to_format: str = "PNG") -> bytes:
         return png_buffer.getvalue()
     except Exception as e:
         logging.warning(f"Not an SVG file: {href} {e}")
+        return None
+
+
+@lru_cache(maxsize=128)
+def encode_favicon_inline(href: str, target_height: int = 20) -> str | None:
+    """Encode a favicon as a base64 PNG string, resized to target height.
+
+    Fetches the image from href, resizes to target_height preserving aspect
+    ratio, and returns base64-encoded PNG data URL.
+
+    Args:
+        href: URL of the favicon image
+        target_height: Target height in pixels (default: 20)
+
+    Returns:
+        Base64-encoded PNG string (with data URL prefix) or None on failure
+    """
+    try:
+        resp = url_util.get_url(href)
+        resp.raise_for_status()
+
+        # Open the image
+        img = Image.open(BytesIO(resp.content))
+
+        # Calculate new dimensions preserving aspect ratio
+        aspect_ratio = img.width / img.height
+        new_height = target_height
+        new_width = int(target_height * aspect_ratio)
+
+        # Resize using high-quality resampling
+        resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+        # Convert to PNG and encode as base64
+        png_buffer = BytesIO()
+        resized.save(png_buffer, format="PNG")
+        png_bytes = png_buffer.getvalue()
+
+        # Encode as base64 with data URL prefix
+        b64 = base64.b64encode(png_bytes).decode("ascii")
+        return f"data:image/png;base64,{b64}"
+    except Exception as e:
+        logging.warning(f"Failed to encode favicon inline: {href} {e}")
         return None

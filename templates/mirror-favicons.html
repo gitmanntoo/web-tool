@@ -8,13 +8,14 @@
         function addOverride(faviconHref, pageUrl, formId) {
             const form = document.getElementById(formId);
             const scope = form.querySelector('input[name="scope"]:checked').value;
+            const saveInline = form.querySelector('input[name="save_inline"]').checked;
             const messageEl = form.querySelector('.override-message');
             const button = form.querySelector('button');
-            
+
             button.disabled = true;
             messageEl.textContent = 'Adding override...';
             messageEl.className = 'override-success';
-            
+
             fetch('/add-favicon-override', {
                 method: 'POST',
                 headers: {
@@ -23,7 +24,8 @@
                 body: JSON.stringify({
                     favicon_url: faviconHref,
                     page_url: pageUrl,
-                    scope: scope
+                    scope: scope,
+                    save_inline: saveInline
                 })
             })
             .then(resp => resp.json())
@@ -89,6 +91,9 @@
             {% if f.cache_source.file %}
                 {% if f.cache_source.file == 'override' %}
                     <span class="cache-badge cache-override">OVERRIDE</span>
+                    {% if f.inline_image %}
+                    <span class="cache-badge cache-override">INLINE</span>
+                    {% endif %}
                 {% elif f.cache_source.file == 'default' %}
                     <span class="cache-badge cache-default">DEFAULT</span>
                 {% elif f.cache_source.file == 'discovered' %}
@@ -112,8 +117,13 @@
         
         {% if f.image_type != 'invalid' %}
         <p>
-            <img src="{{ f.href }}" width="20" alt="20x20 preview" /> 20x20 preview
+            <img src="{{ f.href }}" height="20" alt="20px height preview" /> 20px height preview
         </p>
+        {% if f.inline_image %}
+        <p>
+            <img src="{{ f.inline_image }}" alt="Inline preview" /> Inline (base64, 20px height)
+        </p>
+        {% endif %}
         <p>
             <img src="{{ f.href }}" alt="Full size"/> Full size ({{ f.width }}x{{ f.height }})
         </p>
@@ -134,6 +144,10 @@
                 Domain + first path ({{ url.split('/')[2] }}/{{ url.split('/')[3] }})
             </label>
             {% endif %}
+            <label>
+                <input type="checkbox" name="save_inline">
+                Save as inline (base64)
+            </label>
             <button onclick="addOverride('{{ f.href|e }}', '{{ url|e }}', 'form-{{ loop.index }}')">
                 Add to Overrides
             </button>

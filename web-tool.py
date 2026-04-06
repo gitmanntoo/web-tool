@@ -254,7 +254,7 @@ def get_mirror_favicons():
             metadata.url,
             cache_favicon.href
         )
-        
+
         # Try to get image size, but include even if it fails
         if size := url_util.get_image_size(cache_favicon.href):
             cache_favicon.width = size.width
@@ -265,8 +265,12 @@ def get_mirror_favicons():
             cache_favicon.width = 0
             cache_favicon.height = 0
             cache_favicon.image_type = "invalid"
-        
+
         favicons.insert(0, cache_favicon)
+
+    # Note: inline_image is only set for favicons that were stored with inline data in cache.
+    # We do NOT compute inline on-the-fly here - that would defeat the purpose of
+    # storing inline data in the cache to avoid recomputation.
     
     # Auto-cache the top favicon if none is cached and we have valid favicons
     if not cache_favicon and favicons:
@@ -317,12 +321,13 @@ def get_mirror_favicons():
 @app.route('/add-favicon-override', methods=['POST'])
 def add_favicon_override():
     """Add a favicon override to the user override file.
-    
+
     Accepts JSON with:
     - favicon_url: The URL of the favicon to cache
     - page_url: The URL of the page
     - scope: 'domain' or 'path'
-    
+    - save_inline: If true, store as inline base64 instead of URL
+
     Returns JSON with:
     - success: bool
     - cache_key: The key used (if successful)
@@ -333,21 +338,22 @@ def add_favicon_override():
         favicon_url = data.get('favicon_url')
         page_url = data.get('page_url')
         scope = data.get('scope', 'domain')
-        
+        save_inline = data.get('save_inline', False)
+
         if not favicon_url or not page_url:
             return json.dumps({
                 'success': False,
                 'error': 'Missing favicon_url or page_url'
             }), 400, {'Content-Type': 'application/json'}
-        
+
         # Parse the URL to determine cache key
         parsed = urlparse(page_url)
-        
+
         # Normalize netloc: always remove www. prefix for consistency
         netloc = parsed.netloc
         if netloc.startswith("www."):
             netloc = netloc[4:]
-        
+
         if scope == 'path':
             # Use domain + first path segment
             path_part = parsed.path
@@ -361,7 +367,7 @@ def add_favicon_override():
         else:
             # Use domain only
             cache_key = netloc
-        
+
         # Read current file to preserve header comments
         header_lines = []
         if html_util.FAVICON_OVERRIDES.exists():
@@ -372,13 +378,22 @@ def add_favicon_override():
                     else:
                         # Stop when we hit the first non-comment, non-empty line
                         break
-        
+
         # Load current overrides
         overrides = html_util._load_yaml_with_cache(html_util.FAVICON_OVERRIDES)
-        
+
         # Add the new override
-        overrides[cache_key] = favicon_url
-        
+        if save_inline:
+            # Encode favicon inline (resized to height=20) and store as dict
+            inline_data = img_util.encode_favicon_inline(favicon_url, html_util.FAVICON_HEIGHT)
+            if inline_data:
+                overrides[cache_key] = {'url': favicon_url, 'inline': inline_data}
+            else:
+                # Fallback to URL if encoding fails
+                overrides[cache_key] = favicon_url
+        else:
+            overrides[cache_key] = favicon_url
+
         # Write back to file with preserved header
         with open(html_util.FAVICON_OVERRIDES, "w") as f:
             # Write header comments first
@@ -386,17 +401,17 @@ def add_favicon_override():
                 f.write(line)
             # Write YAML data in sorted order
             yaml.dump(overrides, f, sort_keys=True)
-        
+
         # Invalidate in-memory cache
         file_path_str = str(html_util.FAVICON_OVERRIDES)
         if file_path_str in html_util._favicon_yaml_cache:
             del html_util._favicon_yaml_cache[file_path_str]
-        
+
         return json.dumps({
             'success': True,
             'cache_key': cache_key
         }), 200, {'Content-Type': 'application/json'}
-        
+
     except Exception as e:
         return json.dumps({
             'success': False,
@@ -503,12 +518,17 @@ def get_mirror_links():
             seen_values.add(title_value)
 
     if metadata.favicons:
+        # Get inline base64 favicon only if stored in cache
+        favicon_inline = None
+        if metadata.favicons and metadata.favicons[0].inline_image:
+            favicon_inline = metadata.favicons[0].inline_image
+
         if metadata.fragment_title:
             links.append({
                 "header": "Favicon",
                 "html": (
                     f'<img src="{metadata.favicon_url}" '
-                    f'width="{html_util.FAVICON_WIDTH}" /> '
+                    f'height="{html_util.FAVICON_HEIGHT}" /> '
                     f'<a target="_blank" href="{metadata.url}">'
                     f'{util.html_text(util.ascii_text(metadata.fragment_title))}</a>'
                 ),
@@ -518,7 +538,7 @@ def get_mirror_links():
             "header": "Favicon - Clean",
             "html": (
                 f'<img src="{metadata.favicon_url}" '
-                f'width="{html_util.FAVICON_WIDTH}" /> '
+                f'height="{html_util.FAVICON_HEIGHT}" /> '
                 f'<a target="_blank" href="{metadata.url_clean}">'
                 f'{util.html_text(util.ascii_text(metadata.title))}</a>'
             ),
@@ -555,6 +575,7 @@ def get_mirror_links():
         'url_variants': url_variants,
         'links': links,
         'favicon': metadata.favicon_url,
+        'favicon_inline': favicon_inline,
     })
 
     resp = make_response(rendered_html)
