@@ -288,6 +288,9 @@ def get_favicon_cache(page_url) -> RelLink:
                     # New format: {'url': url, 'inline_image': inline_data}
                     href = cached.get("url", "")
                     inline_image = cached.get("inline_image", None)
+                    # Skip entries with missing or empty URL
+                    if not href:
+                        continue
                 else:
                     # Legacy format: plain URL string
                     href = cached
