@@ -385,12 +385,17 @@ class TestEncodeFaviconInline:
         call_args = mock_image.resize.call_args[0]
         assert call_args[0][1] == 20  # height should be 20
 
-    def test_returns_none_for_invalid_url(self):
+    @patch("library.img_util.url_util.get_url")
+    def test_returns_none_for_invalid_url(self, mock_get_url):
         """Test that function returns None for invalid URL."""
+        from library.url_util import SerializedResponseError
+
+        mock_get_url.side_effect = SerializedResponseError("Connection refused")
+
         encode_favicon_inline.cache_clear()
         result = encode_favicon_inline("http://invalid.example.invalid/notfound.png")
-        # Invalid URLs should return None (connection error or non-image)
-        assert result is None or isinstance(result, str)
+
+        assert result is None
 
 
 class TestEncodeFaviconInlineIntegration:
