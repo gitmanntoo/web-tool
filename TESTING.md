@@ -10,8 +10,9 @@ This project uses **pytest** as the testing framework with tests organized in a 
 web-tool/
 ├── tests/
 │   ├── __init__.py
+│   ├── test_fragment_variants.py   # Tests for fragment variant duplicate detection
 │   ├── test_title_variants.py      # Tests for title variant generation
-│   └── test_title_strings.py       # Test data for title variants
+│   └── test_title_strings.py      # Test data for title variants
 ├── pytest.ini                      # Pytest configuration
 ├── pyproject.toml                  # Project configuration with test dependencies
 └── [old test files - deprecated]
@@ -108,6 +109,15 @@ Edge case testing:
 - Combining diacriticals
 - Very long strings
 - Special characters and newlines
+
+#### `TestFragmentVariants` (8 tests)
+Tests for fragment variant generation in mirror-links endpoint:
+- None option is never marked duplicate
+- Fragment Text is marked duplicate when equal to Fragment (fallback case)
+- Fragment Text is not duplicate when different from Fragment
+- All three options present with correct values
+- Empty fragment/text case handled correctly
+- Pydantic-style URLs (fragment_text equals fragment) detected
 
 ## Test Data
 
