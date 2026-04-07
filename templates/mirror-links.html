@@ -219,8 +219,12 @@
             const linkText = escapeMarkdownText(buildLinkText(title, fragmentText));
             // Wrap URL in angle brackets if it contains chars that could
             // confuse the Markdown parser's link delimiter detection.
-            const wrappedUrl = MARKDOWN_URL_SAFE_WRAP_CHARS.test(url) ? `<${url}>` : url;
-            return `[${linkText}](${wrappedUrl})`;
+            // Encode < and > so they don't prematurely terminate the wrapped destination.
+            if (MARKDOWN_URL_SAFE_WRAP_CHARS.test(url)) {
+                const encoded = url.replace(/[<>]/g, (c) => encodeURIComponent(c));
+                return `[${linkText}](<${encoded}>)`;
+            }
+            return `[${linkText}](${url})`;
         }
 
         // Function to build a link in Wiki-link format
