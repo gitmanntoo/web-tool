@@ -168,7 +168,7 @@ class TestMirrorLinksJsEscaping:
         # Should contain the Markdown text escape function
         assert "escapeMarkdownText" in rendered
         # Should contain the updated buildMarkdownLink that encodes < > in wrapped URLs
-        assert "encoded" in rendered or "encodeURIComponent" in rendered
+        assert "encodeURIComponent" in rendered
 
     def test_markdown_link_template_has_url_wrapping_logic(self, template_env):
         """Test that buildMarkdownLink in the template uses angle-bracket URL wrapping."""
