@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pprint
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, unquote
 
 import fitz
 import jsmin
@@ -185,6 +185,8 @@ class PageMetadata:
             return
 
         self.url = self.request.args.get("url", "")
+        # URL-decode the URL since bookmarklet sends it encoded
+        self.url = unquote(self.url)
         self.parsed_url = urlparse(self.url)
         self.title = self.request.args.get("title", "")
         self.headers = dict(self.request.headers)
@@ -504,7 +506,7 @@ class PageMetadata:
         return ""
 
     def resolve_favicons(self):
-        self.favicons = html_util.get_favicon_links(
+        self.favicons = html_util.get_valid_favicon_links(
             self.url,
             self.soup,
         )

@@ -237,6 +237,49 @@ uv pip install -e ".[dev]"
 uv run pytest tests/ --cov=library --cov-report=xml
 ```
 
+## Manual/Integration Testing
+
+Some edge cases require end-to-end testing via the browser bookmarklet since unit tests cannot fully capture the clipboard/bookmarklet flow.
+
+### Edge-Case URLs for Manual Testing
+
+Test these URLs by bookmarking them and clicking the bookmarklet on each page:
+
+| URL | Description | Expected Behavior |
+|-----|-------------|-------------------|
+| `https://example.com` | Simple URL, no fragment | No fragment section displayed |
+| `https://example.com/page#section1` | URL with simple fragment | Fragment section shows "section1" |
+| `https://pydantic.com.cn/en/api/json_schema/#pydantic.json_schema.GenerateJsonSchema.build_schema_type_to_method` | Fragment containing dots | Fragment section shows correct fragment text, link displays correctly |
+| `https://example.com/page#has-dots.and.dots.and.dots` | Fragment with multiple dot sequences | Fragment preserved correctly |
+| `https://example.com/favicon.ico` | Favicon is ICO, not PNG | ICO converted to PNG inline |
+| `https://example.com/no-such-favicon.png` | Favicon URL returns 404 | Favicon section hidden (URL not valid image) |
+
+### Manual Test Checklist
+
+1. **URL with no fragment** (`https://example.com`):
+   - [ ] Fragment section does not appear
+   - [ ] URL section shows "Original", "Clean", "Root", "Host"
+   - [ ] Link displays correctly with title
+
+2. **URL with fragment containing dots** (`https://pydantic.com.cn/...#pydantic.json_schema...`):
+   - [ ] Fragment section appears with correct fragment text
+   - [ ] All radio buttons work and update the Link preview
+   - [ ] URL "With Fragment" variant includes full fragment
+   - [ ] Copy buttons work
+
+3. **Favicon validation**:
+   - [ ] URLs with broken favicons (404) show no favicon section
+   - [ ] URLs with valid favicons show favicon section
+   - [ ] Inline vs URL options work
+
+### Bookmarklet Testing
+
+To test the bookmarklet:
+1. Run the web-tool server: `make run`
+2. Navigate to a test URL in your browser
+3. Click the "Mirror Links" bookmarklet
+4. Verify the mirror-links page displays correctly
+
 ## Resources
 
 - [Pytest Documentation](https://docs.pytest.org/)
