@@ -226,6 +226,16 @@ dev = [
 
 7. **Keep tests independent**: Each test should be able to run in isolation
 
+8. **Mock clipboard access**: Tests that instantiate `PageMetadata` should patch `pyperclip.paste` to avoid environment-dependent failures:
+   ```python
+   from unittest.mock import patch
+
+   @patch("pyperclip.paste")
+   def test_url_decoding(self, mock_paste):
+       mock_paste.return_value = ""
+       # ... test code
+   ```
+
 ## Common Issues
 
 ### Import Errors
