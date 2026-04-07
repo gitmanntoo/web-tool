@@ -116,6 +116,11 @@ class TestMarkdownUrlWrapping:
         result = build_markdown_link("", "", "https://example.com/foo<bar")
         assert "<https://example.com/foo%3Cbar>" in result
 
+    def test_url_with_both_angle_brackets_encoded(self):
+        """URL containing both < and > is wrapped and both chars are percent-encoded."""
+        result = build_markdown_link("", "", "https://example.com/foo<bar>baz")
+        assert "<https://example.com/foo%3Cbar%3Ebaz>" in result
+
     def test_fragment_with_parens_gets_wrapped(self):
         """URL with fragment containing parens (common with JS method names) is wrapped."""
         url = "https://example.com/page#section(method)"
