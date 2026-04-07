@@ -26,8 +26,11 @@ def escape_markdown_text(text: str) -> str:
 def build_markdown_link(title: str, fragment_text: str, url: str) -> str:
     """Build a Markdown link, applying escaping rules."""
     link_text = escape_markdown_text(fragment_text + " - " + title if fragment_text else title)
-    wrapped_url = f"<{url}>" if MARKDOWN_URL_SAFE_WRAP_CHARS.search(url) else url
-    return f"[{link_text}]({wrapped_url})"
+    if MARKDOWN_URL_SAFE_WRAP_CHARS.search(url):
+        # Encode < > so they don't terminate the wrapped destination early.
+        encoded = url.replace("<", "%3C").replace(">", "%3E")
+        return f"[{link_text}](<{encoded}>)"
+    return f"[{link_text}]({url})"
 
 
 class TestEscapeMarkdownText:
@@ -108,9 +111,10 @@ class TestMarkdownUrlWrapping:
         assert MARKDOWN_URL_SAFE_WRAP_CHARS.search("https://example.com/foo bar") is not None
 
     def test_url_with_angle_bracket_less_than_wrapped(self):
-        """URL containing < is wrapped; > is not in the wrapping regex."""
+        """URL containing < is wrapped; < and > are encoded inside the wrapped URL."""
         assert MARKDOWN_URL_SAFE_WRAP_CHARS.search("https://example.com/foo<bar") is not None
-        assert MARKDOWN_URL_SAFE_WRAP_CHARS.search("https://example.com/foo>bar") is None
+        result = build_markdown_link("", "", "https://example.com/foo<bar")
+        assert "<https://example.com/foo%3Cbar>" in result
 
     def test_fragment_with_parens_gets_wrapped(self):
         """URL with fragment containing parens (common with JS method names) is wrapped."""
