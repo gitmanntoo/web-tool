@@ -44,7 +44,7 @@ The `web-tool` is a utility for extracting and processing information from web p
 - **Templates**: `templates/` contains HTML templates for the web interface.
 
 ### Technical Stack
-- **Backend**: Python 3.11, Flask
+- **Backend**: Python 3.13, Flask
 - **HTML Parsing**: BeautifulSoup4, lxml
 - **Image/SVG Processing**: CairoSVG, Pillow, Magika
 - **Text Processing**: NLTK, anyascii
