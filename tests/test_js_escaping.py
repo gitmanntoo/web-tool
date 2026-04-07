@@ -149,6 +149,45 @@ class TestMirrorLinksJsEscaping:
         assert "favicon:" in rendered
         assert "null" not in rendered.split("favicon:")[1].split("\n")[0]
 
+    def test_markdown_escape_functions_present(self, template_env):
+        """Test that Markdown escaping functions and regex are defined in the template."""
+        template = template_env.get_template("mirror-links.html")
+
+        rendered = template.render(
+            title="Test",
+            title_variants=[{"value": "Test", "label": "Original"}],
+            fragment="",
+            fragment_text="",
+            url_variants=[{"url": "https://example.com", "label": "Original"}],
+            favicon=None,
+            favicon_inline=None,
+        )
+
+        # Should contain the Markdown URL-safe wrap regex
+        assert "MARKDOWN_URL_SAFE_WRAP_CHARS" in rendered
+        # Should contain the Markdown text escape function
+        assert "escapeMarkdownText" in rendered
+        # Should contain the updated buildMarkdownLink that uses angle-bracket wrapping
+        assert "wrappedUrl" in rendered
+
+    def test_markdown_link_template_has_url_wrapping_logic(self, template_env):
+        """Test that buildMarkdownLink in the template uses angle-bracket URL wrapping."""
+        template = template_env.get_template("mirror-links.html")
+
+        rendered = template.render(
+            title="Test",
+            title_variants=[{"value": "Test", "label": "Original"}],
+            fragment="",
+            fragment_text="",
+            url_variants=[{"url": "https://example.com", "label": "Original"}],
+            favicon=None,
+            favicon_inline=None,
+        )
+
+        # The template should define the regex and use it in buildMarkdownLink
+        # The regex pattern [()[] <] should appear (with spaces collapsed)
+        assert "<${url}" in rendered or "<\" + url + \">" in rendered
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
