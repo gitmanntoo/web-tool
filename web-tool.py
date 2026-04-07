@@ -539,11 +539,15 @@ def get_mirror_links():
             seen_labels.add(label)
             seen_values.add(title_value)
 
-    # Get inline base64 favicon (only if stored in cache)
+    # Get inline base64 favicon (from cache or generate on-the-fly)
     favicon_inline = None
     if metadata.favicons:
+        # Use cached inline if available
         if metadata.favicons[0].inline_image:
             favicon_inline = metadata.favicons[0].inline_image
+        # Otherwise generate inline version from the favicon URL
+        elif metadata.favicon_url:
+            favicon_inline = img_util.encode_favicon_inline(metadata.favicon_url, html_util.FAVICON_HEIGHT)
 
         if metadata.fragment_title:
             links.append({

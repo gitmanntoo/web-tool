@@ -9,14 +9,39 @@
     <h1>Mirror Links</h1>
     
     <div class="metadata-panel">
-        <h2>Link</h2>
+        <h2>Links</h2>
         <div class="url-list">
             <div class="url-item" style="flex-direction: column; align-items: flex-start;">
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <button class="copy-btn" id="main-link-copy">Copy</button>
-                    <span id="main-link-display"></span>
+                    <button class="copy-btn" id="copy-html" data-format="html">Copy</button>
+                    <span style="min-width: 100px;"><strong>HTML</strong></span>
+                    <span id="format-html-display"></span>
                 </div>
-                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="main-link-html"></div>
+                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-html-plain"></div>
+            </div>
+            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <button class="copy-btn" id="copy-markdown" data-format="markdown">Copy</button>
+                    <span style="min-width: 100px;"><strong>Markdown</strong></span>
+                    <span id="format-markdown-display"></span>
+                </div>
+                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-markdown-plain"></div>
+            </div>
+            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <button class="copy-btn" id="copy-wiki" data-format="wiki">Copy</button>
+                    <span style="min-width: 100px;"><strong>Wiki-link</strong></span>
+                    <span id="format-wiki-display"></span>
+                </div>
+                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-wiki-plain"></div>
+            </div>
+            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <button class="copy-btn" id="copy-simple" data-format="simple">Copy</button>
+                    <span style="min-width: 100px;"><strong>Simple</strong></span>
+                    <span id="format-simple-display"></span>
+                </div>
+                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-simple-plain"></div>
             </div>
         </div>
     </div>
@@ -80,21 +105,20 @@
                 <input type="radio" name="favicon_option" value="none">
                 <span style="min-width: 100px;"><strong>None</strong></span>
             </div>
-            {% if favicon_inline %}
-            <div class="url-item">
-                <input type="radio" name="favicon_option" value="inline" checked>
-                <button class="copy-btn" data-html="&lt;img src=&quot;{{ favicon_inline|e }}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
-                <span style="min-width: 100px;"><strong>Inline</strong></span>
-                <img src="{{ favicon_inline }}" height="20" alt="Favicon" />
-                <span>{{ favicon_inline|e }}</span>
-            </div>
-            {% else %}
             <div class="url-item">
                 <input type="radio" name="favicon_option" value="url" checked>
                 <button class="copy-btn" data-html="{{ favicon|e }}">Copy</button>
                 <span style="min-width: 100px;"><strong>URL</strong></span>
                 <img src="{{ favicon }}" height="20" alt="Favicon" />
                 <span><a href="{{ favicon|e }}">{{ favicon|e }}</a></span>
+            </div>
+            {% if favicon_inline %}
+            <div class="url-item">
+                <input type="radio" name="favicon_option" value="inline">
+                <button class="copy-btn" data-html="&lt;img src=&quot;{{ favicon_inline|e }}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
+                <span style="min-width: 100px;"><strong>Inline</strong></span>
+                <img src="{{ favicon_inline }}" height="20" alt="Favicon" />
+                <span>{{ favicon_inline|e }}</span>
             </div>
             {% endif %}
         </div>
@@ -148,15 +172,20 @@
             faviconOption: 'url'  // Will be overridden by DOMContentLoaded from checked radio
         };
 
-        // Function to escape HTML for display
+        // Function to escape text for safe use in URLs and HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Function to build a link
-        function buildLink(title, fragmentText, url, faviconOption) {
+        // Function to build text from title and optional fragment
+        function buildLinkText(title, fragmentText) {
+            return fragmentText ? `${fragmentText} - ${title}` : title;
+        }
+
+        // Function to build a link in HTML format
+        function buildHtmlLink(title, fragmentText, url, faviconOption) {
             let html = '';
 
             // Add favicon if requested
@@ -167,25 +196,77 @@
             }
 
             // Add link with appropriate text
-            const linkText = fragmentText ? `${fragmentText} - ${title}` : title;
+            const linkText = buildLinkText(title, fragmentText);
             html += `<a target="_blank" href="${escapeHtml(url)}">${escapeHtml(linkText)}</a>`;
 
             return html;
         }
 
+        // Characters that require the URL to be wrapped in angle brackets.
+        // Angle brackets < > are the autolink delimiters in Markdown — anything
+        // inside them is treated as a URI and won't be parsed for ( ) [ ] etc.
+        const MARKDOWN_URL_SAFE_WRAP_CHARS = /[()[\] <]/;
+
+        // Function to escape special characters in the link text portion of
+        // a Markdown link. Backslash must be replaced first to avoid
+        // double-escaping. All three delimiters [ ] \ are escaped.
+        function escapeMarkdownText(text) {
+            return text.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+        }
+
+        // Function to build a link in Markdown format
+        function buildMarkdownLink(title, fragmentText, url) {
+            const linkText = escapeMarkdownText(buildLinkText(title, fragmentText));
+            // Wrap URL in angle brackets if it contains chars that could
+            // confuse the Markdown parser's link delimiter detection.
+            const wrappedUrl = MARKDOWN_URL_SAFE_WRAP_CHARS.test(url) ? `<${url}>` : url;
+            return `[${linkText}](${wrappedUrl})`;
+        }
+
+        // Function to build a link in Wiki-link format
+        function buildWikiLink(title, fragmentText, url) {
+            const linkText = buildLinkText(title, fragmentText);
+            return `[${linkText}|${url}]`;
+        }
+
+        // Function to build a link in Simple text format
+        function buildSimpleLink(title, fragmentText, url) {
+            const linkText = buildLinkText(title, fragmentText);
+            return `${url} ${linkText}`;
+        }
+
         // Function to render the current state to the DOM
         function render() {
-            const activeLink = buildLink(state.title, state.fragmentText, state.url, state.faviconOption);
+            const linkText = buildLinkText(state.title, state.fragmentText);
 
-            // Update display elements
-            document.getElementById('main-link-display').innerHTML = activeLink;
-            document.getElementById('main-link-html').textContent = activeLink;
-            document.getElementById('main-link-copy').dataset.html = activeLink;
+            // HTML format
+            const htmlLink = buildHtmlLink(state.title, state.fragmentText, state.url, state.faviconOption);
+            document.getElementById('format-html-display').innerHTML = htmlLink;
+            document.getElementById('format-html-plain').textContent = htmlLink;
+            document.getElementById('copy-html').dataset.html = htmlLink;
 
-            // Auto-copy to clipboard
+            // Markdown format
+            const markdownLink = buildMarkdownLink(state.title, state.fragmentText, state.url);
+            document.getElementById('format-markdown-display').textContent = markdownLink;
+            document.getElementById('format-markdown-plain').textContent = markdownLink;
+            document.getElementById('copy-markdown').dataset.html = markdownLink;
+
+            // Wiki-link format
+            const wikiLink = buildWikiLink(state.title, state.fragmentText, state.url);
+            document.getElementById('format-wiki-display').textContent = wikiLink;
+            document.getElementById('format-wiki-plain').textContent = wikiLink;
+            document.getElementById('copy-wiki').dataset.html = wikiLink;
+
+            // Simple format
+            const simpleLink = buildSimpleLink(state.title, state.fragmentText, state.url);
+            document.getElementById('format-simple-display').textContent = simpleLink;
+            document.getElementById('format-simple-plain').textContent = simpleLink;
+            document.getElementById('copy-simple').dataset.html = simpleLink;
+
+            // Auto-copy HTML to clipboard on selection changes
             if (linksInitialized) {
-                navigator.clipboard.writeText(activeLink).then(() => {
-                    console.log('Link copied to clipboard');
+                navigator.clipboard.writeText(htmlLink).then(() => {
+                    console.log('HTML link copied to clipboard');
                 });
             }
         }
@@ -245,12 +326,12 @@
             // Attach copy listeners
             attachCopyListeners();
 
-            // Initial auto-copy
+            // Initial auto-copy HTML
             setTimeout(() => {
-                const initialLink = document.getElementById('main-link-copy').dataset.html;
+                const initialLink = document.getElementById('copy-html').dataset.html;
                 if (initialLink) {
                     navigator.clipboard.writeText(initialLink).then(() => {
-                        console.log('Initial link copied to clipboard');
+                        console.log('Initial HTML link copied to clipboard');
                         linksInitialized = true;
                     });
                 }
