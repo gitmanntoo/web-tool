@@ -11,8 +11,8 @@ import pytest
 
 from library.html_util import (
     COMMON_FAVICON_FILES,
-    FAVICON_REL,
     FAVICON_HEIGHT,
+    FAVICON_REL,
     ICO_TO_PNG_PATH,
     SVG_TO_PNG_PATH,
     RelLink,

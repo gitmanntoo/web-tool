@@ -8,7 +8,6 @@ import pyperclip
 import yaml
 from bs4 import BeautifulSoup
 from flask import request
-from typing import Optional
 from lxml import html as lxml_html
 
 from library import docker_util, img_util, url_util
@@ -403,7 +402,7 @@ def add_favicon_to_cache(cache_key, favicon_link):
         del _favicon_yaml_cache[file_path_str]
 
 
-def get_favicon_links(page_url: str, soup: Optional[BeautifulSoup], include=None) -> list[RelLink]:
+def get_favicon_links(page_url: str, soup: BeautifulSoup | None, include=None) -> list[RelLink]:
     """Get the favicon links for the page URL.
 
     Discovers native favicon formats first. Only creates ICO/SVG→PNG conversions
@@ -551,7 +550,7 @@ def validate_top_candidates(links: list[RelLink], max_count: int = 1) -> list[Re
 
 def get_valid_favicon_links(
     page_url: str,
-    soup: Optional[BeautifulSoup],
+    soup: BeautifulSoup | None,
     max_count: int = 1,
     favicon_height: int = FAVICON_HEIGHT,
 ) -> list[RelLink]:

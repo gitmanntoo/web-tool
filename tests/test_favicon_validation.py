@@ -4,15 +4,13 @@ Tests for favicon validation functionality.
 Tests the get_valid_favicon_links() function and related validation logic.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from library.html_util import (
     RelLink,
-    get_favicon_links,
     get_valid_favicon_links,
-    sort_favicon_links,
     validate_top_candidates,
 )
 

@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pprint
-from urllib.parse import urlparse, urlunparse, unquote
+from urllib.parse import unquote, urlparse, urlunparse
 
 import fitz
 import jsmin

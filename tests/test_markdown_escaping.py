@@ -6,8 +6,8 @@ so we test the logic in Python here.
 """
 
 import re
-import pytest
 
+import pytest
 
 # Python equivalents of the JS functions from mirror-links.html
 
@@ -15,7 +15,7 @@ MARKDOWN_URL_SAFE_WRAP_CHARS = re.compile(r"[()[\] <]")
 
 
 def escape_markdown_text(text: str) -> str:
-    """Escape [ ] and \ for Markdown link text portion.
+    r"""Escape [ ] and \ for Markdown link text portion.
 
     All three delimiter characters are escaped with backslashes.
     Backslash must be escaped first to avoid double-escaping.
@@ -54,7 +54,7 @@ class TestEscapeMarkdownText:
 
     def test_close_bracket_escaped_regardless_of_match(self):
         """All ] are escaped — matched pairs get both [ and ] escaped."""
-        assert escape_markdown_text("[foo]") == "\\[foo\\]"   # both brackets escaped
+        assert escape_markdown_text("[foo]") == "\\[foo\\]"  # both brackets escaped
         assert escape_markdown_text("[foo]bar[baz]") == "\\[foo\\]bar\\[baz\\]"
 
     def test_unmatched_close_bracket_escaped(self):
@@ -69,11 +69,11 @@ class TestEscapeMarkdownText:
         assert result == "\\\\\\["
 
     def test_backslash_escape_prevents_double_escaping(self):
-        """Without escaping \ first, subsequent passes would double-escape."""
+        r"""Without escaping \ first, subsequent passes would double-escape."""
         assert escape_markdown_text("\\") == "\\\\"
 
     def test_mixed_brackets_and_backslashes(self):
-        """Text with [ ] and \ is fully escaped."""
+        r"""Text with [ ] and \ is fully escaped."""
         # [bar]: both [ and ] escaped → \[bar\]
         assert escape_markdown_text("foo[bar]baz\\qux") == "foo\\[bar\\]baz\\\\qux"
 
@@ -159,9 +159,14 @@ class TestBuildMarkdownLink:
     def test_url_with_fragment_parens_wrapped(self):
         """URL fragment with parens triggers wrapping."""
         result = build_markdown_link(
-            "Example", "", "https://pydantic.com/api/pydantic.json_schema#build_schema_type_to_method()"
+            "Example",
+            "",
+            "https://pydantic.com/api/pydantic.json_schema#build_schema_type_to_method()",
         )
-        assert result == "[Example](<https://pydantic.com/api/pydantic.json_schema#build_schema_type_to_method()>)"
+        assert (
+            result
+            == "[Example](<https://pydantic.com/api/pydantic.json_schema#build_schema_type_to_method()>)"
+        )
 
     def test_fragment_prefixes_title(self):
         """Non-empty fragment_text is prepended to title."""
@@ -177,6 +182,7 @@ class TestBuildMarkdownLink:
 
     def test_wiki_link_format_unchanged(self):
         """Wiki-link format [text|url] has no special escaping (for reference)."""
+
         def build_wiki_link(title, fragment_text, url):
             link_text = fragment_text + " - " + title if fragment_text else title
             return f"[{link_text}|{url}]"
@@ -198,7 +204,10 @@ class TestRealWorldExamples:
         title = "JSON Schema - Pydantic documentation (en)"
         result = build_markdown_link(title, "", url)
         # URL has no parens, brackets, spaces, or angle brackets — no wrapping needed
-        assert result == "[JSON Schema - Pydantic documentation (en)](https://pydantic.com.cn/en/api/json_schema/#pydantic.json_schema.GenerateJsonSchema.build_schema_type_to_method)"
+        assert (
+            result
+            == "[JSON Schema - Pydantic documentation (en)](https://pydantic.com.cn/en/api/json_schema/#pydantic.json_schema.GenerateJsonSchema.build_schema_type_to_method)"
+        )
 
     def test_url_with_space_in_fragment(self):
         """URL with space in fragment section is wrapped."""
@@ -210,7 +219,10 @@ class TestRealWorldExamples:
         """Fragment text prepending title — real build_schema_type_to_method pattern."""
         url = "https://pydantic.com/api/pydantic.json_schema#build_schema_type_to_method"
         result = build_markdown_link("GenerateJsonSchema", "build_schema_type_to_method", url)
-        assert result == "[build_schema_type_to_method - GenerateJsonSchema](https://pydantic.com/api/pydantic.json_schema#build_schema_type_to_method)"
+        assert (
+            result
+            == "[build_schema_type_to_method - GenerateJsonSchema](https://pydantic.com/api/pydantic.json_schema#build_schema_type_to_method)"
+        )
 
     def test_fragment_prefixes_title_with_brackets_in_text(self):
         """Fragment prepending title where title itself has brackets."""

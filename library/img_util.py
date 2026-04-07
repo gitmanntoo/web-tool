@@ -108,10 +108,10 @@ def encode_favicon_inline(href: str, target_height: int = 20) -> str | None:
 
         # Clamp width to prevent huge base64 strings from very wide images
         # Most favicons have reasonable aspect ratios; limit to 20x the height
-        MAX_WIDTH = target_height * 20
-        if new_width > MAX_WIDTH:
-            new_width = MAX_WIDTH
-            new_height = int(MAX_WIDTH / aspect_ratio)
+        max_width = target_height * 20
+        if new_width > max_width:
+            new_width = max_width
+            new_height = int(max_width / aspect_ratio)
 
         # Resize using high-quality resampling
         resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)

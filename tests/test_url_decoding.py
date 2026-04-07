@@ -46,7 +46,10 @@ class TestPageMetadataUrlDecoding:
         # URL should be decoded
         assert metadata.url == expected_url
         # Fragment should be extracted correctly
-        assert metadata.parsed_url.fragment == "pydantic.json_schema.GenerateJsonSchema.build_schema_type_to_method"
+        assert (
+            metadata.parsed_url.fragment
+            == "pydantic.json_schema.GenerateJsonSchema.build_schema_type_to_method"
+        )
 
     @patch("pyperclip.paste")
     def test_url_without_fragment_is_decoded(self, mock_paste):
