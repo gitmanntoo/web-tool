@@ -1,0 +1,35 @@
+# Python / venv
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Docs & testing
+TESTING.md
+TEST_COVERAGE.md
+CLAUDE.md
+Makefile
+docs/
+
+# Development artifacts
+tests/
+.env
+.env.*
+*.log
+
+# Build cache
+local-cache/
+
+# Not needed for runtime
+requirements.txt
