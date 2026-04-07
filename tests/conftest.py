@@ -17,8 +17,8 @@ def _load_web_tool():
     """Load web-tool.py as a module despite the hyphenated name."""
     app_path = Path(__file__).resolve().parent.parent / "web-tool.py"
     spec = spec_from_file_location("web_tool", app_path)
-    if spec.loader is None:
-        raise ImportError(f"Could not load loader for {app_path}")
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load loader for {app_path} (from {__file__})")
     web_tool = module_from_spec(spec)
     spec.loader.exec_module(web_tool)
     return web_tool

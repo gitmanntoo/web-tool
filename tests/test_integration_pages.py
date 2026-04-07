@@ -23,6 +23,7 @@ def _submit_clipboard(client, url, title, html, batch_id=None, user_agent="Test 
 
     Returns the batch_id and the JSON-encoded clipboard length.
     batch_id is optional and will be auto-generated if not provided.
+    A provided batch_id must be a valid UUID string (the server validates it).
     """
     if batch_id is None:
         batch_id = str(uuid.uuid4())
