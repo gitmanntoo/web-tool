@@ -6,15 +6,20 @@ Provides:
 - test_page_builder: helper to build test page URLs with query params
 """
 
-import importlib.util
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+from urllib.parse import urlencode
 
 import pytest
 
 
 def _load_web_tool():
     """Load web-tool.py as a module despite the hyphenated name."""
-    spec = importlib.util.spec_from_file_location("web_tool", "web-tool.py")
-    web_tool = importlib.util.module_from_spec(spec)
+    app_path = Path(__file__).resolve().parent.parent / "web-tool.py"
+    spec = spec_from_file_location("web_tool", app_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load loader for {app_path} (from {__file__})")
+    web_tool = module_from_spec(spec)
     spec.loader.exec_module(web_tool)
     return web_tool
 
@@ -50,12 +55,9 @@ def test_page_builder(base_url):
     def _build_url(**params):
         if not params:
             return base_url
-        query_parts = []
-        for key, value in params.items():
-            if value is not None and value != "":
-                query_parts.append(f"{key}={value}")
-        if not query_parts:
+        filtered = {k: v for k, v in params.items() if v is not None and v != ""}
+        if not filtered:
             return base_url
-        return f"{base_url}?{'&'.join(query_parts)}"
+        return f"{base_url}?{urlencode(filtered, doseq=True)}"
 
     return _build_url
