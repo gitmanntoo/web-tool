@@ -15,13 +15,12 @@ MARKDOWN_URL_SAFE_WRAP_CHARS = re.compile(r"[()[\] <]")
 
 
 def escape_markdown_text(text: str) -> str:
-    """Escape [ and \ for Markdown link text portion.
+    """Escape [ ] and \ for Markdown link text portion.
 
-    Only [ needs escaping — it starts the link text delimiter.
-    ] only needs escaping when it has no matching opening [.
+    All three delimiter characters are escaped with backslashes.
     Backslash must be escaped first to avoid double-escaping.
     """
-    return text.replace("\\", "\\\\").replace("[", "\\[")
+    return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
 
 
 def build_markdown_link(title: str, fragment_text: str, url: str) -> str:
@@ -50,14 +49,14 @@ class TestEscapeMarkdownText:
         """Left brackets are escaped to \\[."""
         assert escape_markdown_text("foo[bar") == "foo\\[bar"
 
-    def test_close_bracket_unchanged_when_matched(self):
-        """Matched ] is NOT escaped — only unmatched closing brackets need escaping."""
-        assert escape_markdown_text("[foo]") == "\\[foo]"   # ] unchanged (closes the pair)
-        assert escape_markdown_text("[foo]bar[baz]") == "\\[foo]bar\\[baz]"
+    def test_close_bracket_escaped_regardless_of_match(self):
+        """All ] are escaped — matched pairs get both [ and ] escaped."""
+        assert escape_markdown_text("[foo]") == "\\[foo\\]"   # both brackets escaped
+        assert escape_markdown_text("[foo]bar[baz]") == "\\[foo\\]bar\\[baz\\]"
 
-    def test_unmatched_close_bracket_unchanged(self):
-        """Unmatched ] is NOT escaped — JS escapeMarkdownText only escapes [ and \\."""
-        assert escape_markdown_text("]foo") == "]foo"
+    def test_unmatched_close_bracket_escaped(self):
+        """Unmatched ] is escaped to \\]."""
+        assert escape_markdown_text("]foo") == "\\]foo"
 
     def test_backslash_before_open_bracket_escaped_first(self):
         """Backslash is escaped first so the bracket that follows isn't double-escaped."""
@@ -71,9 +70,9 @@ class TestEscapeMarkdownText:
         assert escape_markdown_text("\\") == "\\\\"
 
     def test_mixed_brackets_and_backslashes(self):
-        """Text with [ and \ is fully escaped."""
-        # [bar]: [ escaped → \\[bar] (] not escaped since it's matched)
-        assert escape_markdown_text("foo[bar]baz\\qux") == "foo\\[bar]baz\\\\qux"
+        """Text with [ ] and \ is fully escaped."""
+        # [bar]: both [ and ] escaped → \[bar\]
+        assert escape_markdown_text("foo[bar]baz\\qux") == "foo\\[bar\\]baz\\\\qux"
 
 
 class TestMarkdownUrlWrapping:
@@ -133,10 +132,10 @@ class TestBuildMarkdownLink:
         assert result == "[Foo (bar)](https://example.com)"
 
     def test_text_with_brackets_escaped(self):
-        """Open brackets in text are escaped; matched close brackets are not."""
-        # Node confirms: JSON.stringify(escapeMarkdownText("Foo [bar]")) = "Foo \\[bar]"
+        """All brackets [ and ] are escaped in link text."""
+        # "Foo [bar]" → Foo \[bar\]
         result = build_markdown_link("Foo [bar]", "", "https://example.com")
-        assert result == "[Foo \\[bar]](https://example.com)"
+        assert result == "[Foo \\[bar\\]](https://example.com)"
 
     def test_text_with_backslash_escaped(self):
         """Backslash in text is escaped."""
@@ -163,9 +162,9 @@ class TestBuildMarkdownLink:
     def test_both_text_brackets_and_url_parens(self):
         """Text brackets and URL parens are both handled correctly."""
         result = build_markdown_link("Foo [bar]", "", "https://example.com/page(method)")
-        # Text: [ escaped → Foo \[bar]  (] not escaped)
+        # Text: [ and ] both escaped → Foo \[bar\]
         # URL: wrapped in <>
-        assert result == "[Foo \\[bar]](<https://example.com/page(method)>)"
+        assert result == "[Foo \\[bar\\]](<https://example.com/page(method)>)"
 
     def test_wiki_link_format_unchanged(self):
         """Wiki-link format [text|url] has no special escaping (for reference)."""
@@ -207,7 +206,7 @@ class TestRealWorldExamples:
     def test_fragment_prefixes_title_with_brackets_in_text(self):
         """Fragment prepending title where title itself has brackets."""
         result = build_markdown_link("Foo [bar]", "baz", "https://example.com")
-        assert result == "[baz - Foo \\[bar]](https://example.com)"
+        assert result == "[baz - Foo \\[bar\\]](https://example.com)"
 
 
 if __name__ == "__main__":

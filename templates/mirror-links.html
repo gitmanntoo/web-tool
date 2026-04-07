@@ -208,11 +208,10 @@
         const MARKDOWN_URL_SAFE_WRAP_CHARS = /[()[\] <]/;
 
         // Function to escape special characters in the link text portion of
-        // a Markdown link. Only [ and \ need escaping — ] only needs escaping
-        // when it doesn't match an opening [ (i.e., for unmatched closing brackets).
-        // Backslash must be replaced first to avoid double-escaping.
+        // a Markdown link. Backslash must be replaced first to avoid
+        // double-escaping. All three delimiters [ ] \ are escaped.
         function escapeMarkdownText(text) {
-            return text.replace(/\\/g, '\\\\').replace(/\[/g, '\\[');
+            return text.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
         }
 
         // Function to build a link in Markdown format

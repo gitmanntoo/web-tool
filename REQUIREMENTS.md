@@ -422,11 +422,11 @@ For each segment, displays:
 - **ASCII Only:** Full ASCII conversion; emoji converted to ASCII equivalents
 - **Path Safe:** Title converted to valid filename (removes invalid characters, converts unicode)
 
-**Link Formats Generated (if favicon available):**
-- **Favicon link:** Image with favicon and fragment title combined with original URL
-- **Favicon Clean link:** Image with favicon and title combined with clean URL
-- **Simple link:** Just text link with fragment title and original URL
-- **Simple Clean link:** Just text link with title and clean URL
+**Link Formats Generated (all use selected title and URL variants):**
+- **HTML:** `<a target="_blank" href="url">text</a>` — standard HTML anchor
+- **Markdown:** `[text](url)` — standard Markdown link format
+- **Wiki-link:** `[text|url]` — Obsidian/piped link format
+- **Simple:** `url text` — plain text with URL followed by title
 
 **Favicon Discovery:**
 - Automatically retrieves first cached favicon for the page domain
