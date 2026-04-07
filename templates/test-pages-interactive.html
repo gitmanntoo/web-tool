@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Pages - Interactive</title>
+    <link rel="stylesheet" href="/static/default.css">
+    <link rel="stylesheet" href="/static/mirror.css">
+</head>
+<body>
+    <h1>Test Pages - Interactive</h1>
+    <p>Configure test page parameters and load the test page.</p>
+
+    <div class="metadata-panel">
+        <h2>Page Content</h2>
+            <div style="display: grid; gap: 12px;">
+                <div>
+                    <label for="title" style="display: block; font-weight: bold;">Title:</label>
+                    <input type="text" name="title" id="title" value="Test Page" style="width: 100%; padding: 6px; font-size: 14px;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: bold;">Fragment Options:</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                        <div>
+                            <label for="fragment" style="font-size: 13px;">Fragment (id on h1):</label>
+                            <input type="text" name="fragment" id="fragment" value="" placeholder="e.g. my-section" style="width: 100%; padding: 6px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label for="anchor-fragment" style="font-size: 13px;">Anchor Fragment:</label>
+                            <input type="text" name="anchor-fragment" id="anchor-fragment" value="" placeholder="e.g. my-anchor" style="width: 100%; padding: 6px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label for="wrap-fragment" style="font-size: 13px;">Wrapper Fragment:</label>
+                            <input type="text" name="wrap-fragment" id="wrap-fragment" value="" placeholder="e.g. wrapper-id" style="width: 100%; padding: 6px; font-size: 14px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: bold;">Content Flags:</label>
+                    <div style="display: flex; gap: 20px; margin-top: 6px;">
+                        <label style="font-size: 13px;">
+                            <input type="checkbox" name="url-has-parens" id="url-has-parens" value="yes">
+                            URL has parens
+                        </label>
+                        <label style="font-size: 13px;">
+                            <input type="checkbox" name="url-has-brackets" id="url-has-brackets" value="yes">
+                            URL has brackets
+                        </label>
+                        <label style="font-size: 13px;">
+                            <input type="checkbox" name="url-has-space" id="url-has-space" value="yes">
+                            URL has spaces
+                        </label>
+                        <label style="font-size: 13px;">
+                            <input type="checkbox" name="unicode-content" id="unicode-content" value="yes">
+                            Unicode content
+                        </label>
+                        <label style="font-size: 13px;">
+                            <input type="checkbox" name="emoji-content" id="emoji-content" value="yes">
+                            Emoji content
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <button type="button" onclick="loadTestPage()" style="padding: 8px 16px; font-size: 14px;">Load Test Page</button>
+                    <button type="button" onclick="copyUrl()" style="padding: 8px 16px; font-size: 14px;">Copy URL</button>
+                    <span id="copy-status" style="font-size: 13px; color: #666; align-self: center;"></span>
+                </div>
+            </div>
+    </div>
+
+    <div class="metadata-panel" style="margin-top: 20px;">
+        <h2>Generated URL</h2>
+        <pre id="generated-url" style="background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px;"></pre>
+    </div>
+
+    <div class="metadata-panel" style="margin-top: 20px;">
+        <h2>Preset Configurations</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+            <button type="button" onclick="loadPreset('unicode')" style="padding: 10px; text-align: left; cursor: pointer;">
+                <strong>Unicode Title</strong><br>
+                <span style="font-size: 12px; color: #666;">Title with CJK, Arabic, Russian</span>
+            </button>
+            <button type="button" onclick="loadPreset('emoji')" style="padding: 10px; text-align: left; cursor: pointer;">
+                <strong>Emoji Title</strong><br>
+                <span style="font-size: 12px; color: #666;">Title with emoji characters</span>
+            </button>
+            <button type="button" onclick="loadPreset('fragment')" style="padding: 10px; text-align: left; cursor: pointer;">
+                <strong>Fragment Tests</strong><br>
+                <span style="font-size: 12px; color: #666;">All fragment handler types</span>
+            </button>
+            <button type="button" onclick="loadPreset('special-chars')" style="padding: 10px; text-align: left; cursor: pointer;">
+                <strong>Special Characters</strong><br>
+                <span style="font-size: 12px; color: #666;">Title with []() and brackets</span>
+            </button>
+            <button type="button" onclick="loadPreset('url-edge-cases')" style="padding: 10px; text-align: left; cursor: pointer;">
+                <strong>URL Edge Cases</strong><br>
+                <span style="font-size: 12px; color: #666;">Parens, brackets, spaces in URLs</span>
+            </button>
+            <button type="button" onclick="loadPreset('all')" style="padding: 10px; text-align: left; cursor: pointer;">
+                <strong>All Options</strong><br>
+                <span style="font-size: 12px; color: #666;">Everything enabled</span>
+            </button>
+        </div>
+    </div>
+
+    <p style="margin-top: 20px;">
+        <a href="/test-page?title=Basic+Test&fragment=basic-section">Basic test page</a> |
+        <a href="/debug/title-variants">Title variants debug</a> |
+        <a href="/debug/url-variants">URL variants debug</a>
+    </p>
+
+    <script>
+        function buildQueryString() {
+            const params = new URLSearchParams();
+
+            const title = document.getElementById('title').value.trim();
+            if (title) params.set('title', title);
+
+            const fragment = document.getElementById('fragment').value.trim();
+            if (fragment) params.set('fragment', fragment);
+
+            const anchorFragment = document.getElementById('anchor-fragment').value.trim();
+            if (anchorFragment) params.set('anchor-fragment', anchorFragment);
+
+            const wrapFragment = document.getElementById('wrap-fragment').value.trim();
+            if (wrapFragment) params.set('wrap-fragment', wrapFragment);
+
+            if (document.getElementById('url-has-parens').checked) params.set('url-has-parens', 'yes');
+            if (document.getElementById('url-has-brackets').checked) params.set('url-has-brackets', 'yes');
+            if (document.getElementById('url-has-space').checked) params.set('url-has-space', 'yes');
+            if (document.getElementById('unicode-content').checked) params.set('unicode-content', 'yes');
+            if (document.getElementById('emoji-content').checked) params.set('emoji-content', 'yes');
+
+            return params.toString();
+        }
+
+        function updateGeneratedUrl() {
+            const qs = buildQueryString();
+            const url = '/test-page' + (qs ? '?' + qs : '');
+            document.getElementById('generated-url').textContent = url;
+            return url;
+        }
+
+        function loadTestPage() {
+            const qs = buildQueryString();
+            const url = '/test-page' + (qs ? '?' + qs : '');
+            window.location.href = url;
+        }
+
+        function copyUrl() {
+            const qs = buildQueryString();
+            const url = '/test-page' + (qs ? '?' + qs : '');
+            navigator.clipboard.writeText(window.location.origin + url).then(() => {
+                document.getElementById('copy-status').textContent = 'Copied!';
+                setTimeout(() => {
+                    document.getElementById('copy-status').textContent = '';
+                }, 2000);
+            });
+        }
+
+        function loadPreset(preset) {
+            // Reset all
+            document.getElementById('title').value = 'Test Page';
+            document.getElementById('fragment').value = '';
+            document.getElementById('anchor-fragment').value = '';
+            document.getElementById('wrap-fragment').value = '';
+            document.getElementById('url-has-parens').checked = false;
+            document.getElementById('url-has-brackets').checked = false;
+            document.getElementById('url-has-space').checked = false;
+            document.getElementById('unicode-content').checked = false;
+            document.getElementById('emoji-content').checked = false;
+
+            switch (preset) {
+                case 'unicode':
+                    document.getElementById('title').value = '日本語タイトル — Русский';
+                    document.getElementById('unicode-content').checked = true;
+                    break;
+                case 'emoji':
+                    document.getElementById('title').value = 'Hello 🌍 World 🚀';
+                    document.getElementById('emoji-content').checked = true;
+                    break;
+                case 'fragment':
+                    document.getElementById('title').value = 'Fragment Test Page';
+                    document.getElementById('fragment').value = 'main-section';
+                    document.getElementById('anchor-fragment').value = 'anchor-frag';
+                    document.getElementById('wrap-fragment').value = 'wrapper-frag';
+                    break;
+                case 'special-chars':
+                    document.getElementById('title').value = 'File: Name [v1].txt (copy)';
+                    break;
+                case 'url-edge-cases':
+                    document.getElementById('title').value = 'URL Edge Cases';
+                    document.getElementById('url-has-parens').checked = true;
+                    document.getElementById('url-has-brackets').checked = true;
+                    document.getElementById('url-has-space').checked = true;
+                    break;
+                case 'all':
+                    document.getElementById('title').value = '日本語 🚀 [v1]';
+                    document.getElementById('fragment').value = 'main-section';
+                    document.getElementById('anchor-fragment').value = 'anchor-frag';
+                    document.getElementById('wrap-fragment').value = 'wrapper-frag';
+                    document.getElementById('url-has-parens').checked = true;
+                    document.getElementById('url-has-brackets').checked = true;
+                    document.getElementById('unicode-content').checked = true;
+                    document.getElementById('emoji-content').checked = true;
+                    break;
+            }
+
+            // Update URL display then navigate
+            updateGeneratedUrl();
+            loadTestPage();
+        }
+
+        // Update URL display on any input change
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', updateGeneratedUrl);
+            input.addEventListener('change', updateGeneratedUrl);
+        });
+
+        // Initialize
+        updateGeneratedUrl();
+    </script>
+</body>
+</html>

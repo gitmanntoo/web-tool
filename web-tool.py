@@ -957,6 +957,57 @@ def debug_clipboard_proxy():
     return html
 
 
+@app.route("/test-page", methods=["GET", "POST"])
+def test_page():
+    """
+    Serve a test page with configurable edge-case content for manual and
+    automated testing of URL, fragment, and title handling.
+
+    Query/Form params:
+    - title: page title and H1 text
+    - fragment: URL fragment identifier
+    - anchor-fragment: fragment for anchor-inside-heading test
+    - wrap-fragment: fragment for wrapper-with-id test
+    - url-has-parens: if "yes", include links with () in href
+    - url-has-brackets: if "yes", include links with [] in href
+    - url-has-space: if "yes", include links with spaces in href
+    - unicode-content: if "yes", include Unicode body content
+    - emoji-content: if "yes", include emoji body content
+    """
+    params = {}
+
+    if request.method == "POST":
+        params = {
+            'title': request.form.get('title', 'Test Page'),
+            'fragment': request.form.get('fragment', ''),
+            'anchor_fragment': request.form.get('anchor-fragment', ''),
+            'wrap_fragment': request.form.get('wrap-fragment', ''),
+            'url_has_parens': request.form.get('url-has-parens', ''),
+            'url_has_brackets': request.form.get('url-has-brackets', ''),
+            'url_has_space': request.form.get('url-has-space', ''),
+            'unicode_content': request.form.get('unicode-content', ''),
+            'emoji_content': request.form.get('emoji-content', ''),
+        }
+    else:
+        params = {
+            'title': request.args.get('title', 'Test Page'),
+            'fragment': request.args.get('fragment', ''),
+            'anchor_fragment': request.args.get('anchor-fragment', ''),
+            'wrap_fragment': request.args.get('wrap-fragment', ''),
+            'url_has_parens': request.args.get('url-has-parens', ''),
+            'url_has_brackets': request.args.get('url-has-brackets', ''),
+            'url_has_space': request.args.get('url-has-space', ''),
+            'unicode_content': request.args.get('unicode-content', ''),
+            'emoji_content': request.args.get('emoji-content', ''),
+        }
+
+    template = template_env.get_template('test-page.html')
+    rendered_html = template.render(params)
+
+    resp = make_response(rendered_html)
+    return resp
+
+
 @app.route("/debug/favicon-files", methods=["GET", ])
 def debug_favicon_files():
     """Show favicon cache files in precedence order.
@@ -1067,6 +1118,16 @@ def debug_favicon_files():
         'cache_ttl_seconds': html_util.FAVICON_CACHE_TTL,
         'note': 'Files are listed in precedence order (highest to lowest)',
     }
+
+
+@app.route("/test-pages-interactive", methods=["GET"])
+def test_pages_interactive():
+    """
+    Interactive page for building test page URLs with configurable parameters.
+    """
+    template = template_env.get_template("test-pages-interactive.html")
+    rendered_html = template.render({})
+    return make_response(rendered_html)
 
 
 if __name__ == "__main__":
