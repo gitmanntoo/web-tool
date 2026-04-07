@@ -241,8 +241,6 @@
 
         // Function to render the current state to the DOM
         function render() {
-            const linkText = buildLinkText(state.title, state.fragmentText);
-
             // HTML format
             const htmlLink = buildHtmlLink(state.title, state.fragmentText, state.url, state.faviconOption);
             document.getElementById('format-html-display').innerHTML = htmlLink;
