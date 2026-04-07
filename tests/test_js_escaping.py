@@ -5,9 +5,10 @@ Tests that the tojson filter is used correctly for JavaScript strings
 in mirror-links.html, ensuring special characters don't break JS parsing.
 """
 
+from pathlib import Path
+
 import pytest
 from jinja2 import Environment, FileSystemLoader
-from pathlib import Path
 
 
 class TestMirrorLinksJsEscaping:
@@ -64,7 +65,9 @@ class TestMirrorLinksJsEscaping:
 
         rendered = template.render(
             title="JSON Schema - Pydantic documentation (en)",
-            title_variants=[{"value": "JSON Schema - Pydantic documentation (en)", "label": "Original"}],
+            title_variants=[
+                {"value": "JSON Schema - Pydantic documentation (en)", "label": "Original"}
+            ],
             fragment="",
             fragment_text="",
             url_variants=[{"url": "https://example.com", "label": "Original"}],
