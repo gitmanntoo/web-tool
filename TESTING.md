@@ -10,11 +10,13 @@ This project uses **pytest** as the testing framework with tests organized in a 
 web-tool/
 ├── tests/
 │   ├── __init__.py
+│   ├── conftest.py                   # Pytest fixtures (app_client, test_page_builder)
 │   ├── test_docker_util.py         # Tests for Docker detection
 │   ├── test_fragment_variants.py   # Tests for fragment variant duplicate detection
 │   ├── test_favicon_validation.py # Tests for favicon validation (get_valid_favicon_links)
 │   ├── test_html_util.py          # Tests for HTML parsing and favicon discovery
 │   ├── test_img_util.py           # Tests for image conversion
+│   ├── test_integration_pages.py  # Integration tests for URL/fragment/title handling
 │   ├── test_js_escaping.py        # Tests for JavaScript string escaping in templates
 │   ├── test_text_util.py          # Tests for text utilities
 │   ├── test_title_strings.py      # Test data for title variants
@@ -65,6 +67,16 @@ uv run pytest tests/test_title_variants.py::TestAsciiAndEmojis -v
 ### Run Tests Matching a Pattern
 ```bash
 uv run pytest -k "emoji" -v
+```
+
+### Run Only Integration Tests
+```bash
+uv run pytest -m integration -v
+```
+
+### Run Only Unit Tests
+```bash
+uv run pytest -m "not integration" -v
 ```
 
 ### Run with Coverage Report
@@ -160,6 +172,38 @@ Tests for JavaScript string escaping in `mirror-links.html` template:
 - Null favicon renders as `null` in JavaScript
 - Favicon URL renders as JavaScript string
 
+#### `TestFragmentResolution` (4 integration tests)
+Tests fragment text resolution via the 6 handlers in `PageMetadata`:
+- Heading with id resolves fragment to heading text
+- Anchor inside heading with href resolves to heading text minus anchor symbol
+- Section/div wrapper with id containing heading resolves fragment
+- Anchor with matching href and text content resolves fragment
+
+#### `TestTitleVariants` (3 integration tests)
+Tests for `TitleVariants` generation from mirror-links:
+- Original title preserves Unicode characters
+- ASCII Only variant strips emoji and converts Unicode to ASCII
+- Path Safe variant replaces special characters
+
+#### `TestURLVariants` (3 integration tests)
+Tests URL variant generation:
+- Clean variant strips fragment and query string
+- Root variant returns scheme://netloc/first-path-segment
+- Host variant returns scheme://netloc only
+
+#### `TestMirrorLinksEndpoint` (3 integration tests)
+Tests the `/mirror-links` endpoint:
+- Accepts batchId parameter for clipboard data
+- Returns HTML containing the page title
+- Handles emoji in page content
+
+#### `TestTestPageEndpoint` (7 integration tests)
+Tests the `/test-page` endpoint:
+- Returns HTML, renders headings with fragment ids
+- Renders anchor fragments and wrapper sections
+- Renders Unicode and emoji content
+- Accepts both GET and POST methods
+
 ## Test Data
 
 Test strings covering various scenarios are available in `tests/test_title_strings.py`:
@@ -200,6 +244,62 @@ dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
 ]
+```
+
+## Test Fixtures (conftest.py)
+
+The `tests/conftest.py` module provides shared pytest fixtures for integration tests:
+
+### `app_client`
+Flask application test client for making requests to the web-tool endpoints.
+
+```python
+def test_something(app_client):
+    resp = app_client.get("/mirror-links?url=http://example.com")
+    assert resp.status_code == 200
+```
+
+### `test_page_builder`
+Returns a callable that builds test page URLs with query parameters.
+
+```python
+def test_something(test_page_builder):
+    url = test_page_builder(title="Hello", fragment="section1")
+    resp = app_client.get(url)
+```
+
+### Integration Test Pattern
+
+Integration tests use a clipboard-based pattern:
+
+```python
+import json
+import uuid
+
+def test_mirror_links(app_client, test_page_builder):
+    # 1. Submit clipboard data to clip-collector
+    batch_id = str(uuid.uuid4())
+    clip_data = {
+        "url": "http://example.com",
+        "title": "Test Page",
+        "userAgent": "Test Agent",
+        "cookieString": "",
+        "html": "<html><body><h1>Test</h1></body></html>",
+    }
+    json_body = json.dumps(clip_data)
+    app_client.post(
+        f"/clip-collector?batchId={batch_id}&chunkNum=1",
+        data=json_body,
+        content_type="application/json",
+    )
+
+    # 2. Call endpoint with batchId and textLength
+    from urllib.parse import quote
+    url = "http://example.com"
+    resp = app_client.get(
+        f"/mirror-links?url={quote(url, safe=':/')}&batchId={batch_id}&textLength={len(json_body)}"
+    )
+    assert resp.status_code == 200
 ```
 
 ## Best Practices
@@ -290,7 +390,28 @@ uv run pytest tests/ --cov=library --cov-report=xml
 
 ## Manual/Integration Testing
 
-Some edge cases require end-to-end testing via the browser bookmarklet since unit tests cannot fully capture the clipboard/bookmarklet flow.
+### Test Pages Endpoint
+
+The `/test-page` endpoint provides parameterized HTML pages for testing URL, fragment, and title handling. For interactive use, see the **<a href="http://localhost:8532/test-pages-interactive">test pages interactive builder</a>**.
+
+**Query Parameters:**
+| Parameter | Description |
+|-----------|-------------|
+| `title` | Page title and H1 text |
+| `fragment` | URL fragment identifier (id on the h1) |
+| `anchor-fragment` | Fragment for anchor-inside-heading test |
+| `wrap-fragment` | Fragment for wrapper-with-id test |
+| `url-has-parens` | Include links with `()` in href (`yes`) |
+| `url-has-brackets` | Include links with `[]` in href (`yes`) |
+| `url-has-space` | Include links with spaces in href (`yes`) |
+| `unicode-content` | Include Unicode body content (`yes`) |
+| `emoji-content` | Include emoji body content (`yes`) |
+
+**Examples:**
+- `http://localhost:8532/test-page?title=Hello+World`
+- `http://localhost:8532/test-page?title=Test&fragment=my-section`
+- `http://localhost:8532/test-page?title=Test&anchor-fragment=anchor1&wrap-fragment=wrap1`
+- `http://localhost:8532/test-page?title=Test&unicode-content=yes&emoji-content=yes`
 
 ### Edge-Case URLs for Manual Testing
 

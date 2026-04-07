@@ -145,3 +145,8 @@ Container detection status and clipboard proxy testing are available at:
     - Interactive test page for generating URL variants.
     - Enter any URL and click Generate to see all variants (Original, With Fragment, Clean, Root, Host).
     - Duplicate variants are visually indicated with reduced opacity and gray background.
+
+- <a href="http://localhost:8532/test-pages-interactive" target="_blank">test pages</a>
+    - <strong><a href="http://localhost:8532/test-pages-interactive" target="_blank">Interactive test page builder</a></strong> — configure parameters and load test pages in the browser
+    - <a href="http://localhost:8532/test-page" target="_blank">Raw test page</a> — parameterized endpoint for direct URL access
+    - Parameters: `title`, `fragment`, `anchor-fragment`, `wrap-fragment`, `url-has-parens`, `url-has-brackets`, `url-has-space`, `unicode-content`, `emoji-content`

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title | e }}</title>
+    <link rel="stylesheet" href="/static/default.css">
+    <link rel="stylesheet" href="/static/mirror.css">
+</head>
+<body>
+    {# Primary heading - id matches fragment if provided #}
+    <h1 id="{{ fragment | e if fragment else 'main' }}">{{ title | e }}</h1>
+
+    {# Anchor inside heading - for anchor-inside-heading fragment handler #}
+    {% if anchor_fragment %}
+    <h2 id="{{ anchor_fragment | e }}">
+        <a id="{{ anchor_fragment | e }}"></a>
+        {{ anchor_fragment | e }} with anchor
+    </h2>
+    {% endif %}
+
+    {# Wrapper div/section with id containing a heading - for wrapper-with-id fragment handler #}
+    {% if wrap_fragment %}
+    <section id="{{ wrap_fragment | e }}">
+        <h2>Wrapped Heading</h2>
+        <p>This section's id is "{{ wrap_fragment | e }}" and contains a heading.</p>
+    </section>
+    {% endif %}
+
+    {# Heading with anchor element that has text - for anchor-with-text fragment handler #}
+    <h2 id="anchor-with-text-heading">
+        <a href="#anchor-with-text">Display Text for Anchor</a>
+    </h2>
+
+    {# Links with edge-case URLs #}
+    <div id="links">
+        <h2>Links with Edge-Case URLs</h2>
+
+        {% if url_has_parens %}
+        <p><a href="http://example.com/page#heading_(with-parens)">Link with parens in fragment</a></p>
+        <p><a href="http://example.com/path_(directory)/file.html">Link with parens in path</a></p>
+        {% endif %}
+
+        {% if url_has_brackets %}
+        <p><a href="http://example.com/path[with/brackets]/file.html">Link with brackets in path</a></p>
+        {% endif %}
+
+        {% if url_has_space %}
+        <p><a href="http://example.com/path with spaces/file.html">Link with spaces in path</a></p>
+        {% endif %}
+
+        {# Always include a normal link for baseline #}
+        <p><a href="http://example.com/normal/path">Normal link</a></p>
+    </div>
+
+    {# Body content for fragment text resolution #}
+    <div id="content">
+        <h2>Content Section</h2>
+        <p>This is paragraph content under the main heading.</p>
+
+        {% if unicode_content %}
+        <h3>Unicode Content</h3>
+        <p>Русский текст — Russian</p>
+        <p>中文内容 — Chinese</p>
+        <p>العربية — Arabic (RTL)</p>
+        <p>日本語 — Japanese</p>
+        {% endif %}
+
+        {% if emoji_content %}
+        <h3>Emoji Content</h3>
+        <p>Hello 🌍! Navigation 📍 icons 🚀</p>
+        <p>Flags: 🇺🇸 🇬🇧 🇯🇵</p>
+        {% endif %}
+    </div>
+
+    {# Sibling heading after anchor - for anchor-siblings fragment handler #}
+    <h3 id="sibling-heading">Sibling Heading</h3>
+    <a id="anchor-sibling"></a>
+    <p>Content after the anchor.</p>
+
+</body>
+</html>
