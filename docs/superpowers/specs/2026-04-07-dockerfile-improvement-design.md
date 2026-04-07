@@ -1,0 +1,78 @@
+# Dockerfile Improvement Design
+
+## Context
+
+The current `Dockerfile` is functional but has several issues that affect build performance, image size, and production readiness. This is a single-project repository (web-tool) used both locally and deployed to servers.
+
+## Design
+
+### 1. Add `.dockerignore`
+
+Exclude from build context:
+- `node_modules/`, `.venv/`, `.pytest_cache/`, `.git/`, `__pycache__/`, `*.pyc`
+- `TESTING.md`, `TEST_COVERAGE.md`, `Makefile`, `.github/`, `tests/`
+- `requirements.txt` (not used; uv managed)
+- `local-cache/` (runtime cache, not needed in image)
+- `*.yml`, `*.yaml` at root level (e.g., `CLAUDE.md`); files in `static/` are still needed
+
+**Impact**: Build context shrinks significantly; only actual runtime artifacts sent to Docker daemon.
+
+### 2. Optimized Single-Stage Dockerfile
+
+```
+FROM python:3.13-slim
+
+# Install system deps + clean apt cache in one layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential libcairo2-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install uv from official image (avoids extra pip layer)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy dependency manifests first (for layer caching)
+COPY pyproject.toml uv.lock ./
+RUN uv pip install --system --no-cache .
+
+# Download NLTK data (embedded in image)
+RUN python -m nltk.downloader wordnet words
+
+WORKDIR /app
+COPY web-tool.py README.md ./
+COPY library/ ./library/
+COPY static/ ./static/
+COPY templates/ ./templates/
+
+# Non-root user for security
+RUN useradd --create-home appuser && chown -R appuser:appuser /app
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8532/')" || exit 1
+
+EXPOSE 8532
+ENTRYPOINT ["python", "web-tool.py"]
+```
+
+### Key Decisions
+
+| Decision | Rationale |
+|---|---|
+| `--no-install-recommends` | Don't pull suggested packages we don't need |
+| `apt-get clean && rm -rf /var/lib/apt/lists/*` | Keeps layer small; can't prune after layer commits |
+| `COPY --from=ghcr.io/astral-sh/uv:latest` | Official uv image is tiny; avoids `pip install uv` extra layer |
+| `uv pip install --system --no-cache` | No pip cache in image |
+| `USER appuser` | Runs as non-root; Flask still binds to 8532 fine |
+| Inline `HEALTHCHECK` | Built-in Docker health probe |
+
+## Files to Create/Modify
+
+- **Create**: `.dockerignore`
+- **Modify**: `Dockerfile`
+
+## Expected Outcomes
+
+- **Image size**: ~180-220MB (vs current ~250-300MB)
+- **Build time**: ~20-30% faster due to `.dockerignore` + better layer caching
+- **Production ready**: Non-root user + healthcheck included
