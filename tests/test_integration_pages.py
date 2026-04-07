@@ -22,17 +22,10 @@ def _submit_clipboard(client, url, title, html, batch_id=None, user_agent="Test 
     Submit clipboard data to the clip-collector endpoint.
 
     Returns the batch_id and the JSON-encoded clipboard length.
-    batch_id must be a valid UUID string.
+    batch_id is optional and will be auto-generated if not provided.
     """
     if batch_id is None:
         batch_id = str(uuid.uuid4())
-    else:
-        # Validate it looks UUID-ish to avoid cryptic errors
-        try:
-            uuid.UUID(batch_id)
-        except ValueError:
-            # Not a valid UUID - generate a proper one
-            batch_id = str(uuid.uuid4())
 
     clip_data = {
         "url": url,
@@ -66,7 +59,7 @@ def _get_mirror_links(client, url, batch_id, text_length):
 
 @pytest.mark.integration
 class TestFragmentResolution:
-    """Tests for fragment text resolution via the 6 handlers in PageMetadata."""
+    """Tests for fragment text resolution via fragment handlers in PageMetadata."""
 
     def test_fragment_handler_heading_with_id(self, app_client, test_page_builder):
         """Heading element with matching id resolves fragment to heading text."""
@@ -132,7 +125,7 @@ class TestTitleVariants:
         url = "http://localhost/test"
         title = "日本語タイトル — Russian"
         html = f"<html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "test-title-unicode")
+        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440001")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -144,7 +137,7 @@ class TestTitleVariants:
         url = "http://localhost/test"
         title = "Hello 🌍 World 🚀"
         html = f"<html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "test-title-emoji")
+        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440002")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -160,7 +153,7 @@ class TestTitleVariants:
         url = "http://localhost/test"
         title = "File: Name [v1].txt"
         html = f"<html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "test-title-path")
+        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440003")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -177,7 +170,7 @@ class TestURLVariants:
         """URL Clean variant removes fragment and query string."""
         url = "http://example.com/path?query=value#section"
         html = "<html><body><h1>Test</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "test-url-clean")
+        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440004")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -191,7 +184,7 @@ class TestURLVariants:
         """URL Root returns scheme://netloc/first-path-segment."""
         url = "http://example.com/a/b/c?query=1#frag"
         html = "<html><body><h1>Test</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "test-url-root")
+        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440005")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -202,7 +195,7 @@ class TestURLVariants:
         """URL Host returns only scheme://netloc with no path."""
         url = "http://example.com/deep/path/file.html"
         html = "<html><body><h1>Test</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "test-url-host")
+        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440006")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -218,7 +211,9 @@ class TestMirrorLinksEndpoint:
         """mirror-links accepts batchId parameter for clipboard data."""
         url = "http://localhost/test"
         html = "<html><body><h1>Test</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Test Title", html, "test-batch")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, "Test Title", html, "550e8400-e29b-41d4-a716-446655440000"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -230,7 +225,7 @@ class TestMirrorLinksEndpoint:
             "<html><head><title>My Test Page</title></head>"
             "<body><h1>My Test Page</h1></body></html>"
         )
-        batch_id, text_len = _submit_clipboard(app_client, url, "My Test Page", html, "test-html")
+        batch_id, text_len = _submit_clipboard(app_client, url, "My Test Page", html, "550e8400-e29b-41d4-a716-446655440007")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -241,7 +236,7 @@ class TestMirrorLinksEndpoint:
         """mirror-links handles emoji in page content."""
         url = "http://localhost/test"
         html = "<html><body><h1>Emoji Test 🚀</h1><p>Navigation 📍 icons 🚀</p></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Emoji Test 🚀", html, "test-emoji")
+        batch_id, text_len = _submit_clipboard(app_client, url, "Emoji Test 🚀", html, "550e8400-e29b-41d4-a716-446655440008")
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -275,7 +270,7 @@ class TestTestPageEndpoint:
         assert resp.status_code == 200
         html = resp.get_data(as_text=True)
         assert 'id="my-anchor"' in html
-        assert '<a id="my-anchor"></a>' in html
+        assert '<a href="#my-anchor">' in html
 
     def test_test_page_with_wrap_fragment(self, app_client):
         """test-page renders wrapper section when wrap-fragment is set."""

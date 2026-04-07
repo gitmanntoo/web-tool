@@ -12,8 +12,7 @@
     {# Anchor inside heading - for anchor-inside-heading fragment handler #}
     {% if anchor_fragment %}
     <h2 id="{{ anchor_fragment | e }}">
-        <a id="{{ anchor_fragment | e }}"></a>
-        {{ anchor_fragment | e }} with anchor
+        {{ anchor_fragment | e }} with anchor <a href="#{{ anchor_fragment | e }}">¶</a>
     </h2>
     {% endif %}
 
@@ -73,7 +72,7 @@
 
     {# Sibling heading after anchor - for anchor-siblings fragment handler #}
     <h3 id="sibling-heading">Sibling Heading</h3>
-    <a id="anchor-sibling"></a>
+    <a href="#sibling-heading" id="anchor-sibling">¶</a>
     <p>Content after the anchor.</p>
 
 </body>

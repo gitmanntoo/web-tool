@@ -173,9 +173,9 @@ Tests for JavaScript string escaping in `mirror-links.html` template:
 - Favicon URL renders as JavaScript string
 
 #### `TestFragmentResolution` (4 integration tests)
-Tests fragment text resolution via the 6 handlers in `PageMetadata`:
+Tests fragment text resolution via fragment handlers in `PageMetadata`:
 - Heading with id resolves fragment to heading text
-- Anchor inside heading with href resolves to heading text minus anchor symbol
+- Anchor inside heading with href resolves to heading text (minus anchor symbol when anchor text trails the heading text)
 - Section/div wrapper with id containing heading resolves fragment
 - Anchor with matching href and text content resolves fragment
 
