@@ -6,9 +6,6 @@ verifying that is_duplicate is set correctly when fragment_text
 equals fragment (fallback case).
 """
 
-
-
-
 class TestFragmentVariants:
     """Tests for fragment variant generation."""
 
@@ -74,7 +71,7 @@ class TestFragmentVariants:
 
     def test_empty_fragment_and_text(self):
         """
-        Handles case where both fragment and fragment_text are empty.
+        Fragment and Fragment Text are both empty.
         All three options have empty values, so Fragment and Fragment Text
         are duplicates of None.
         """
