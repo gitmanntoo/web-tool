@@ -172,7 +172,7 @@
             faviconOption: 'url'  // Will be overridden by DOMContentLoaded from checked radio
         };
 
-        // Function to escape text for safe use in URLs and HTML
+        // Function to escape text for safe use in HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -219,8 +219,12 @@
             const linkText = escapeMarkdownText(buildLinkText(title, fragmentText));
             // Wrap URL in angle brackets if it contains chars that could
             // confuse the Markdown parser's link delimiter detection.
-            const wrappedUrl = MARKDOWN_URL_SAFE_WRAP_CHARS.test(url) ? `<${url}>` : url;
-            return `[${linkText}](${wrappedUrl})`;
+            // Encode < and > so they don't prematurely terminate the wrapped destination.
+            if (MARKDOWN_URL_SAFE_WRAP_CHARS.test(url)) {
+                const encoded = url.replace(/[<>]/g, (c) => encodeURIComponent(c));
+                return `[${linkText}](<${encoded}>)`;
+            }
+            return `[${linkText}](${url})`;
         }
 
         // Function to build a link in Wiki-link format
@@ -237,8 +241,6 @@
 
         // Function to render the current state to the DOM
         function render() {
-            const linkText = buildLinkText(state.title, state.fragmentText);
-
             // HTML format
             const htmlLink = buildHtmlLink(state.title, state.fragmentText, state.url, state.faviconOption);
             document.getElementById('format-html-display').innerHTML = htmlLink;
