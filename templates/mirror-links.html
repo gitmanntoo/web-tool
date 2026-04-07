@@ -133,10 +133,10 @@
     <script>
         // Store default values
         const defaultValues = {
-            title: '{{ title_variants[0].value|e }}',
-            fragmentText: {% if fragment %}'{{ fragment_text|e }}'{% else %}''{% endif %},
-            url: '{{ url_variants[0].url|e }}',
-            favicon: {% if favicon %}'{{ favicon|e }}'{% else %}null{% endif %},
+            title: {{ title_variants[0].value|tojson }},
+            fragmentText: {% if fragment %}{{ fragment_text|tojson }}{% else %}''{% endif %},
+            url: {{ url_variants[0].url|tojson }},
+            favicon: {% if favicon %}{{ favicon|tojson }}{% else %}null{% endif %},
             faviconInline: {% if favicon_inline %}{{ favicon_inline|tojson }}{% else %}null{% endif %}
         };
 

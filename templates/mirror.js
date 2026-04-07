@@ -15,7 +15,7 @@ var c = {
 c.htmlSize = c.html.length;
 
 p.append('title', c.title);
-p.append('url', c.url);
+p.append('url', encodeURIComponent(c.url));
 p.append('format', '{{ format }}');
 
 // Function to handle clipboard error and make HEAD request

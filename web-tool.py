@@ -466,9 +466,11 @@ def get_mirror_links():
     fragment_variants = []
     fragment_variants_data = [
         ('', 'None'),
-        (metadata.parsed_url.fragment if metadata.parsed_url else '', 'Fragment'),
-        (metadata.fragment_text, 'Fragment Text'),
     ]
+    if metadata.parsed_url.fragment:
+        fragment_variants_data.append((metadata.parsed_url.fragment, 'Fragment'))
+    if metadata.fragment_text:
+        fragment_variants_data.append((metadata.fragment_text, 'Fragment Text'))
 
     seen_values = set()
     for fragment_value, label in fragment_variants_data:

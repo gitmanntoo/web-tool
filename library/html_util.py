@@ -8,6 +8,7 @@ import pyperclip
 import yaml
 from bs4 import BeautifulSoup
 from flask import request
+from typing import Optional
 from lxml import html as lxml_html
 
 from library import docker_util, img_util, url_util
@@ -402,7 +403,7 @@ def add_favicon_to_cache(cache_key, favicon_link):
         del _favicon_yaml_cache[file_path_str]
 
 
-def get_favicon_links(page_url: str, soup: BeautifulSoup, include=None) -> list[RelLink]:
+def get_favicon_links(page_url: str, soup: Optional[BeautifulSoup], include=None) -> list[RelLink]:
     """Get the favicon links for the page URL.
 
     Discovers native favicon formats first. Only creates ICO/SVG→PNG conversions
@@ -546,6 +547,33 @@ def validate_top_candidates(links: list[RelLink], max_count: int = 1) -> list[Re
                 break
 
     return validated
+
+
+def get_valid_favicon_links(
+    page_url: str,
+    soup: Optional[BeautifulSoup],
+    max_count: int = 1,
+    favicon_height: int = FAVICON_HEIGHT,
+) -> list[RelLink]:
+    """Get valid favicon links for a page.
+
+    Discovers favicon candidates and validates them, returning only those
+    that resolve to valid images. This is the primary interface for getting
+    favicons that are guaranteed to be valid.
+
+    Args:
+        page_url: The URL of the page
+        soup: BeautifulSoup parsed HTML (or None)
+        max_count: Maximum number of valid favicons to return
+        favicon_height: Target height in pixels for optimal size sorting
+
+    Returns:
+        List of validated RelLink objects that resolved to valid images.
+        Returns empty list if no valid favicons found.
+    """
+    links = get_favicon_links(page_url, soup)
+    sorted_links = sort_favicon_links(links, favicon_height)
+    return validate_top_candidates(sorted_links, max_count)
 
 
 def get_common_favicon_links(page_url):
