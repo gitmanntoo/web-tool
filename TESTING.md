@@ -10,9 +10,18 @@ This project uses **pytest** as the testing framework with tests organized in a 
 web-tool/
 ├── tests/
 │   ├── __init__.py
+│   ├── test_docker_util.py         # Tests for Docker detection
 │   ├── test_fragment_variants.py   # Tests for fragment variant duplicate detection
-│   ├── test_title_variants.py      # Tests for title variant generation
-│   └── test_title_strings.py      # Test data for title variants
+│   ├── test_favicon_validation.py # Tests for favicon validation (get_valid_favicon_links)
+│   ├── test_html_util.py          # Tests for HTML parsing and favicon discovery
+│   ├── test_img_util.py           # Tests for image conversion
+│   ├── test_js_escaping.py        # Tests for JavaScript string escaping in templates
+│   ├── test_text_util.py          # Tests for text utilities
+│   ├── test_title_strings.py      # Test data for title variants
+│   ├── test_title_variants.py     # Tests for title variant generation
+│   ├── test_unicode_util.py       # Tests for Unicode utilities
+│   ├── test_url_decoding.py       # Tests for URL encoding/decoding
+│   └── test_url_util.py           # Tests for URL utilities
 ├── pytest.ini                      # Pytest configuration
 ├── pyproject.toml                  # Project configuration with test dependencies
 └── [old test files - deprecated]
@@ -118,6 +127,38 @@ Tests for fragment variant generation in mirror-links endpoint:
 - All three options present with correct values
 - Empty fragment/text case handled correctly
 - Pydantic-style URLs (fragment_text equals fragment) detected
+
+#### `TestGetValidFaviconLinks` (6 tests)
+Tests for `get_valid_favicon_links()` function in `html_util.py`:
+- Returns only validated links (filters out broken favicon URLs)
+- Returns empty list when no valid favicons found
+- Passes `max_count` and `favicon_height` parameters correctly
+- Composes `get_favicon_links`, `sort_favicon_links`, and `validate_top_candidates`
+
+#### `TestValidateTopCandidates` (3 tests)
+Tests for `validate_top_candidates()` function:
+- Returns empty list for empty input
+- Returns single valid link
+- Returns multiple valid links up to max_count
+
+#### `TestPageMetadataUrlDecoding` (6 tests)
+Tests for URL decoding in `PageMetadata`:
+- URL with fragment containing dots is properly decoded
+- URL without fragment is decoded
+- URL with query string is decoded
+- URL with `%23` (encoded `#`) is decoded to `#`
+- Already-decoded URLs pass through unchanged
+- Empty URL handled gracefully
+
+#### `TestMirrorLinksJsEscaping` (7 tests)
+Tests for JavaScript string escaping in `mirror-links.html` template:
+- Fragment text with newlines properly escaped (using `|tojson`)
+- Fragment text with special characters (quotes) escaped
+- Title with Unicode characters escaped
+- URL with fragment containing dots rendered correctly
+- Empty fragment renders empty string for `fragmentText`
+- Null favicon renders as `null` in JavaScript
+- Favicon URL renders as JavaScript string
 
 ## Test Data
 
