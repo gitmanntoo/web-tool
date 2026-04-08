@@ -1120,6 +1120,68 @@ def debug_favicon_files():
     }
 
 
+@app.route("/debug/inline-image", methods=["GET"])
+def debug_inline_image_page():
+    """Debug page for converting pasted or uploaded images to inline base64."""
+    template = template_env.get_template("debug-inline-image.html")
+    rendered_html = template.render({})
+    return make_response(rendered_html)
+
+
+@app.route("/debug/inline-image", methods=["POST"])
+def debug_inline_image():
+    """Convert raw image bytes to an inline base64 img tag.
+
+    Accepts JSON body with:
+      - image_data: base64-encoded image bytes
+      - height: target height in pixels (default 20)
+
+    Returns JSON with:
+      - success: true/false
+      - inline: <img> tag with data URL (on success)
+      - base64: raw base64 string (on success)
+      - error: error message (on failure)
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return json.dumps({"success": False, "error": "no JSON body"})
+
+        image_data = data.get("image_data")
+        height = int(data.get("height", 20))
+
+        if not image_data:
+            return json.dumps({"success": False, "error": "image_data is required"})
+
+        # Decode base64 to raw bytes
+        try:
+            image_bytes = base64.b64decode(image_data, validate=True)
+        except Exception:
+            return json.dumps({"success": False, "error": "invalid base64 data"})
+
+        # Process image
+        from library.img_util import encode_image_inline
+
+        inline = encode_image_inline(image_bytes, target_height=height)
+        if inline is None:
+            return json.dumps({
+                "success": False,
+                "error": "image too large (>2000px in any dimension) or unsupported format",
+            })
+
+        # Extract base64 portion for separate display
+        base64_part = inline.split(",", 1)[1]
+
+        return json.dumps({
+            "success": True,
+            "inline": f'<img src="{inline}" height="{height}" alt="Favicon" />',
+            "base64": base64_part,
+        })
+    except Exception as e:
+        logging.exception("debug_inline_image failed")
+        return json.dumps({"success": False, "error": str(e)})
+
+
 @app.route("/test-pages-interactive", methods=["GET"])
 def test_pages_interactive():
     """

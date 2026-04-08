@@ -411,5 +411,71 @@ class TestEncodeFaviconInlineIntegration:
         assert hasattr(encode_favicon_inline, "cache_clear")
 
 
+class TestEncodeImageInline:
+    """Tests for encode_image_inline function."""
+
+    def test_function_exists(self):
+        """Test that encode_image_inline function exists."""
+        from library.img_util import encode_image_inline
+
+        assert callable(encode_image_inline)
+
+    def test_accepts_bytes_parameter(self):
+        """Test that encode_image_inline accepts bytes parameter."""
+        from library.img_util import encode_image_inline
+
+        # Valid PNG bytes (1x1 transparent pixel)
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        result = encode_image_inline(png_bytes, target_height=20)
+        assert result is not None
+        assert result.startswith("data:image/png;base64,")
+
+    def test_accepts_target_height_parameter(self):
+        """Test that encode_image_inline accepts target_height parameter."""
+        from library.img_util import encode_image_inline
+
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        result = encode_image_inline(png_bytes, target_height=10)
+        assert result is not None
+
+    def test_default_target_height_is_20(self):
+        """Test that default target height is 20."""
+        from library.img_util import encode_image_inline
+
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        # Should not raise with default height
+        result = encode_image_inline(png_bytes)
+        assert result is not None
+
+    def test_returns_none_for_empty_bytes(self):
+        """Test that encode_image_inline returns None for empty bytes."""
+        from library.img_util import encode_image_inline
+
+        result = encode_image_inline(b"", target_height=20)
+        assert result is None
+
+    def test_returns_none_for_invalid_bytes(self):
+        """Test that encode_image_inline returns None for invalid bytes."""
+        from library.img_util import encode_image_inline
+
+        result = encode_image_inline(b"not an image", target_height=20)
+        assert result is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

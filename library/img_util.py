@@ -79,6 +79,82 @@ def convert_svg(href: str, to_format: str = "PNG") -> bytes:
         return None
 
 
+def _resize_image(img: Image.Image, target_height: int) -> Image.Image:
+    """Resize an image to target_height preserving aspect ratio.
+
+    Width is clamped to max 20x the target height to prevent huge base64
+    strings from very wide images.
+    """
+    aspect_ratio = img.width / img.height
+    new_height = target_height
+    new_width = int(target_height * aspect_ratio)
+
+    max_width = target_height * 20
+    if new_width > max_width:
+        new_width = max_width
+        new_height = int(max_width / aspect_ratio)
+
+    return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+
+def encode_image_inline(image_bytes: bytes, target_height: int = 20) -> str | None:
+    """Encode raw image bytes as a base64 PNG string, resized to target height.
+
+    Detects the image type using Magika, opens with Pillow, resizes to
+    target_height preserving aspect ratio (width clamped to 20x target_height
+    to prevent huge base64 strings), and returns a base64-encoded PNG data URL.
+
+    Args:
+        image_bytes: Raw bytes of the image file
+        target_height: Target height in pixels (default: 20)
+
+    Returns:
+        Base64-encoded PNG string (with data URL prefix) or None on failure
+    """
+    try:
+        # Detect image type
+        result = mgk.identify_bytes(image_bytes)
+        image_type = result.output.label
+        logging.debug(f"encode_image_inline: detected type={image_type}")
+
+        # Handle SVG — convert to PNG first
+        if image_type == "image/svg":
+            png_buffer = BytesIO()
+            svg2png(
+                bytestring=image_bytes,
+                write_to=png_buffer,
+                output_height=SVG_HEIGHT,
+                output_width=SVG_WIDTH,
+            )
+            image_bytes = png_buffer.getvalue()
+            image_type = "image/png"
+
+        # Check dimensions before loading into Pillow
+        temp_img = Image.open(BytesIO(image_bytes))
+        if temp_img.width > 2000 or temp_img.height > 2000:
+            logging.warning(
+                f"encode_image_inline: image too large {temp_img.width}x{temp_img.height}"
+            )
+            return None
+
+        # Open the image
+        img = Image.open(BytesIO(image_bytes))
+
+        # Resize preserving aspect ratio
+        resized = _resize_image(img, target_height)
+
+        # Convert to PNG and encode as base64
+        png_buffer = BytesIO()
+        resized.save(png_buffer, format="PNG")
+        png_bytes = png_buffer.getvalue()
+
+        b64 = base64.b64encode(png_bytes).decode("ascii")
+        return f"data:image/png;base64,{b64}"
+    except Exception as e:
+        logging.warning(f"Failed to encode image inline: {e}")
+        return None
+
+
 @lru_cache(maxsize=128)
 def encode_favicon_inline(href: str, target_height: int = 20) -> str | None:
     """Encode a favicon as a base64 PNG string, resized to target height.
@@ -98,32 +174,7 @@ def encode_favicon_inline(href: str, target_height: int = 20) -> str | None:
         resp = url_util.get_url(href)
         resp.raise_for_status()
 
-        # Open the image
-        img = Image.open(BytesIO(resp.content))
-
-        # Calculate new dimensions preserving aspect ratio
-        aspect_ratio = img.width / img.height
-        new_height = target_height
-        new_width = int(target_height * aspect_ratio)
-
-        # Clamp width to prevent huge base64 strings from very wide images
-        # Most favicons have reasonable aspect ratios; limit to 20x the height
-        max_width = target_height * 20
-        if new_width > max_width:
-            new_width = max_width
-            new_height = int(max_width / aspect_ratio)
-
-        # Resize using high-quality resampling
-        resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
-        # Convert to PNG and encode as base64
-        png_buffer = BytesIO()
-        resized.save(png_buffer, format="PNG")
-        png_bytes = png_buffer.getvalue()
-
-        # Encode as base64 with data URL prefix
-        b64 = base64.b64encode(png_bytes).decode("ascii")
-        return f"data:image/png;base64,{b64}"
+        return encode_image_inline(resp.content, target_height)
     except Exception as e:
         logging.warning(f"Failed to encode favicon inline: {href} {e}")
         return None
