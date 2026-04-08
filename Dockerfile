@@ -22,7 +22,7 @@ COPY web-tool.py README.md ./
 RUN uv pip install --system --no-cache .
 
 # Non-root user for security
-RUN useradd --create-home appuser && \
+RUN useradd --uid 1000 --create-home appuser && \
     chown -R appuser:appuser /app && \
     mkdir -p /data && chown appuser:appuser /data
 
