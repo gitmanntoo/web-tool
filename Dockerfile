@@ -7,7 +7,7 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install uv from official image (avoids extra pip layer)
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ COPY web-tool.py README.md ./
 # Install deps
 RUN uv pip install --system --no-cache .
 
-# Non-root user for security (create before nltk download so data goes to their home)
+# Non-root user for security
 RUN useradd --create-home appuser && \
     chown -R appuser:appuser /app && \
     mkdir -p /data && chown appuser:appuser /data
