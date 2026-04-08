@@ -13,7 +13,7 @@ Exclude from build context:
 - `TESTING.md`, `TEST_COVERAGE.md`, `Makefile`, `.github/`, `tests/`
 - `requirements.txt` (not used; uv managed)
 - `local-cache/` (runtime cache, not needed in image)
-- `*.yml`, `*.yaml` at root level (e.g., `CLAUDE.md`); files in `static/` are still needed
+- `docs/` (documentation not needed at runtime)
 
 **Impact**: Build context shrinks significantly; only actual runtime artifacts sent to Docker daemon.
 
@@ -61,9 +61,9 @@ ENTRYPOINT ["python", "web-tool.py"]
 |---|---|
 | `--no-install-recommends` | Don't pull suggested packages we don't need |
 | `apt-get clean && rm -rf /var/lib/apt/lists/*` | Keeps layer small; can't prune after layer commits |
-| `COPY --from=ghcr.io/astral-sh/uv:latest` | Official uv image is tiny; avoids `pip install uv` extra layer |
+| `COPY --from=ghcr.io/astral-sh/uv:0.11.3` | Official uv image is tiny; avoids `pip install uv` extra layer; pinned for reproducibility |
 | `uv pip install --system --no-cache` | No pip cache in image |
-| `USER appuser` | Runs as non-root; Flask still binds to 8532 fine |
+| `USER appuser` (uid 1000) | Runs as non-root; Flask still binds to 8532 fine; UID pinned for deterministic permissions |
 | Inline `HEALTHCHECK` | Built-in Docker health probe |
 
 ## Files to Create/Modify
