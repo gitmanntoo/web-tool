@@ -13,7 +13,7 @@ Exclude from build context:
 - `TESTING.md`, `TEST_COVERAGE.md`, `Makefile`, `.github/`, `tests/`
 - `requirements.txt` (not used; uv managed)
 - `local-cache/` (runtime cache, not needed in image)
-- `*.yml`, `*.yaml` at root level (e.g., `CLAUDE.md`); files in `static/` are still needed
+- `docs/` (documentation not needed at runtime)
 
 **Impact**: Build context shrinks significantly; only actual runtime artifacts sent to Docker daemon.
 
@@ -31,25 +31,31 @@ RUN apt-get update && \
 # Install uv from official image (avoids extra pip layer)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+WORKDIR /app
+
 # Copy dependency manifests first (for layer caching)
 COPY pyproject.toml uv.lock ./
-RUN uv pip install --system --no-cache .
-
-# Download NLTK data (embedded in image)
-RUN python -m nltk.downloader wordnet words
-
-WORKDIR /app
-COPY web-tool.py README.md ./
 COPY library/ ./library/
 COPY static/ ./static/
 COPY templates/ ./templates/
+COPY web-tool.py README.md ./
+
+# Install deps
+RUN uv pip install --system --no-cache .
+
+# Download NLTK data to a world-readable location
+ENV NLTK_DATA=/usr/share/nltk_data
+RUN python -m nltk.downloader -d /usr/share/nltk_data wordnet words
 
 # Non-root user for security
-RUN useradd --create-home appuser && chown -R appuser:appuser /app
+RUN useradd --uid 1000 --create-home appuser && \
+    chown -R appuser:appuser /app && \
+    mkdir -p /data && chown appuser:appuser /data
+
 USER appuser
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8532/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8532/', timeout=5).close()" || exit 1
 
 EXPOSE 8532
 ENTRYPOINT ["python", "web-tool.py"]
@@ -63,7 +69,7 @@ ENTRYPOINT ["python", "web-tool.py"]
 | `apt-get clean && rm -rf /var/lib/apt/lists/*` | Keeps layer small; can't prune after layer commits |
 | `COPY --from=ghcr.io/astral-sh/uv:latest` | Official uv image is tiny; avoids `pip install uv` extra layer |
 | `uv pip install --system --no-cache` | No pip cache in image |
-| `USER appuser` | Runs as non-root; Flask still binds to 8532 fine |
+| `USER appuser` (uid 1000) | Runs as non-root; Flask still binds to 8532 fine; UID pinned for deterministic permissions |
 | Inline `HEALTHCHECK` | Built-in Docker health probe |
 
 ## Files to Create/Modify

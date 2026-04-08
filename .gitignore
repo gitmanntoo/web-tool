@@ -66,3 +66,8 @@ local-cache/
 uv.lock
 .factory/
 .remember/
+
+# Node (not used by this Python project but sometimes present)
+node_modules/
+package.json
+package-lock.json
