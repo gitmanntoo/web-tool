@@ -33,7 +33,7 @@ RUN python -m nltk.downloader -d /usr/share/nltk_data wordnet words
 USER appuser
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8532/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8532/', timeout=5).close()" || exit 1
 
 EXPOSE 8532
 ENTRYPOINT ["python", "web-tool.py"]
