@@ -29,27 +29,33 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install uv from official image (avoids extra pip layer)
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-# Copy dependency manifests first (for layer caching)
-COPY pyproject.toml uv.lock ./
-RUN uv pip install --system --no-cache .
-
-# Download NLTK data (embedded in image)
-RUN python -m nltk.downloader wordnet words
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /usr/local/bin/uv
 
 WORKDIR /app
-COPY web-tool.py README.md ./
+
+# Copy all source + manifests before deps install (setuptools requires all package dirs present)
+COPY pyproject.toml uv.lock ./
 COPY library/ ./library/
 COPY static/ ./static/
 COPY templates/ ./templates/
+COPY web-tool.py README.md ./
+
+# Install deps
+RUN uv pip install --system --no-cache .
 
 # Non-root user for security
-RUN useradd --create-home appuser && chown -R appuser:appuser /app
+RUN useradd --uid 1000 --create-home appuser && \
+    chown -R appuser:appuser /app && \
+    mkdir -p /data && chown appuser:appuser /data
+
+# Download NLTK data to a world-readable location
+ENV NLTK_DATA=/usr/share/nltk_data
+RUN python -m nltk.downloader -d /usr/share/nltk_data wordnet words
+
 USER appuser
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8532/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8532/', timeout=5).close()" || exit 1
 
 EXPOSE 8532
 ENTRYPOINT ["python", "web-tool.py"]
