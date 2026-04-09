@@ -96,6 +96,61 @@ class TestConvertIco:
         # Should return None for non-ICO files
         assert result is None
 
+    @patch("library.img_util.Image.open")
+    @patch("library.img_util.url_util.get_url")
+    def test_ico_file_passes_magika_check(self, mock_get_url, mock_image_open):
+        """Regression: walrus operator precedence must not short-circuit ICO files.
+
+        Without parentheses, `t := resp.get_type() != "image/ico"` evaluates as
+        `t := (resp.get_type() != "image/ico")`, making t a boolean. Since
+        `False != "image/ico"` is True, the early return fires even for valid
+        ICO files. This test verifies Image.open is called (not short-circuited).
+        """
+        mock_response = MagicMock()
+        mock_response.get_type.return_value = "image/ico"
+        mock_response.content = b"\x00\x00\x01\x00"
+        mock_get_url.return_value = mock_response
+
+        mock_img = MagicMock()
+        mock_img.format = "ICO"
+        mock_img.save.return_value = None
+        mock_image_open.return_value = mock_img
+
+        convert_ico.cache_clear()
+        result = convert_ico("http://example.com/favicon.ico")
+
+        # Image.open MUST be called — assert no early return at magika check
+        mock_image_open.assert_called_once()
+        # Should return bytes (Pillow save produces bytes)
+        assert result is not None
+        assert isinstance(result, bytes)
+
+    @patch("library.img_util.Image.open")
+    @patch("library.img_util.url_util.get_url")
+    def test_walrus_operator_captures_type_string_not_boolean(self, mock_get_url, mock_image_open):
+        """Regression: verify t captures the type string, not a comparison result.
+
+        If the walrus has wrong precedence, t becomes a bool (False when types
+        match), causing incorrect early returns for valid ICO files.
+        """
+        mock_response = MagicMock()
+        mock_response.get_type.return_value = "image/ico"
+        mock_response.content = b"\x00\x00\x01\x00"
+        mock_get_url.return_value = mock_response
+
+        mock_img = MagicMock()
+        mock_img.format = "ICO"
+        mock_img.save.return_value = None
+        mock_image_open.return_value = mock_img
+
+        convert_ico.cache_clear()
+        result = convert_ico("http://example.com/favicon.ico")
+
+        # Image.open must be called — no early return
+        mock_image_open.assert_called_once()
+        assert result is not None
+        assert isinstance(result, bytes)
+
     @patch("library.img_util.url_util.get_url")
     def test_handles_serialized_response_error(self, mock_get_url):
         """Test handling of SerializedResponseError."""
@@ -409,6 +464,123 @@ class TestEncodeFaviconInlineIntegration:
         """Test that function uses caching."""
         assert hasattr(encode_favicon_inline, "cache_info")
         assert hasattr(encode_favicon_inline, "cache_clear")
+
+
+class TestEncodeImageInline:
+    """Tests for encode_image_inline function."""
+
+    def test_function_exists(self):
+        """Test that encode_image_inline function exists."""
+        from library.img_util import encode_image_inline
+
+        assert callable(encode_image_inline)
+
+    def test_accepts_bytes_parameter(self):
+        """Test that encode_image_inline accepts bytes parameter."""
+        from library.img_util import encode_image_inline
+
+        # Valid PNG bytes (1x1 transparent pixel)
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        result = encode_image_inline(png_bytes, target_height=20)
+        assert result is not None
+        assert result.startswith("data:image/png;base64,")
+
+    def test_accepts_target_height_parameter(self):
+        """Test that encode_image_inline accepts target_height parameter."""
+        from library.img_util import encode_image_inline
+
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        result = encode_image_inline(png_bytes, target_height=10)
+        assert result is not None
+
+    def test_default_target_height_is_20(self):
+        """Test that default target height is 20."""
+        from library.img_util import encode_image_inline
+
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        # Should not raise with default height
+        result = encode_image_inline(png_bytes)
+        assert result is not None
+
+    def test_returns_none_for_empty_bytes(self):
+        """Test that encode_image_inline returns None for empty bytes."""
+        from library.img_util import encode_image_inline
+
+        result = encode_image_inline(b"", target_height=20)
+        assert result is None
+
+    def test_returns_none_for_invalid_bytes(self):
+        """Test that encode_image_inline returns None for invalid bytes."""
+        from library.img_util import encode_image_inline
+
+        result = encode_image_inline(b"not an image", target_height=20)
+        assert result is None
+
+    def test_resize_very_tall_image_does_not_produce_zero_width(self):
+        """Regression: very tall images with int() truncation can produce
+        new_width=0 (e.g. 1x1000 at height=20 gives int(20*0.001)=0),
+        which crashes Pillow's resize()."""
+        from library.img_util import _resize_image
+
+        # 1 pixel wide, 1000 tall — aspect_ratio = 0.001
+        mock_img = MagicMock()
+        mock_img.width = 1
+        mock_img.height = 1000
+        # Simulate resize returning a mock
+        mock_img.resize.return_value = mock_img
+
+        result = _resize_image(mock_img, target_height=20)
+
+        # new_width should be clamped to 1, not 0
+        assert mock_img.resize.call_args[0][0] == (1, 20)
+        assert result is mock_img
+
+    def test_resize_very_wide_image_does_not_produce_zero_height(self):
+        """Regression: width-clamp path can produce new_height=0 for extremely
+        wide images (e.g. 10000x1 clamped to 400px wide gives int(400/10000)=0)."""
+        from library.img_util import _resize_image
+
+        # 10000 wide, 1 tall — aspect_ratio=10000, new_width=int(20*10000)=200000
+        # max_width=20*20=400, clamped: new_height=int(400/10000)=0 without fix
+        mock_img = MagicMock()
+        mock_img.width = 10000
+        mock_img.height = 1
+        mock_img.resize.return_value = mock_img
+
+        result = _resize_image(mock_img, target_height=20)
+
+        # new_height should be clamped to 1, not 0
+        assert mock_img.resize.call_args[0][0] == (400, 1)
+        assert result is mock_img
+
+    def test_resize_rejects_invalid_target_height(self):
+        """target_height must be >= 1 to prevent Pillow errors."""
+        from library.img_util import _resize_image
+
+        mock_img = MagicMock()
+        mock_img.width = 100
+        mock_img.height = 100
+
+        with pytest.raises(ValueError, match="target_height must be >= 1"):
+            _resize_image(mock_img, target_height=0)
+
+        with pytest.raises(ValueError, match="target_height must be >= 1"):
+            _resize_image(mock_img, target_height=-5)
 
 
 if __name__ == "__main__":

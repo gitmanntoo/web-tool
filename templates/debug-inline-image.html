@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Inline Image</title>
+    <link rel="stylesheet" href="/static/default.css">
+    <link rel="stylesheet" href="/static/mirror.css">
+    <style>
+        #file-input::file-selector-button {
+            padding: 8px 16px;
+            font-size: 14px;
+            border: none;
+            background: #0066cc;
+            color: white;
+            cursor: pointer;
+        }
+        #file-input::file-selector-button:hover {
+            background: #0052a3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Inline Image Generator</h1>
+    <p>Convert a pasted or uploaded image to an inline base64 img tag.</p>
+
+    <div class="metadata-panel">
+        <h2>Height</h2>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="number" id="height-input" value="20" min="1" max="100"
+                   style="padding: 8px; font-size: 14px; width: 80px;">
+            <span>px</span>
+        </div>
+    </div>
+
+    <div class="metadata-panel">
+        <h2>Image</h2>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="paste-btn" style="padding: 8px 16px; font-size: 14px;">
+                Paste Image
+            </button>
+            <span style="color: #666;">or</span>
+            <input type="file" id="file-input" accept="image/*"
+                   style="font-size: 14px;">
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 8px;">
+            Max file size: 5MB. Images over 2000px in any dimension will be rejected.
+        </p>
+    </div>
+
+    <div class="metadata-panel">
+        <h2>Output</h2>
+        <button id="copy-output-btn" style="padding: 8px 16px; font-size: 14px;">
+            Copy
+        </button>
+        <div id="output-tag" style="margin-top: 12px;"></div>
+        <div id="output-base64" style="margin-top: 8px; font-family: monospace;
+             font-size: 0.85em; word-break: break-all; color: #666;"></div>
+    </div>
+
+    <script src="/static/js/inline-image.js"></script>
+</body>
+</html>
