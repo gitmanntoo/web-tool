@@ -30,7 +30,7 @@ def convert_ico(href: str, to_format: str = "PNG") -> bytes | None:
         resp.raise_for_status()
 
         # Check if the response is an ICO image.
-        if t := resp.get_type() != "image/ico":
+        if (t := resp.get_type()) != "image/ico":
             logging.warning(f"Not an ICO file (magika): {href} {t}")
             return None
 

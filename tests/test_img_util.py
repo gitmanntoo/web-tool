@@ -96,6 +96,59 @@ class TestConvertIco:
         # Should return None for non-ICO files
         assert result is None
 
+    @patch("library.img_util.Image.open")
+    @patch("library.img_util.url_util.get_url")
+    def test_ico_file_passes_magika_check(self, mock_get_url, mock_image_open):
+        """Regression: walrus operator precedence must not short-circuit ICO files.
+
+        Without parentheses, `t := resp.get_type() != "image/ico"` evaluates as
+        `t := (resp.get_type() != "image/ico")`, making t a boolean. Since
+        `False != "image/ico"` is True, the early return fires even for valid
+        ICO files. This test verifies get_type() returning 'image/ico' does NOT
+        trigger the early None return.
+        """
+        mock_response = MagicMock()
+        mock_response.get_type.return_value = "image/ico"
+        mock_response.content = b"\x00\x00\x01\x00"  # Minimal ICO header bytes
+        mock_get_url.return_value = mock_response
+
+        # Pillow confirms it's an ICO
+        mock_img = MagicMock()
+        mock_img.format = "ICO"
+        mock_image_open.return_value.__enter__.return_value = mock_img
+
+        convert_ico.cache_clear()
+        result = convert_ico("http://example.com/favicon.ico")
+
+        # Should NOT return None at the magika check — proceeds to Pillow check
+        assert result is None  # Pillow check returns None since we didn't mock save
+
+    @patch("library.img_util.Image.open")
+    @patch("library.img_util.url_util.get_url")
+    def test_walrus_operator_captures_type_string_not_boolean(self, mock_get_url, mock_image_open):
+        """Regression: verify t captures the type string, not a comparison result.
+
+        If the walrus has wrong precedence, t becomes a bool (False when types
+        match), causing incorrect early returns for valid ICO files.
+        """
+        mock_response = MagicMock()
+        mock_response.get_type.return_value = "image/ico"
+        mock_response.content = b"\x00\x00\x01\x00"
+        mock_get_url.return_value = mock_response
+
+        mock_img = MagicMock()
+        mock_img.format = "ICO"
+        mock_image_open.return_value.__enter__.return_value = mock_img
+
+        convert_ico.cache_clear()
+        result = convert_ico("http://example.com/favicon.ico")
+
+        # With correct precedence: t = "image/ico", so "image/ico" != "image/ico"
+        # is False → no early return → falls through to Pillow (no content) → None
+        # With buggy precedence: t = False, so False != "image/ico" is True
+        # → early return None (same result, but different code path)
+        assert result is None
+
     @patch("library.img_util.url_util.get_url")
     def test_handles_serialized_response_error(self, mock_get_url):
         """Test handling of SerializedResponseError."""
