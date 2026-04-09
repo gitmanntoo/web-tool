@@ -10,15 +10,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Development dependencies**: `make dev`
 
 ### Quality & Testing
-- **Lint code**: `make lint` (requires `make dev` first to install ruff)
-- **Format code**: `make format` (uses ruff)
+- **Prerequisite**: Run `make dev` first to install lint/format/test tools (ruff, pytest)
+- **Lint code**: `make lint`
+- **Format code**: `make format`
 - **All quality checks**: `make check` (lint + format + import sorting)
-- **Run all tests**: `make test` (via `uv run pytest`)
+- **Run all tests**: `make test`
 - **Run tests with coverage**: `make testcov`
 - **Run tests with verbose output**: `make testv`
 - **Run a specific test file**: `uv run pytest tests/test_filename.py -v`
 - **Run a specific test class**: `uv run pytest tests/test_filename.py::TestClassName -v`
-- **Run tests**: `uv run pytest tests/` (requires `make dev` first to install test deps)
 
 ### Docker
 - **Run published image**: `make docker-run`
