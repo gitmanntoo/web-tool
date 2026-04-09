@@ -1153,11 +1153,18 @@ def debug_inline_image():
         if not image_data:
             return json.dumps({"success": False, "error": "image_data is required"})
 
+        if not (1 <= height <= 200):
+            return json.dumps({"success": False, "error": "height must be between 1 and 200"})
+
         # Decode base64 to raw bytes
         try:
             image_bytes = base64.b64decode(image_data, validate=True)
         except Exception:
             return json.dumps({"success": False, "error": "invalid base64 data"})
+
+        MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
+        if len(image_bytes) > MAX_IMAGE_BYTES:
+            return json.dumps({"success": False, "error": f"image exceeds {MAX_IMAGE_BYTES // 1024 // 1024}MB limit"})
 
         # Process image
         from library.img_util import encode_image_inline
