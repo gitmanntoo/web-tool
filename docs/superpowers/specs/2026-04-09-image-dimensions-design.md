@@ -143,4 +143,4 @@ html += `<img src="${escapeHtml(defaultValues.favicon)}" height="20" alt="Favico
 
 ## Rollback Plan
 
-Revert the branch if issues arise. The change is backward-compatible (adding attributes doesn't break existing functionality).
+Revert the branch if issues arise. The change is backward-compatible at the user-visible level (adding `width` attributes doesn't break existing functionality). One internal API note: `encode_image_inline()` and `encode_favicon_inline()` now return `dict | None` (with `data_url`, `width`, `height` keys) instead of `str | None`. All callers are internal to this project, so no external breaking changes — but external consumers of these functions would need updating.

@@ -547,6 +547,10 @@ def get_mirror_links():
         # Use cached inline if available
         if metadata.favicons[0].inline_image:
             favicon_inline = metadata.favicons[0].inline_image
+            # Cached inline images are pre-encoded at FAVICON_HEIGHT; use the
+            # constant as both dimensions since stored cache has no width record.
+            favicon_width = html_util.FAVICON_HEIGHT
+            favicon_height = html_util.FAVICON_HEIGHT
         # Otherwise generate inline version from the favicon URL
         elif metadata.favicon_url:
             favicon_result = img_util.encode_favicon_inline(metadata.favicon_url, html_util.FAVICON_HEIGHT)
@@ -1146,8 +1150,10 @@ def debug_inline_image():
 
     Returns JSON with:
       - success: true/false
-      - inline: <img> tag with data URL (on success)
+      - inline: <img> tag with data URL, height, and width (on success)
       - base64: raw base64 string (on success)
+      - width: calculated width in pixels (on success)
+      - height: calculated height in pixels (on success)
       - error: error message (on failure)
     """
     try:
