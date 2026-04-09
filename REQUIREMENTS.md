@@ -432,10 +432,12 @@ For each segment, displays:
 - Automatically retrieves first cached favicon for the page domain
 - If no favicon cached: Automatically caches the top favicon for future use
 - Uses [favicon cache system](#favicon-system) with three-tier priority
+- **Paste Favicon:** Button reads a clipboard image via the `paste` event (no browser permission required), sends it to `POST /debug/inline-image`, and adds it as an inline base64 option in the favicon selector. Arms a 5-second timeout or Esc to cancel.
 
 **Favicon Display:**
 - Favicon images use `height="20"` with aspect ratio preserved
-- Inline base64 option shown only when favicon is stored with inline data in cache
+- Inline base64 option shown when favicon is stored with inline data in cache
+- **Pasted** option shown when a pasted image has been captured in the current session
 - URL option copies just the URL; Inline option copies full `<img>` tag with base64 data
 
 **Implementation:** [web-tool.py](web-tool.py) - `get_mirror_links()` function; [library/util.py](library/util.py) - `TitleVariants` class; [library/url_util.py](library/url_util.py) - URL parsing functions
@@ -827,6 +829,68 @@ Each favicon shows which cache file it comes from:
 **Use Case:** Debugging favicon not found issues, checking cache file status, verifying cache precedence, monitoring cache sizes
 
 **Implementation:** [web-tool.py](web-tool.py) - `debug_favicon_files()` function; [library/html_util.py](library/html_util.py) - cache file management functions
+
+#### `GET /debug/inline-image` — Inline Image Generator
+
+**Purpose:** Interactive debug page for converting pasted or uploaded images to inline base64 `<img>` tags. Useful for generating favicon-style inline images without network requests.
+
+**Features:**
+- Paste an image from clipboard (Ctrl+V) or use the file upload input
+- Adjustable output height (default 20px, preserving aspect ratio)
+- Shows the resulting `<img>` tag and raw base64 for direct use
+- 5MB client-side size guard; 2000px server-side dimension limit
+- Supports SVG, ICO, PNG, JPEG, WebP, and GIF inputs
+
+**Use Case:** Creating inline favicon images for mirror-links.html without fetching from a URL.
+
+**Implementation:** [web-tool.py](web-tool.py) - `debug_inline_image()` function; [library/img_util.py](library/img_util.py) - `encode_image_inline()` function
+
+#### `POST /debug/inline-image` — Convert Image to Inline Base64
+
+**Purpose:** Accepts a raw image (uploaded or base64-decoded) and returns a resized inline `<img>` tag.
+
+**Request:** `Content-Type: multipart/form-data`
+- `image` (required): Image file upload OR
+- `base64` (required): Base64-encoded image string
+
+**Request (JSON):** `Content-Type: application/json`
+- `base64` (required): Base64-encoded image string
+
+**Query Parameters:**
+- `height` (optional): Target height in pixels (default: 20, max: 200)
+
+**Response (JSON):**
+```json
+{
+  "success": true,
+  "inline": "<img src=\"data:image/png;base64,...\" height=\"20\" alt=\"Inline\" />",
+  "base64": "...",
+  "width": 24,
+  "height": 20,
+  "original_width": 48,
+  "original_height": 40,
+  "format": "PNG"
+}
+```
+
+**Error Response (JSON):**
+```json
+{ "success": false, "error": "error message" }
+```
+
+**Processing:**
+- Detects image type using Magika
+- Converts SVG to PNG via CairoSVG (256×256)
+- Resizes to target height (width clamped to 20× height to prevent huge base64 strings)
+- Returns base64-encoded PNG data URL
+
+**Error Conditions:**
+- 400: Missing image/base64 parameter
+- 400: Image dimensions exceed 2000×2000
+- 400: Unsupported image format
+- 500: Image processing failed
+
+**Implementation:** [web-tool.py](web-tool.py) - `debug_inline_image()` function; [library/img_util.py](library/img_util.py) - `encode_image_inline()` function
 
 ---
 
