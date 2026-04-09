@@ -85,6 +85,8 @@ def _resize_image(img: Image.Image, target_height: int) -> Image.Image:
     Width is clamped to max 20x the target height to prevent huge base64
     strings from very wide images.
     """
+    if target_height < 1:
+        raise ValueError(f"target_height must be >= 1, got {target_height}")
     aspect_ratio = img.width / img.height
     new_height = target_height
     new_width = int(target_height * aspect_ratio)
@@ -93,6 +95,10 @@ def _resize_image(img: Image.Image, target_height: int) -> Image.Image:
     if new_width > max_width:
         new_width = max_width
         new_height = int(max_width / aspect_ratio)
+
+    # Clamp to at least 1 to prevent Pillow raising on non-positive dimensions.
+    new_width = max(1, new_width)
+    new_height = max(1, new_height)
 
     return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 

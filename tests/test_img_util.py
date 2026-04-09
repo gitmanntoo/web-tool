@@ -529,6 +529,57 @@ class TestEncodeImageInline:
         result = encode_image_inline(b"not an image", target_height=20)
         assert result is None
 
+    def test_resize_very_tall_image_does_not_produce_zero_width(self):
+        """Regression: very tall images with int() truncation can produce
+        new_width=0 (e.g. 1x1000 at height=20 gives int(20*0.001)=0),
+        which crashes Pillow's resize()."""
+        from library.img_util import _resize_image
+
+        # 1 pixel wide, 1000 tall — aspect_ratio = 0.001
+        mock_img = MagicMock()
+        mock_img.width = 1
+        mock_img.height = 1000
+        # Simulate resize returning a mock
+        mock_img.resize.return_value = mock_img
+
+        result = _resize_image(mock_img, target_height=20)
+
+        # new_width should be clamped to 1, not 0
+        assert mock_img.resize.call_args[0][0] == (1, 20)
+        assert result is mock_img
+
+    def test_resize_very_wide_image_does_not_produce_zero_height(self):
+        """Regression: width-clamp path can produce new_height=0 for extremely
+        wide images (e.g. 10000x1 clamped to 400px wide gives int(400/10000)=0)."""
+        from library.img_util import _resize_image
+
+        # 10000 wide, 1 tall — aspect_ratio=10000, new_width=int(20*10000)=200000
+        # max_width=20*20=400, clamped: new_height=int(400/10000)=0 without fix
+        mock_img = MagicMock()
+        mock_img.width = 10000
+        mock_img.height = 1
+        mock_img.resize.return_value = mock_img
+
+        result = _resize_image(mock_img, target_height=20)
+
+        # new_height should be clamped to 1, not 0
+        assert mock_img.resize.call_args[0][0] == (400, 1)
+        assert result is mock_img
+
+    def test_resize_rejects_invalid_target_height(self):
+        """target_height must be >= 1 to prevent Pillow errors."""
+        from library.img_util import _resize_image
+
+        mock_img = MagicMock()
+        mock_img.width = 100
+        mock_img.height = 100
+
+        with pytest.raises(ValueError, match="target_height must be >= 1"):
+            _resize_image(mock_img, target_height=0)
+
+        with pytest.raises(ValueError, match="target_height must be >= 1"):
+            _resize_image(mock_img, target_height=-5)
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
