@@ -420,7 +420,9 @@ class TestEncodeFaviconInline:
 
     @patch("library.img_util.Image.open")
     @patch("library.img_util.url_util.get_url")
-    def test_encode_favicon_inline_returns_dict_with_dimensions(self, mock_get_url, mock_image_open):
+    def test_encode_favicon_inline_returns_dict_with_dimensions(
+        self, mock_get_url, mock_image_open
+    ):
         """Test that encode_favicon_inline returns dict with width and height."""
         mock_response = MagicMock()
         mock_response.content = b"fake_image_data"
