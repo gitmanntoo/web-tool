@@ -109,15 +109,15 @@
                 <input type="radio" name="favicon_option" value="url"{% if favicon %} checked{% endif %}>
                 <button class="copy-btn" data-html="{{ favicon|e }}">Copy</button>
                 <span style="min-width: 100px;"><strong>URL</strong></span>
-                <img src="{{ favicon }}" height="20" alt="Favicon" />
+                <img src="{{ favicon }}" height="20" width="{{ favicon_width or 20 }}" alt="Favicon" />
                 <span><a href="{{ favicon|e }}">{{ favicon|e }}</a></span>
             </div>
             {% if favicon_inline %}
             <div class="url-item">
                 <input type="radio" name="favicon_option" value="inline">
-                <button class="copy-btn" data-html="&lt;img src=&quot;{{ favicon_inline|e }}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
+                <button class="copy-btn" data-html='&lt;img src="{{ favicon_inline|e }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" /&gt;'>Copy</button>
                 <span style="min-width: 100px;"><strong>Inline</strong></span>
-                <img src="{{ favicon_inline }}" height="20" alt="Favicon" />
+                <img src="{{ favicon_inline }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" />
                 <span style="font-family: monospace; font-size: 0.85em; color: #666; word-break: break-all;">{{ favicon_inline[:25] }}...{{ favicon_inline[-20:] }}</span>
             </div>
             {% endif %}
@@ -167,7 +167,9 @@
             url: {{ url_variants[0].url|tojson }},
             favicon: {% if favicon %}{{ favicon|tojson }}{% else %}null{% endif %},
             faviconInline: {% if favicon_inline %}{{ favicon_inline|tojson }}{% else %}null{% endif %},
-            pastedFavicon: null
+            pastedFavicon: null,
+            faviconWidth: {% if favicon_width %}{{ favicon_width|tojson }}{% else %}null{% endif %},
+            faviconHeight: {% if favicon_height %}{{ favicon_height|tojson }}{% else %}null{% endif %}
         };
 
         // State tracking
@@ -175,7 +177,9 @@
             title: defaultValues.title,
             fragmentText: '',
             url: '',
-            faviconOption: 'url'  // Will be overridden by DOMContentLoaded from checked radio
+            faviconOption: 'url',  // Will be overridden by DOMContentLoaded from checked radio
+            faviconWidth: defaultValues.faviconWidth,
+            faviconHeight: defaultValues.faviconHeight
         };
 
         // Function to escape text for safe use in HTML
@@ -191,16 +195,18 @@
         }
 
         // Function to build a link in HTML format
-        function buildHtmlLink(title, fragmentText, url, faviconOption) {
+        function buildHtmlLink(title, fragmentText, url, faviconOption, faviconWidth, faviconHeight) {
             let html = '';
 
             // Add favicon if requested
+            const favH = faviconHeight || 20;
+            const favW = faviconWidth || 20;
             if (faviconOption === 'pasted' && defaultValues.pastedFavicon) {
-                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="20" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="${faviconH}" width="${faviconW}" alt="Favicon" /> `;
             } else if (faviconOption === 'inline' && defaultValues.faviconInline) {
-                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="20" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="${faviconH}" width="${faviconW}" alt="Favicon" /> `;
             } else if (faviconOption === 'url' && defaultValues.favicon) {
-                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="20" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="${faviconH}" width="${faviconW}" alt="Favicon" /> `;
             }
 
             // Add link with appropriate text
@@ -250,7 +256,7 @@
         // Function to render the current state to the DOM
         function render() {
             // HTML format
-            const htmlLink = buildHtmlLink(state.title, state.fragmentText, state.url, state.faviconOption);
+            const htmlLink = buildHtmlLink(state.title, state.fragmentText, state.url, state.faviconOption, state.faviconWidth, state.faviconHeight);
             document.getElementById('format-html-display').innerHTML = htmlLink;
             document.getElementById('format-html-plain').textContent = htmlLink;
             document.getElementById('copy-html').dataset.html = htmlLink;

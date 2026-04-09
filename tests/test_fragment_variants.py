@@ -6,6 +6,7 @@ verifying that is_duplicate is set correctly when fragment_text
 equals fragment (fallback case).
 """
 
+
 class TestFragmentVariants:
     """Tests for fragment variant generation."""
 

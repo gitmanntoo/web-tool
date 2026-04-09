@@ -88,7 +88,11 @@ async function sendToServer(base64Image, height) {
     const data = await response.json();
 
     if (data.success) {
-        updatePreview(data.inline, data.base64);
+        updatePreview(data.inline, data.base64, data.width, data.height);
+        const widthDisplay = document.getElementById('width-display');
+        if (widthDisplay && data.width) {
+            widthDisplay.value = data.width;
+        }
         showInlineTooltip(document.getElementById('copy-output-btn'), 'Ready!');
     } else {
         showInlineTooltip(document.getElementById('copy-output-btn'), 'Error: ' + data.error);
@@ -100,14 +104,20 @@ async function sendToServer(base64Image, height) {
  * Update the output section with the generated img tag and raw base64.
  * @param {string} imgTag  Complete <img .../> tag
  * @param {string} base64  Raw base64 string
+ * @param {number} width  Image width in pixels
+ * @param {number} height  Image height in pixels
  */
-function updatePreview(imgTag, base64) {
+function updatePreview(imgTag, base64, width, height) {
     const outputTag = document.getElementById('output-tag');
     const outputBase64 = document.getElementById('output-base64');
+    const outputDimensions = document.getElementById('output-dimensions');
     const copyBtn = document.getElementById('copy-output-btn');
 
     if (outputTag) outputTag.innerHTML = imgTag;
     if (outputBase64) outputBase64.textContent = base64;
+    if (outputDimensions) {
+        outputDimensions.textContent = `Dimensions: ${width}×${height}px`;
+    }
     if (copyBtn) {
         copyBtn.dataset.html = imgTag;
         copyBtn.disabled = false;
@@ -120,10 +130,14 @@ function updatePreview(imgTag, base64) {
 function clearPreview() {
     const outputTag = document.getElementById('output-tag');
     const outputBase64 = document.getElementById('output-base64');
+    const outputDimensions = document.getElementById('output-dimensions');
     const copyBtn = document.getElementById('copy-output-btn');
+    const widthDisplay = document.getElementById('width-display');
 
     if (outputTag) outputTag.innerHTML = '';
     if (outputBase64) outputBase64.textContent = '';
+    if (outputDimensions) outputDimensions.textContent = '';
+    if (widthDisplay) widthDisplay.value = '';
     if (copyBtn) {
         copyBtn.dataset.html = '';
         copyBtn.disabled = true;

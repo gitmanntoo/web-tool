@@ -541,13 +541,23 @@ def get_mirror_links():
 
     # Get inline base64 favicon (from cache or generate on-the-fly)
     favicon_inline = None
+    favicon_width = None
+    favicon_height = None
     if metadata.favicons:
         # Use cached inline if available
         if metadata.favicons[0].inline_image:
             favicon_inline = metadata.favicons[0].inline_image
+            # Cached inline images are pre-encoded at FAVICON_HEIGHT; use the
+            # constant as both dimensions since stored cache has no width record.
+            favicon_width = html_util.FAVICON_HEIGHT
+            favicon_height = html_util.FAVICON_HEIGHT
         # Otherwise generate inline version from the favicon URL
         elif metadata.favicon_url:
-            favicon_inline = img_util.encode_favicon_inline(metadata.favicon_url, html_util.FAVICON_HEIGHT)
+            favicon_result = img_util.encode_favicon_inline(metadata.favicon_url, html_util.FAVICON_HEIGHT)
+            if favicon_result:
+                favicon_inline = favicon_result.get('data_url')
+                favicon_width = favicon_result.get('width')
+                favicon_height = favicon_result.get('height')
 
         if metadata.fragment_title:
             links.append({
@@ -603,6 +613,8 @@ def get_mirror_links():
         'links': links,
         'favicon': metadata.favicon_url,
         'favicon_inline': favicon_inline,
+        'favicon_width': favicon_width,
+        'favicon_height': favicon_height,
     })
 
     resp = make_response(rendered_html)
@@ -1138,8 +1150,10 @@ def debug_inline_image():
 
     Returns JSON with:
       - success: true/false
-      - inline: <img> tag with data URL (on success)
+      - inline: <img> tag with data URL, height, and width (on success)
       - base64: raw base64 string (on success)
+      - width: calculated width in pixels (on success)
+      - height: calculated height in pixels (on success)
       - error: error message (on failure)
     """
     try:
@@ -1169,20 +1183,22 @@ def debug_inline_image():
         # Process image
         from library.img_util import encode_image_inline
 
-        inline = encode_image_inline(image_bytes, target_height=height)
-        if inline is None:
+        result = encode_image_inline(image_bytes, target_height=height)
+        if result is None:
             return json.dumps({
                 "success": False,
                 "error": "image too large (>2000px in any dimension) or unsupported format",
             }), 400, {"Content-Type": "application/json"}
 
         # Extract base64 portion for separate display
-        base64_part = inline.split(",", 1)[1]
+        base64_part = result["data_url"].split(",", 1)[1]
 
         return json.dumps({
             "success": True,
-            "inline": f'<img src="{inline}" height="{height}" alt="Favicon" />',
+            "inline": f'<img src="{result["data_url"]}" height="{result["height"]}" width="{result["width"]}" alt="Favicon" />',
             "base64": base64_part,
+            "width": result["width"],
+            "height": result["height"],
         }), 200, {"Content-Type": "application/json"}
     except Exception as e:
         logging.exception("debug_inline_image failed")
