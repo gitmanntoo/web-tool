@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 
 ## Python Runtime
-- **Use `uv run`** for all commands (`.python-version` references pyenv 3.11 which isn't installed on this machine)
+- **Use `uv run`** for all commands
 
 ## Testing
 - **Mocking Pillow images:** When mocking `Image.resize`, set `.resize.return_value = mock_img` so callers can chain `.width`/`.height` on the returned image
