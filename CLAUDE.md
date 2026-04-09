@@ -28,6 +28,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Git Workflow
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 
+## Python Runtime
+- **Use `uv run`** for all commands (`.python-version` references pyenv 3.11 which isn't installed on this machine)
+
+## Testing
+- **Mocking Pillow images:** When mocking `Image.resize`, set `.resize.return_value = mock_img` so callers can chain `.width`/`.height` on the returned image
+
+## Workflow
+- **Multi-step implementations:** Use `superpowers:subagent-driven-development` skill. Create tasks with `TaskCreate`, set dependencies, dispatch one `general-purpose` subagent per task.
+
 ## Architecture & Project Structure
 
 The `web-tool` is a utility for extracting and processing information from web pages, primarily interacting with the user via browser bookmarklets.
