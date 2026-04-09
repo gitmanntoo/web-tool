@@ -167,7 +167,9 @@
             url: {{ url_variants[0].url|tojson }},
             favicon: {% if favicon %}{{ favicon|tojson }}{% else %}null{% endif %},
             faviconInline: {% if favicon_inline %}{{ favicon_inline|tojson }}{% else %}null{% endif %},
-            pastedFavicon: null
+            pastedFavicon: null,
+            faviconWidth: {% if favicon_width %}{{ favicon_width|tojson }}{% else %}null{% endif %},
+            faviconHeight: {% if favicon_height %}{{ favicon_height|tojson }}{% else %}null{% endif %}
         };
 
         // State tracking
@@ -175,7 +177,9 @@
             title: defaultValues.title,
             fragmentText: '',
             url: '',
-            faviconOption: 'url'  // Will be overridden by DOMContentLoaded from checked radio
+            faviconOption: 'url',  // Will be overridden by DOMContentLoaded from checked radio
+            faviconWidth: defaultValues.faviconWidth,
+            faviconHeight: defaultValues.faviconHeight
         };
 
         // Function to escape text for safe use in HTML
@@ -191,16 +195,16 @@
         }
 
         // Function to build a link in HTML format
-        function buildHtmlLink(title, fragmentText, url, faviconOption) {
+        function buildHtmlLink(title, fragmentText, url, faviconOption, faviconWidth, faviconHeight) {
             let html = '';
 
             // Add favicon if requested
             if (faviconOption === 'pasted' && defaultValues.pastedFavicon) {
-                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="20" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="${faviconHeight}" width="${faviconWidth}" alt="Favicon" /> `;
             } else if (faviconOption === 'inline' && defaultValues.faviconInline) {
-                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="20" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="${faviconHeight}" width="${faviconWidth}" alt="Favicon" /> `;
             } else if (faviconOption === 'url' && defaultValues.favicon) {
-                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="20" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="${faviconHeight}" width="${faviconWidth}" alt="Favicon" /> `;
             }
 
             // Add link with appropriate text
@@ -250,7 +254,7 @@
         // Function to render the current state to the DOM
         function render() {
             // HTML format
-            const htmlLink = buildHtmlLink(state.title, state.fragmentText, state.url, state.faviconOption);
+            const htmlLink = buildHtmlLink(state.title, state.fragmentText, state.url, state.faviconOption, state.faviconWidth, state.faviconHeight);
             document.getElementById('format-html-display').innerHTML = htmlLink;
             document.getElementById('format-html-plain').textContent = htmlLink;
             document.getElementById('copy-html').dataset.html = htmlLink;
