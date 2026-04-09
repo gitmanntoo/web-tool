@@ -79,11 +79,14 @@ def convert_svg(href: str, to_format: str = "PNG") -> bytes:
         return None
 
 
-def _resize_image(img: Image.Image, target_height: int) -> Image.Image:
+def _resize_image(img: Image.Image, target_height: int) -> tuple[Image.Image, int, int]:
     """Resize an image to target_height preserving aspect ratio.
 
     Width is clamped to max 20x the target height to prevent huge base64
     strings from very wide images.
+
+    Returns:
+        Tuple of (resized_image, width, height)
     """
     if target_height < 1:
         raise ValueError(f"target_height must be >= 1, got {target_height}")
@@ -100,7 +103,7 @@ def _resize_image(img: Image.Image, target_height: int) -> Image.Image:
     new_width = max(1, new_width)
     new_height = max(1, new_height)
 
-    return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    return img.resize((new_width, new_height), Image.Resampling.LANCZOS), new_width, new_height
 
 
 def encode_image_inline(image_bytes: bytes, target_height: int = 20) -> str | None:
@@ -147,7 +150,7 @@ def encode_image_inline(image_bytes: bytes, target_height: int = 20) -> str | No
         img = Image.open(BytesIO(image_bytes))
 
         # Resize preserving aspect ratio
-        resized = _resize_image(img, target_height)
+        resized, _, _ = _resize_image(img, target_height)
 
         # Convert to PNG and encode as base64
         png_buffer = BytesIO()

@@ -548,7 +548,9 @@ class TestEncodeImageInline:
 
         # new_width should be clamped to 1, not 0
         assert mock_img.resize.call_args[0][0] == (1, 20)
-        assert result is mock_img
+        assert result[0] is mock_img
+        assert result[1] == 1
+        assert result[2] == 20
 
     def test_resize_very_wide_image_does_not_produce_zero_height(self):
         """Regression: width-clamp path can produce new_height=0 for extremely
@@ -566,7 +568,9 @@ class TestEncodeImageInline:
 
         # new_height should be clamped to 1, not 0
         assert mock_img.resize.call_args[0][0] == (400, 1)
-        assert result is mock_img
+        assert result[0] is mock_img
+        assert result[1] == 400
+        assert result[2] == 1
 
     def test_resize_rejects_invalid_target_height(self):
         """target_height must be >= 1 to prevent Pillow errors."""
@@ -581,6 +585,25 @@ class TestEncodeImageInline:
 
         with pytest.raises(ValueError, match="target_height must be >= 1"):
             _resize_image(mock_img, target_height=-5)
+
+    def test_resize_image_returns_dimensions(self):
+        """Test that _resize_image returns (image, width, height) tuple."""
+        from library.img_util import _resize_image
+
+        mock_img = MagicMock()
+        mock_img.width = 100
+        mock_img.height = 50
+        mock_img.resize.return_value = mock_img
+
+        result = _resize_image(mock_img, target_height=20)
+
+        # Should return tuple of (image, width, height)
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+        resized_img, width, height = result
+        assert height == 20
+        assert width == 40  # 100/50 * 20 = 40
+        assert resized_img is mock_img
 
 
 if __name__ == "__main__":
