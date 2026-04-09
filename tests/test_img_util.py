@@ -415,6 +415,35 @@ class TestEncodeFaviconInline:
         assert result is not None
         assert isinstance(result, dict)
         assert result["data_url"].startswith("data:image/png;base64,")
+        assert "width" in result
+        assert "height" in result
+
+    @patch("library.img_util.Image.open")
+    @patch("library.img_util.url_util.get_url")
+    def test_encode_favicon_inline_returns_dict_with_dimensions(self, mock_get_url, mock_image_open):
+        """Test that encode_favicon_inline returns dict with width and height."""
+        mock_response = MagicMock()
+        mock_response.content = b"fake_image_data"
+        mock_response.raise_for_status.return_value = None
+        mock_get_url.return_value = mock_response
+
+        mock_image = MagicMock()
+        mock_image.width = 100
+        mock_image.height = 50
+        mock_image.resize.return_value = mock_image
+        mock_image.save.return_value = None
+        mock_image_open.return_value = mock_image
+
+        encode_favicon_inline.cache_clear()
+        result = encode_favicon_inline("http://example.com/favicon.png", target_height=20)
+
+        assert result is not None
+        assert isinstance(result, dict)
+        assert "data_url" in result
+        assert "width" in result
+        assert "height" in result
+        assert result["height"] == 20
+        assert result["width"] == 40  # 100/50 * 20 = 40
 
     @patch("library.img_util.Image.open")
     @patch("library.img_util.url_util.get_url")
