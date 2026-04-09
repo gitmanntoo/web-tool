@@ -1145,26 +1145,26 @@ def debug_inline_image():
     try:
         data = request.get_json()
         if not data:
-            return json.dumps({"success": False, "error": "no JSON body"})
+            return json.dumps({"success": False, "error": "no JSON body"}), 400, {"Content-Type": "application/json"}
 
         image_data = data.get("image_data")
         height = int(data.get("height", 20))
 
         if not image_data:
-            return json.dumps({"success": False, "error": "image_data is required"})
+            return json.dumps({"success": False, "error": "image_data is required"}), 400, {"Content-Type": "application/json"}
 
         if not (1 <= height <= 200):
-            return json.dumps({"success": False, "error": "height must be between 1 and 200"})
+            return json.dumps({"success": False, "error": "height must be between 1 and 200"}), 400, {"Content-Type": "application/json"}
 
         # Decode base64 to raw bytes
         try:
             image_bytes = base64.b64decode(image_data, validate=True)
         except Exception:
-            return json.dumps({"success": False, "error": "invalid base64 data"})
+            return json.dumps({"success": False, "error": "invalid base64 data"}), 400, {"Content-Type": "application/json"}
 
         MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
         if len(image_bytes) > MAX_IMAGE_BYTES:
-            return json.dumps({"success": False, "error": f"image exceeds {MAX_IMAGE_BYTES // 1024 // 1024}MB limit"})
+            return json.dumps({"success": False, "error": f"image exceeds {MAX_IMAGE_BYTES // 1024 // 1024}MB limit"}), 400, {"Content-Type": "application/json"}
 
         # Process image
         from library.img_util import encode_image_inline
@@ -1174,7 +1174,7 @@ def debug_inline_image():
             return json.dumps({
                 "success": False,
                 "error": "image too large (>2000px in any dimension) or unsupported format",
-            })
+            }), 400, {"Content-Type": "application/json"}
 
         # Extract base64 portion for separate display
         base64_part = inline.split(",", 1)[1]
@@ -1183,10 +1183,10 @@ def debug_inline_image():
             "success": True,
             "inline": f'<img src="{inline}" height="{height}" alt="Favicon" />',
             "base64": base64_part,
-        })
+        }), 200, {"Content-Type": "application/json"}
     except Exception as e:
         logging.exception("debug_inline_image failed")
-        return json.dumps({"success": False, "error": str(e)})
+        return json.dumps({"success": False, "error": "internal server error"}), 500, {"Content-Type": "application/json"}
 
 
 @app.route("/test-pages-interactive", methods=["GET"])
