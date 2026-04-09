@@ -847,29 +847,18 @@ Each favicon shows which cache file it comes from:
 
 #### `POST /debug/inline-image` — Convert Image to Inline Base64
 
-**Purpose:** Accepts a raw image (uploaded or base64-decoded) and returns a resized inline `<img>` tag.
+**Purpose:** Accepts a base64-encoded image and returns a resized inline `<img>` tag.
 
-**Request:** `Content-Type: multipart/form-data`
-- `image` (required): Image file upload OR
-- `base64` (required): Base64-encoded image string
-
-**Request (JSON):** `Content-Type: application/json`
-- `base64` (required): Base64-encoded image string
-
-**Query Parameters:**
-- `height` (optional): Target height in pixels (default: 20, max: 200)
+**Request:** `Content-Type: application/json`
+- `image_data` (required): Base64-encoded image string
+- `height` (optional): Target height in pixels (default: 20, max: 200, must be 1–200)
 
 **Response (JSON):**
 ```json
 {
   "success": true,
-  "inline": "<img src=\"data:image/png;base64,...\" height=\"20\" alt=\"Inline\" />",
-  "base64": "...",
-  "width": 24,
-  "height": 20,
-  "original_width": 48,
-  "original_height": 40,
-  "format": "PNG"
+  "inline": "<img src=\"data:image/png;base64,...\" height=\"20\" alt=\"Favicon\" />",
+  "base64": "..."
 }
 ```
 
@@ -878,17 +867,16 @@ Each favicon shows which cache file it comes from:
 { "success": false, "error": "error message" }
 ```
 
+**Error Conditions:**
+- `400`: Missing or invalid JSON body, missing `image_data`, `height` out of range, invalid base64, image exceeds 5MB limit, unsupported format
+- `500`: Internal processing error
+
 **Processing:**
+- Decodes and validates base64 payload (max 5MB decoded)
 - Detects image type using Magika
 - Converts SVG to PNG via CairoSVG (256×256)
 - Resizes to target height (width clamped to 20× height to prevent huge base64 strings)
 - Returns base64-encoded PNG data URL
-
-**Error Conditions:**
-- 400: Missing image/base64 parameter
-- 400: Image dimensions exceed 2000×2000
-- 400: Unsupported image format
-- 500: Image processing failed
 
 **Implementation:** [web-tool.py](web-tool.py) - `debug_inline_image()` function; [library/img_util.py](library/img_util.py) - `encode_image_inline()` function
 
