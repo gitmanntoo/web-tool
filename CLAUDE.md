@@ -26,7 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Stop container**: `make docker-stop`
 
 ### Git Workflow
-- **Delete merged branch**: `git branch -D <branch>` (use -D not -d if merged via PR)
+- **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 
 ## Architecture & Project Structure
 
