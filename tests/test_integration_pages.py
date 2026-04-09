@@ -126,7 +126,9 @@ class TestTitleVariants:
         url = "http://localhost/test"
         title = "日本語タイトル — Russian"
         html = f"<html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440001")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440001"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -138,7 +140,9 @@ class TestTitleVariants:
         url = "http://localhost/test"
         title = "Hello 🌍 World 🚀"
         html = f"<html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440002")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440002"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -154,7 +158,9 @@ class TestTitleVariants:
         url = "http://localhost/test"
         title = "File: Name [v1].txt"
         html = f"<html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440003")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, title, html, "550e8400-e29b-41d4-a716-446655440003"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -171,7 +177,9 @@ class TestURLVariants:
         """URL Clean variant removes fragment and query string."""
         url = "http://example.com/path?query=value#section"
         html = "<html><body><h1>Test</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440004")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440004"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -185,7 +193,9 @@ class TestURLVariants:
         """URL Root returns scheme://netloc/first-path-segment."""
         url = "http://example.com/a/b/c?query=1#frag"
         html = "<html><body><h1>Test</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440005")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440005"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -196,7 +206,9 @@ class TestURLVariants:
         """URL Host returns only scheme://netloc with no path."""
         url = "http://example.com/deep/path/file.html"
         html = "<html><body><h1>Test</h1></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440006")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, "Test", html, "550e8400-e29b-41d4-a716-446655440006"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -226,7 +238,9 @@ class TestMirrorLinksEndpoint:
             "<html><head><title>My Test Page</title></head>"
             "<body><h1>My Test Page</h1></body></html>"
         )
-        batch_id, text_len = _submit_clipboard(app_client, url, "My Test Page", html, "550e8400-e29b-41d4-a716-446655440007")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, "My Test Page", html, "550e8400-e29b-41d4-a716-446655440007"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
@@ -237,7 +251,9 @@ class TestMirrorLinksEndpoint:
         """mirror-links handles emoji in page content."""
         url = "http://localhost/test"
         html = "<html><body><h1>Emoji Test 🚀</h1><p>Navigation 📍 icons 🚀</p></body></html>"
-        batch_id, text_len = _submit_clipboard(app_client, url, "Emoji Test 🚀", html, "550e8400-e29b-41d4-a716-446655440008")
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, "Emoji Test 🚀", html, "550e8400-e29b-41d4-a716-446655440008"
+        )
 
         resp = _get_mirror_links(app_client, url, batch_id, text_len)
         assert resp.status_code == 200
