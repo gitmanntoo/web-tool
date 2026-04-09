@@ -1169,20 +1169,22 @@ def debug_inline_image():
         # Process image
         from library.img_util import encode_image_inline
 
-        inline = encode_image_inline(image_bytes, target_height=height)
-        if inline is None:
+        result = encode_image_inline(image_bytes, target_height=height)
+        if result is None:
             return json.dumps({
                 "success": False,
                 "error": "image too large (>2000px in any dimension) or unsupported format",
             }), 400, {"Content-Type": "application/json"}
 
         # Extract base64 portion for separate display
-        base64_part = inline.split(",", 1)[1]
+        base64_part = result["data_url"].split(",", 1)[1]
 
         return json.dumps({
             "success": True,
-            "inline": f'<img src="{inline}" height="{height}" alt="Favicon" />',
+            "inline": f'<img src="{result["data_url"]}" height="{result["height"]}" width="{result["width"]}" alt="Favicon" />',
             "base64": base64_part,
+            "width": result["width"],
+            "height": result["height"],
         }), 200, {"Content-Type": "application/json"}
     except Exception as e:
         logging.exception("debug_inline_image failed")
