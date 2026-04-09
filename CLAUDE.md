@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Development dependencies**: `make dev`
 
 ### Quality & Testing
-- **Lint code**: `make lint` (uses ruff)
+- **Lint code**: `make lint` (requires `make dev` first to install ruff)
 - **Format code**: `make format` (uses ruff)
 - **All quality checks**: `make check` (lint + format + import sorting)
 - **Run all tests**: `make test` (via `uv run pytest`)
@@ -18,11 +18,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Run tests with verbose output**: `make testv`
 - **Run a specific test file**: `uv run pytest tests/test_filename.py -v`
 - **Run a specific test class**: `uv run pytest tests/test_filename.py::TestClassName -v`
+- **Run tests**: `uv run pytest tests/` (requires `make dev` first to install test deps)
 
 ### Docker
 - **Run published image**: `make docker-run`
 - **Build image**: `make docker-build`
 - **Stop container**: `make docker-stop`
+
+### Git Workflow
+- **Delete merged branch**: `git branch -D <branch>` (use -D not -d if merged via PR)
 
 ## Architecture & Project Structure
 
