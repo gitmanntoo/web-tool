@@ -67,10 +67,12 @@ The existing top section already has the 4-format panel infrastructure. Reusing 
 const state = {
     title: defaultValues.title,
     fragmentText: '',
-    url: '',              // URL of selected extracted link
+    url: defaultValues.url,
     faviconOption: 'url',
-    // ...
-    selectedLinkIndex: 0  // index into extracted_links
+    faviconWidth: defaultValues.faviconWidth,
+    faviconHeight: defaultValues.faviconHeight,
+    // NEW: index into extractedLinks[], selected by extracted_link radio
+    selectedLinkIndex: 0
 };
 ```
 
@@ -124,22 +126,23 @@ def extract_links(html: str, base_url: str, max_links: int = 20) -> list[dict]:
         # Skip fragment-only
         if href.startswith('#'):
             continue
+        # Resolve relative hrefs against base_url
+        resolved_url = urljoin(base_url, href)
+        # Skip empty hrefs after resolve
+        if not resolved_url:
+            continue
         text = a.get_text(strip=True)
         if not text:
-            text = href  # fallback to URL if no text
+            text = resolved_url  # fallback to URL if no text
         links.append({
-            'url': urljoin(base_url, href),
-            'text': text[:200],  # truncate long text
-            'html': f'<a target="_blank" href="{escape_html(urljoin(base_url, href))}">{escape_html(text)}</a>'
+            'url': resolved_url,
+            'text': html.escape(text[:200]),  # truncate long text, HTML-escape
+            'html': f'<a target="_blank" href="{html.escape(resolved_url)}">{html.escape(text[:200])}</a>'
         })
         if len(links) >= max_links:
             break
     return links
 ```
-
-### HTML-escaping
-
-Use a minimal HTML escaper (replace `&`, `<`, `>`, `"`, `'`). Jinja's `|e` filter handles templates; attribute values need quotes handled too. Python's `html.escape()` covers this.
 
 ### Auto-copy
 
