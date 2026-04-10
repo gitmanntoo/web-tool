@@ -177,40 +177,6 @@ Duplicates hidden/grayed via `is_duplicate`.
 
 ---
 
-### 7. Extracted Links (NEW) — Per-Page Link Browser
-
-**Purpose:** Extract all hyperlinks from the pasted HTML and let the user browse/copy them.
-
-**Shown:** Always (empty state if no links found).
-
-**Extraction rules (backend):**
-- BeautifulSoup `soup.find_all('a', href=True)`
-- Skip `href.startswith('#')` (fragment-only anchors)
-- Skip empty hrefs after `urljoin`
-- Join relative hrefs against `base_url` using `urljoin`
-- Truncate link text to 200 chars
-- Limit to 20 links max
-
-**Each link entry:**
-| Field | Value |
-|-------|-------|
-| `url` | Resolved absolute URL |
-| `text` | Link text (or URL if no text), HTML-escaped |
-| `html` | Full `<a target="_blank" href="...">text</a>` |
-
-**Frontend (each row):**
-- Radio button → selects this link as active (sets `state.url`, `state.title`)
-- Copy button → copies `link.html`
-- Text display → `link.text` (truncated to 40 chars killwords=True)
-- URL display → `link.url` (truncated to 60 chars killwords=True, displayed as `<a>`)
-
-**Behavior:**
-- On page load: first link is selected by default, auto-copy HTML
-- On radio change: update `state.url` + `state.title` from `data-*`, run `render()`, auto-copy HTML
-- Empty state: section hidden if `extracted_links` is empty
-
----
-
 ## JavaScript State
 
 ```javascript
