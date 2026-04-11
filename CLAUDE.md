@@ -57,6 +57,16 @@ The `web-tool` is a utility for extracting and processing information from web p
 - **Templates**: `templates/` contains HTML templates for the web interface.
 - **Specs**: `specs/` contains permanent page specs (one per web-tool page) and a parent spec documenting shared architecture. See `specs/web-tool-spec.md` for the full index.
 
+### Specs Conventions
+- Each web-tool page has a spec at `specs/pages/<name>.md` following the `mirror-links.md` format
+- Parent spec at `specs/web-tool-spec.md` documents shared patterns (clipboard flow, favicon cache, `plain_text_response`)
+- When modifying a page: update its spec first. When adding a page: create its spec first
+
+### Known Bug Patterns
+- `buildWikiLink`/`buildSimpleLink` in `mirror-links.html` require `escapeHtml(url)` — URLs are inserted into innerHTML and must be escaped
+- `buildHtmlLink` uses `favH`/`favW` (the local const aliases, not the outer parameter names)
+- Template domain extraction must use backend-computed `override_domain`/`override_path_scope` — string-splitting on `/` reverses the TLD
+
 ### Technical Stack
 - **Backend**: Python 3.13, Flask
 - **HTML Parsing**: BeautifulSoup4, lxml
