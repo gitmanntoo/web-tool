@@ -26,7 +26,7 @@ All business logic lives in `library/`:
 
 | Module | Responsibility |
 |--------|----------------|
-| `util.py` | Shared utilities: `plain_text_response()`, `get_page_metadata()`, `ClipCache`, `MirrorData`, `PageMetadata`, `clip_cache` dict, JavaScript file serving |
+| `util.py` | Shared utilities: `plain_text_response()`, `get_page_metadata()`, `MirrorData`, `PageMetadata`, `clip_cache` dict, JavaScript file serving |
 | `html_util.py` | HTML parsing, link extraction, three-tier favicon cache (`get_favicon_cache()`) |
 | `url_util.py` | URL variant generation, URL normalization |
 | `img_util.py` | Image encoding (ICO→PNG, SVG→PNG, inline base64), `encode_image_inline()` |
@@ -90,7 +90,7 @@ Pages that accept clipboard input expect a JSON object with this structure:
 
 ### 3.2 Chunked Clipboard Transfer
 
-For large HTML payloads, the clipboard is split into chunks stored in `clip_cache`. The `ClipCache` class in `util.py` manages batched chunks keyed by `batch_id` (UUID) + `chunk_number`. Chunks are collected via `POST /clip-collector` and reassembled before processing. The cache is in-memory only, with a 10-minute TTL and size limits (max 100 batches, max 10,000 chunks per batch, max 50% available memory).
+For large HTML payloads, the clipboard is split into chunks stored in `util.clip_cache`. The module-level `clip_cache` dict (in `library/util.py`) stores batches keyed by `batch_id` (UUID) + `chunk_number`. Chunks are collected via `POST /clip-collector` and reassembled before processing. The cache is in-memory only, cleaned by `cleanup_clip_cache()` on every request, with a 10-minute TTL and size limits (max 100 batches, max 10,000 chunks per batch, max 50% available memory).
 
 ### 3.3 Plain Text Auto-Copy
 
@@ -127,7 +127,12 @@ When resolving a favicon for a URL, the cache is searched from highest to lowest
 
 ### 5.1 `plain_text_response()`
 
-Defined in `library/util.py`. Renders `templates/plain_text.html` with `page_title`, `page_text`, `clip_b64`, and `language_class`. The `clip_b64` variable (base64-encoded page text) is decoded client-side by the template's `atob()` call and written to clipboard on `DOMContentLoaded`. Used by `mirror-clip` and `mirror-html-source`. The other three plain-text pages (`mirror-text`, `mirror-text-debug`, `mirror-soup-text`) return raw `Response()` with no auto-copy.
+Defined in `library/util.py`. Renders `templates/plain_text.html` with `page_title`, `page_text`, `clip_b64`, and `language_class`. The `clip_b64` variable (base64-encoded page text) is decoded client-side by the template's `atob()` call and written to clipboard on `DOMContentLoaded`. Used by:
+- **`/mirror-clip`** — auto-copies prettified JSON
+- **`/mirror-html-source`** — auto-copies prettified HTML
+- **`/js/<filename>.js`** — serves minified/bookmarklet JS with Prism highlighting
+
+The three remaining plain-text pages (`mirror-text`, `mirror-text-debug`, `mirror-soup-text`) return raw `Response(mimetype="text/plain")` with no auto-copy.
 
 ### 5.2 `pyperclip` Access
 
@@ -175,26 +180,26 @@ All template and plain-text pages. API-only routes are listed separately.
 
 ### 6.2 Plain-Text Pages
 
-All five use `plain_text_response()` for auto-copy on page load.
+`mirror-clip` and `mirror-html-source` use `util.plain_text_response()` for auto-copy on page load. The other three return raw `text/plain` with no auto-copy.
 
-| Route | Spec | Purpose |
-|-------|------|---------|
-| `/mirror-clip` | `specs/pages/mirror-clip.md` | Clipboard contents as prettified JSON |
-| `/mirror-html-source` | `specs/pages/mirror-html-source.md` | Prettified HTML source with syntax highlighting |
-| `/mirror-text` | `specs/pages/mirror-text.md` | Text extracted via soup tree walk |
-| `/mirror-text-debug` | `specs/pages/mirror-text-debug.md` | Debug text extraction with per-tag cell display |
-| `/mirror-soup-text` | `specs/pages/mirror-soup-text.md` | Plain `soup.get_text()` extraction |
+| Route | Spec | Purpose | Auto-copy |
+|-------|------|---------|-----------|
+| `/mirror-clip` | `specs/pages/mirror-clip.md` | Clipboard contents as prettified JSON | Yes |
+| `/mirror-html-source` | `specs/pages/mirror-html-source.md` | Prettified HTML source with syntax highlighting | Yes |
+| `/mirror-text` | `specs/pages/mirror-text.md` | Text extracted via soup tree walk | No |
+| `/mirror-text-debug` | `specs/pages/mirror-text-debug.md` | Debug text extraction with per-tag cell display | No |
+| `/mirror-soup-text` | `specs/pages/mirror-soup-text.md` | Plain `soup.get_text()` extraction | No |
 
-### 6.3 Debug JSON Pages
+### 6.3 Debug API Pages
 
-These return JSON only, no template.
+These return JSON or raw inline HTML directly, no Jinja2 template.
 
 | Route | Spec | Purpose |
 |-------|------|---------|
 | `/debug/favicon-files` | `specs/pages/debug-favicon-files.md` | Favicon cache file status (JSON) |
 | `/debug/container` | `specs/pages/debug-container.md` | Container detection result (JSON) |
 | `/debug/clip-cache` | `specs/pages/debug-clip-cache.md` | Clipboard cache status (JSON) |
-| `/debug/clipboard-proxy` | `specs/pages/debug-clipboard-proxy.md` | Clipboard proxy test page (inline HTML f-string) |
+| `/debug/clipboard-proxy` | `specs/pages/debug-clipboard-proxy.md` | Clipboard proxy test page (inline HTML f-string, not JSON) |
 
 ### 6.4 API-Only Routes (No Spec)
 

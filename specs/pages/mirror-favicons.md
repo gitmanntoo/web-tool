@@ -20,7 +20,7 @@ User pastes clipboard data
          ▼
 web-tool.py:get_mirror_favicons()
     │
-    ├── html_util.get_page_metadata() — reads query params + pyperclip
+    ├── util.get_page_metadata() — reads query params + pyperclip
     │       └── PageMetadata: url, title, html, soup
     │
     ├── html_util.get_favicon_links(url, soup, include="all")
@@ -275,7 +275,7 @@ function addOverride(faviconHref, pageUrl, formId) {
 | Variable | Type | Description |
 |----------|------|-------------|
 | `url` | `str` | Current page URL |
-| `cache_key` | `str` | Domain-level cache key for this URL (e.g., `example.com`) |
+| `cache_key` | `str` | Cache key for this URL: `netloc/first_path_segment` (e.g., `example.com/` or `example.com/docs`) |
 | `override_domain` | `str` | `netloc` with `www.` stripped — used for "Domain only" scope display in Add Override form |
 | `override_path_scope` | `str` | `override_domain` + first path segment — used for "Domain + first path" scope display |
 | `cache_files` | `dict[str, dict]` | Per-tier cache info: `overrides`, `defaults`, `discovered` |

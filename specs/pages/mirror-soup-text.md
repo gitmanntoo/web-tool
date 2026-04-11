@@ -1,39 +1,14 @@
 # Mirror Soup Text — Specification
 
 **Route:** `/mirror-soup-text` (GET/POST)
-**Template:** `templates/plain_text.html`
+**Template:** None (returns `text/plain` directly)
 **Backend:** `web-tool.py::get_mirror_soup_text()`
 
 ---
 
 ## Overview
 
-The Mirror Soup Text page extracts text content from the pasted HTML using BeautifulSoup's built-in `get_text()` method with newline separator. The result is cleaned via `remove_repeated_lines()` to collapse consecutive blank lines.
-
----
-
-## Shared Pattern: plain_text_response()
-
-All pages using `templates/plain_text.html` share the following behavior:
-
-- **`util.plain_text_response()`** accepts:
-  - `template_env` — Jinja2 environment
-  - `page_title` — displayed in `<title>`
-  - `page_text` — the content to display
-  - `format` (default `"html"`) — controls rendering mode
-  - `language` (default `None`) — maps to Prism.js class
-
-- **For `format` in `("yaml", "json")`:** parses and re-serializes with appropriate content-type (`text/yaml` or `application/json`). Falls back to `format="text"` if parsing fails.
-
-- **For `format="text"`:** returns plain text directly with `mimetype="text/plain"`.
-
-- **Otherwise:** renders via `plain_text.html` template.
-
-- **`plain_text.html`** template behavior:
-  - `page_title` in `<title>`
-  - `page_text` in `<pre><code>{{ page_text|e }}</code></pre>` with Prism highlighting via `language_class`
-  - `clip_b64` — base64-encoded text, decoded via `atob()` on `DOMContentLoaded` for auto-copy to clipboard
-  - Prism.js loaded via `/static/prism-mini.js` and `/static/prism-mini.css`
+The Mirror Soup Text page extracts text content from the pasted HTML using BeautifulSoup's built-in `get_text()` method with newline separator. The result is cleaned via `remove_repeated_lines()` to collapse consecutive blank lines. Output is `mimetype="text/plain"` — no template, no auto-copy.
 
 ---
 
@@ -62,15 +37,9 @@ web-tool.py::get_mirror_soup_text()
 
 ---
 
-## Backend Template Data
+## Response
 
-Note: This endpoint returns a plain `text/plain` Response directly, not via `plain_text_response()`. The text is not rendered through the HTML template.
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `page_title` | `str` | `"Mirror Soup Text"` |
-| `page_text` | `str` | Extracted text from `soup.get_text("\n")` cleaned |
-| `format` | `str` | Not used — returns `text/plain` directly |
+Returns `Response(soup_text, mimetype="text/plain")` directly. No template rendered. No auto-copy.
 
 ---
 
@@ -92,8 +61,7 @@ Note: This endpoint returns a plain `text/plain` Response directly, not via `pla
 
 | Case | Behavior |
 |------|----------|
-| `metadata.soup` exists | Extract text via `soup.get_text("\n")`, clean repeated lines |
-| `metadata.soup` is None | Return empty text (no HTML to parse) |
+| `metadata.soup` is None | Raises `AttributeError` — `soup.get_text()` called on None |
 | Multiple consecutive blank lines | Collapsed via `remove_repeated_lines()` |
 | `batch_id` in clip cache | Reassemble chunks from cache |
 | `clipboard_error` set | Load page via `url_util.get_url()` |
@@ -117,5 +85,5 @@ Note: This endpoint returns a plain `text/plain` Response directly, not via `pla
 
 - **BeautifulSoup** (`lxml`) — HTML parsing to create `metadata.soup` and `soup.get_text()`
 - **text_util.remove_repeated_lines()** — collapses repeated blank lines
-- **pyperclip** — clipboard access
+- **pyperclip** — clipboard access via `get_page_metadata()`
 - **clip_cache** — batched clipboard chunk storage

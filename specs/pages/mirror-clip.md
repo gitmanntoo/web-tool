@@ -8,9 +8,7 @@
 
 ## Overview
 
-The Mirror Clip page displays the raw clipboard contents. If the clipboard contains valid JSON, it is pretty-printed with 2-space indentation. Otherwise, the raw clipboard text is returned as-is.
-
-This page delegates to `/clip-proxy` behavior when the clipboard does not contain JSON.
+The Mirror Clip page displays the raw clipboard contents. If the clipboard contains valid JSON, it is pretty-printed via `json.dumps(..., indent=2)`. Otherwise, the raw clipboard text is passed as `page_text` to `plain_text_response()` with `format="text"`. In both cases the output is rendered via `templates/plain_text.html` with auto-copy via `clip_b64`.
 
 ---
 

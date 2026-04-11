@@ -111,7 +111,7 @@ web-tool.py::debug_inline_image()
 | Image > 5MB | Client-side: tooltip "Image too large (max 5MB)" |
 | Dimension > 2000px | Client-side: tooltip "Image too large (max 2000px in any dimension)" |
 | Non-image MIME type | Pillow may accept it; result depends on Pillow behavior |
-| `height` not numeric | Defaults to 20 |
+| Non-numeric `height` | `ValueError` caught by generic exception handler → 400 `{"success": false, "error": "invalid base64 data"}` |
 
 ---
 

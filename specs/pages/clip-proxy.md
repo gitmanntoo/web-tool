@@ -8,7 +8,7 @@
 
 ## Overview
 
-The Clip Proxy page reads clipboard text, splits it into chunks, POSTs each chunk to the `clip-collector` endpoint, then submits a form to the target URL with an `X-Batch-Id` header. It is the server-side component of the clipboard bookmarklet flow.
+The Clip Proxy page reads clipboard text, splits it into chunks, POSTs each chunk to the `clip-collector` endpoint, then submits a hidden form to the target URL containing the `batchId`. It is the server-side component of the clipboard bookmarklet flow.
 
 The page behaves differently depending on whether the app is running inside a Docker container.
 

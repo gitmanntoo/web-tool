@@ -1,6 +1,6 @@
 # Web-Tool Page Specs — Implementation Plan
 
-**Design:** `docs/superpowers/specs/2026-04-10-web-tool-page-specs-design.md`
+**Design:** `specs/2026-04-10-web-tool-page-specs-design.md`
 
 ---
 
@@ -34,9 +34,7 @@ The existing `specs/mirror-links-spec.md` references `extracted_links` as "NEW" 
 
 ### Flag 3: `plain_text_response` Shared Auto-Copy Pattern
 
-Five routes (`mirror-clip`, `mirror-html-source`, `mirror-text`, `mirror-text-debug`, `mirror-soup-text`) all call `util.plain_text_response()` which:
-1. Renders `templates/plain_text.html` with `page_title`, `page_text`, `format`, `language`
-2. Injects `clip_b64` — base64-encoded text that the template decodes and auto-copies via `atob()` on page load
+Only `mirror-clip` and `mirror-html-source` use `util.plain_text_response()`. `mirror-text`, `mirror-text-debug`, and `mirror-soup-text` return raw `Response(mimetype="text/plain")`. The `/js/<filename>.js` route also uses `plain_text_response()` for JS serving.
 
 **Resolution:** Parent spec documents this shared pattern once. Each plain-text page spec references it.
 

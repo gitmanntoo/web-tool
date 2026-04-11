@@ -57,7 +57,7 @@ submitTest() JavaScript function
     │       body: JSON.stringify(test_data)
     │   })
     │
-    ├── On success → window.location = '/mirror-clip?batchId=<uuid>'
+    ├── On success → window.location = '/mirror-clip?batchId=<uuid>&textLength=<length>'
     │
     └── On error → show error in #result div
 ```
