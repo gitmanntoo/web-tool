@@ -136,12 +136,12 @@
             <strong>Add Override:</strong>
             <label>
                 <input type="radio" name="scope" value="domain" checked>
-                Domain only ({{ url.split('/')[2].split('.')[-2:] | join('.') }})
+                Domain only ({{ override_domain }})
             </label>
             {% if url.split('/')|length > 3 and url.split('/')[3] %}
             <label>
                 <input type="radio" name="scope" value="path">
-                Domain + first path ({{ url.split('/')[2] }}/{{ url.split('/')[3] }})
+                Domain + first path ({{ override_path_scope }})
             </label>
             {% endif %}
             <label>

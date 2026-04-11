@@ -311,6 +311,8 @@ def get_mirror_favicons():
         'favicons': favicons,
         'url': metadata.url,
         'cache_key': metadata.cache_key,
+        'override_domain': metadata.override_domain,
+        'override_path_scope': metadata.override_path_scope,
         'cache_files': cache_files,
     })
 

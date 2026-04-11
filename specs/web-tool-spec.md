@@ -94,7 +94,18 @@ For large HTML payloads, the clipboard is split into chunks stored in `clip_cach
 
 ### 3.3 Plain Text Auto-Copy
 
-Five pages (`mirror-clip`, `mirror-html-source`, `mirror-text`, `mirror-text-debug`, `mirror-soup-text`) use `util.plain_text_response()` to render output. This function injects a `clip_b64` template variable — the page text base64-encoded. The `templates/plain_text.html` template decodes it client-side via `atob()` and writes it to the clipboard automatically on page load.
+Two pages use `util.plain_text_response()` for auto-copy:
+
+- **`mirror-clip`** — pretty-prints clipboard JSON, auto-copies via `clip_b64`
+- **`mirror-html-source`** — prettifies HTML, auto-copies via `clip_b64`
+
+Three pages return raw `text/plain` responses with **no auto-copy**:
+
+- **`mirror-text`** — `Response(txt, mimetype="text/plain")`
+- **`mirror-text-debug`** — `Response(txt, mimetype="text/plain")`
+- **`mirror-soup-text`** — `Response(soup_text, mimetype="text/plain")`
+
+The `plain_text_response()` function (defined in `library/util.py`) renders `templates/plain_text.html` with `page_title`, `page_text`, `clip_b64` (base64-encoded), and `language_class`. The template's `DOMContentLoaded` handler calls `atob(clip_b64)` and writes to clipboard.
 
 ---
 
@@ -116,11 +127,11 @@ When resolving a favicon for a URL, the cache is searched from highest to lowest
 
 ### 5.1 `plain_text_response()`
 
-Defined in `library/util.py`, this function renders `templates/plain_text.html` with `page_title`, `page_text`, `format`, and `language`. The resulting template injects `clip_b64` (base64 of `page_text`) which the client-side `atob()` decodes and writes to clipboard on load. Used exclusively by the five plain-text mirror pages.
+Defined in `library/util.py`. Renders `templates/plain_text.html` with `page_title`, `page_text`, `clip_b64`, and `language_class`. The `clip_b64` variable (base64-encoded page text) is decoded client-side by the template's `atob()` call and written to clipboard on `DOMContentLoaded`. Used by `mirror-clip` and `mirror-html-source`. The other three plain-text pages (`mirror-text`, `mirror-text-debug`, `mirror-soup-text`) return raw `Response()` with no auto-copy.
 
 ### 5.2 `pyperclip` Access
 
-`pyperclip.paste()` is called directly in route handlers (e.g., `get_mirror_links()`, `get_mirror_clip()`) to read the clipboard. `pyperclip` is also available client-side in bookmarklets. The server-side clipboard is the primary input mechanism.
+Clipboard data flows through `util.get_page_metadata()` which calls `pyperclip.paste()` internally via `MirrorData.clipboard`. Route handlers do not call `pyperclip` directly — they call `get_page_metadata()` and access the result.
 
 ### 5.3 `clip_cache` Structure
 
@@ -237,3 +248,7 @@ All dependencies are listed in `pyproject.toml` and installed via `uv`.
 | `pyyaml` | YAML parsing for favicon cache files |
 | `psutil` | Memory usage measurement for `clip_cache` cleanup |
 | `markdown` | README rendering at root `/` route |
+| `pymupdf` | PDF metadata extraction in clipboard error handling |
+| `tldextract` | Domain extraction for `PageMetadata.url_domain` |
+| `jsmin` | JavaScript minification for bookmarklet serving |
+| `esprima` | JavaScript AST parsing for bookmarklet serving |

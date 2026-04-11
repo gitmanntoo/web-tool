@@ -276,6 +276,8 @@ function addOverride(faviconHref, pageUrl, formId) {
 |----------|------|-------------|
 | `url` | `str` | Current page URL |
 | `cache_key` | `str` | Domain-level cache key for this URL (e.g., `example.com`) |
+| `override_domain` | `str` | `netloc` with `www.` stripped — used for "Domain only" scope display in Add Override form |
+| `override_path_scope` | `str` | `override_domain` + first path segment — used for "Domain + first path" scope display |
 | `cache_files` | `dict[str, dict]` | Per-tier cache info: `overrides`, `defaults`, `discovered` |
 | `cache_files[key].name` | `str` | Human-readable name |
 | `cache_files[key].path` | `str` | Absolute file path |

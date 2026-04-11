@@ -192,7 +192,7 @@ const defaultValues = {
 const state = {
     title: defaultValues.title,
     fragmentText: '',
-    url: defaultValues.url,
+    url: '',  // initialized empty; DOMContentLoaded immediately overwrites from DOM radios
     faviconOption: 'url',   // overridden from DOM on load
     faviconWidth: defaultValues.faviconWidth,
     faviconHeight: defaultValues.faviconHeight
@@ -366,7 +366,7 @@ Set when `is_duplicate: true` in variant data.
 |------|----------|
 | No title | `metadata.title` defaults to `"link"` before title variant generation |
 | Title variant duplicate | Row shown with `opacity: 0.6`, still selectable |
-| URL variant duplicate | Row hidden (`is_duplicate: true`) |
+| URL variant duplicate | Row shown with `opacity: 0.6`, still selectable but grayed out |
 | Fragment but no fragment text | Only "None" and "Fragment" options shown |
 | Fragment but no fragment | Section not rendered |
 | Clipboard parse error | `clipboard_error` shown in Metadata section; page still renders |
