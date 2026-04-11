@@ -61,6 +61,7 @@ The `web-tool` is a utility for extracting and processing information from web p
 - Each web-tool page has a spec at `specs/pages/<name>.md` following the `mirror-links.md` format
 - Parent spec at `specs/web-tool-spec.md` documents shared patterns (clipboard flow, favicon cache, `plain_text_response`)
 - When modifying a page: update its spec first. When adding a page: create its spec first
+- **Any change that conflicts with or contradicts an existing spec must be explicitly approved by the user before proceeding**
 
 ### Known Bug Patterns
 - `buildWikiLink`/`buildSimpleLink` in `mirror-links.html` require `escapeHtml(url)` — URLs are inserted into innerHTML and must be escaped
