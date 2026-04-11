@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 
 ## Python Runtime
-- **Use `uv run`** for all commands
+- **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.13. pytest must be run via `uv run python -m pytest`; using a pyenv-managed Python will fail to find test dependencies.
 
 ## Testing
 - **Mocking Pillow images:** When mocking `Image.resize`, set `.resize.return_value = mock_img` so callers can chain `.width`/`.height` on the returned image
@@ -55,6 +55,7 @@ The `web-tool` is a utility for extracting and processing information from web p
     3. `local-cache/favicon.yml` or `/data/favicon.yml` (Auto-discovered - Lowest priority)
 - **Static Assets**: `static/` contains JavaScript for bookmarklets, CSS, and favicon configurations.
 - **Templates**: `templates/` contains HTML templates for the web interface.
+- **Specs**: `specs/` contains permanent page specs (one per web-tool page) and a parent spec documenting shared architecture. See `specs/web-tool-spec.md` for the full index.
 
 ### Technical Stack
 - **Backend**: Python 3.13, Flask
@@ -63,3 +64,4 @@ The `web-tool` is a utility for extracting and processing information from web p
 - **Text Processing**: NLTK, anyascii
 - **Package Management**: `uv`
 - **Linting/Formatting**: Ruff
+- **Testing**: coverage.py (via `make testcov`)
