@@ -67,6 +67,10 @@ uv.lock
 .factory/
 .remember/
 
+# Local dev artifacts
+.mcp.json
+.superpowers/
+
 # Node (not used by this Python project but sometimes present)
 node_modules/
 package.json
