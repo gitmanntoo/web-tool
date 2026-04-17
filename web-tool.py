@@ -1040,7 +1040,6 @@ def debug_favicon_files():
     - In-memory cache status
     - Sample entries
     """
-    from library import html_util
     
     files_info = []
     
@@ -1103,8 +1102,7 @@ def debug_favicon_files():
             
             # Load the file contents
             try:
-                with open(path, 'r') as f:
-                    data = yaml.safe_load(f) or {}
+                data = html_util._load_yaml_with_cache(path) or {}
                 
                 info['entry_count'] = len(data)
                 
