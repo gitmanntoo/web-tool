@@ -340,5 +340,46 @@ class TestGetFaviconCacheSource:
         assert result["precedence"] is None
 
 
+class TestPrettifyHtml:
+    """Tests for prettify_html function."""
+
+    def test_empty_string(self):
+        """Test that empty string returns empty string."""
+        from library.html_util import prettify_html
+
+        assert prettify_html("") == ""
+
+    def test_none_input(self):
+        """Test that None returns None."""
+        from library.html_util import prettify_html
+
+        assert prettify_html(None) is None
+
+    def test_simple_html(self):
+        """Test that simple HTML is prettified."""
+        from library.html_util import prettify_html
+
+        result = prettify_html("<div><p>Hello</p></div>")
+        assert "<div>" in result
+        assert "<p>Hello</p>" in result
+
+    def test_self_closing_tags(self):
+        """Test that self-closing tags are handled correctly."""
+        from library.html_util import prettify_html
+
+        result = prettify_html("<div><br/><p>Text</p></div>")
+        assert "<br" in result
+        assert "Text" in result
+
+    def test_plain_text_gets_wrapped(self):
+        """Test that plain text (not valid HTML) is wrapped by lxml."""
+        from library.html_util import prettify_html
+
+        plain_text = "not html at all"
+        result = prettify_html(plain_text)
+        # lxml wraps plain text in a <span> tag
+        assert "not html at all" in result
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
