@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clipboard Proxy Debug</title>
+    <link rel="stylesheet" href="/static/default.css">
+</head>
+<body>
+    <h1>Clipboard Proxy Debug Test</h1>
+    <p>This page tests the clipboard proxy by submitting test data to /mirror-clip.</p>
+    <p><strong>Test Data:</strong></p>
+    <pre>{{ test_data_json }}</pre>
+    <button onclick="submitTest()">Submit Test Data</button>
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <script>
+        function submitTest() {
+            const testData = {{ test_data_js }};
+            const batchId = crypto.randomUUID();
+
+            // POST the test data to clip-collector
+            fetch('/clip-collector?batchId=' + batchId + '&chunkNum=1', {
+                method: 'POST',
+                body: testData,
+                headers: {'Content-Type': 'text/plain'}
+            })
+            .then(resp => {
+                if (resp.ok) {
+                    document.getElementById('result').textContent = '✓ Chunk submitted. Opening /mirror-clip...';
+                    document.getElementById('result').style.color = '#5cb85c';
+                    // Redirect to mirror-clip with the batch ID
+                    window.location.href = '/mirror-clip?batchId=' + batchId + '&textLength=' + testData.length;
+                } else {
+                    document.getElementById('result').textContent = '✗ Failed to submit chunk: ' + resp.statusText;
+                    document.getElementById('result').style.color = '#d9534f';
+                }
+            })
+            .catch(err => {
+                document.getElementById('result').textContent = '✗ Error: ' + err.message;
+                document.getElementById('result').style.color = '#d9534f';
+            });
+        }
+    </script>
+</body>
+</html>
