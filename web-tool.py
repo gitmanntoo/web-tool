@@ -200,6 +200,32 @@ def mirror_html_source():
     return mirror_clip()
 
 
+def validate_favicons(favicons: list, url: str) -> list:
+    """Validate favicon links, keeping cached ones even if they fail to load.
+
+    For each favicon, determines cache source and image size. Non-cached
+    favicons that don't load are excluded.
+    """
+    valid_favicons = []
+    for favicon in favicons:
+        favicon.cache_source = html_util.get_favicon_cache_source(url, favicon.href)
+
+        if size := url_util.get_image_size(favicon.href):
+            favicon.width = size.width
+            favicon.height = size.height
+            favicon.image_type = size.image_type
+            valid_favicons.append(favicon)
+        elif favicon.cache_source['file'] is not None:
+            # Cached favicon but failed to load - include it anyway
+            # so users can see invalid cache entries
+            favicon.width = 0
+            favicon.height = 0
+            favicon.image_type = "invalid"
+            valid_favicons.append(favicon)
+
+    return valid_favicons
+
+
 @app.route("/mirror-favicons", methods=["GET", "POST"])
 def get_mirror_favicons():
     """
@@ -224,27 +250,7 @@ def get_mirror_favicons():
     # Get the size of each favicon and determine cache source.
     # Keep cached favicons even if they fail to load (to show invalid cache entries).
     # Filter out only non-cached favicons that don't exist.
-    valid_favicons = []
-    for favicon in favicons:
-        # Determine which cache file (if any) contains this favicon
-        favicon.cache_source = html_util.get_favicon_cache_source(
-            metadata.url,
-            favicon.href
-        )
-        
-        # Try to get image size
-        if size := url_util.get_image_size(favicon.href):
-            favicon.width = size.width
-            favicon.height = size.height
-            favicon.image_type = size.image_type
-            valid_favicons.append(favicon)
-        elif favicon.cache_source['file'] is not None:
-            # Cached favicon but failed to load - include it anyway
-            # so users can see invalid cache entries
-            favicon.width = 0
-            favicon.height = 0
-            favicon.image_type = "invalid"
-            valid_favicons.append(favicon)
+    favicons = validate_favicons(favicons, metadata.url)
         # else: non-cached favicon that doesn't exist - exclude it
     
     favicons = valid_favicons
