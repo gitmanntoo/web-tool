@@ -71,6 +71,7 @@ uv.lock
 .mcp.json
 .playwright-mcp/
 .superpowers/
+.worktrees/
 
 # Node (not used by this Python project but sometimes present)
 node_modules/
