@@ -191,5 +191,87 @@ class TestMirrorLinksJsEscaping:
         assert "encodeURIComponent" in rendered
 
 
+class TestBuildHtmlLinkTemplate:
+    """Regression tests for buildHtmlLink JS variable references.
+
+    The buildHtmlLink function defines local const aliases:
+        const favH = faviconHeight || 20;
+        const favW = faviconWidth || 20;
+    The favicon <img> tags must use favW/favH (the aliases), not the
+    raw parameter names faviconWidth/faviconHeight. A prior bug used
+    the undefined variable faviconW, which threw a ReferenceError that
+    crashed render() on every page with a favicon.
+    """
+
+    @pytest.fixture
+    def template_env(self):
+        """Create Jinja2 environment for testing templates."""
+        template_dir = Path(__file__).parent.parent / "templates"
+        env = Environment(loader=FileSystemLoader(template_dir))
+        return env
+
+    def _render_with_favicon(self, template_env):
+        """Render mirror-links.html with a favicon URL."""
+        template = template_env.get_template("mirror-links.html")
+        return template.render(
+            title="Test",
+            title_variants=[{"value": "Test", "label": "Original"}],
+            fragment="",
+            fragment_text="",
+            url_variants=[{"url": "https://example.com", "label": "Original"}],
+            favicon="https://example.com/favicon.png",
+            favicon_inline=None,
+        )
+
+    def test_buildHtmlLink_uses_favW_not_faviconW(self, template_env):
+        """buildHtmlLink must use favW (local const), not faviconW (undefined)."""
+        rendered = self._render_with_favicon(template_env)
+
+        # All three favicon branches (pasted, inline, url) must use favW
+        assert 'width="${favW}"' in rendered
+        # faviconW must not appear inside template literals — only as
+        # the function parameter name and in the const definition
+        assert 'width="${faviconW}"' not in rendered
+
+    def test_buildHtmlLink_uses_favH_not_faviconHeight(self, template_env):
+        """buildHtmlLink must use favH (local const) in height attributes."""
+        rendered = self._render_with_favicon(template_env)
+
+        assert 'height="${favH}"' in rendered
+        # faviconHeight should only appear as parameter name and const def,
+        # not inside the img tag template literals
+        assert 'height="${faviconHeight}"' not in rendered
+
+    def test_buildHtmlLink_constants_defined(self, template_env):
+        """buildHtmlLink must define favH and favW before the favicon branches."""
+        rendered = self._render_with_favicon(template_env)
+
+        assert "const favH = faviconHeight || 20;" in rendered
+        assert "const favW = faviconWidth || 20;" in rendered
+
+    def test_no_undefined_js_references_in_buildHtmlLink(self, template_env):
+        """buildHtmlLink must not reference undefined variables.
+
+        After the function parameter list, any reference to faviconW
+        (capital W after 'favicon') would be an undefined variable.
+        The parameter name is faviconWidth (lowercase w after 'icon').
+        Use regex to match faviconW as a standalone token, not as a
+        substring of the valid parameter name faviconWidth.
+        """
+        import re
+
+        rendered = self._render_with_favicon(template_env)
+
+        # Extract the buildHtmlLink function body
+        func_start = rendered.index("function buildHtmlLink(")
+        func_end = rendered.index("}", rendered.index("// Add link with appropriate text", func_start))
+        func_body = rendered[func_start:func_end]
+
+        # faviconW must not appear as a standalone token (not part of faviconWidth)
+        # Match faviconW that is NOT followed by 'idth' (which would make it faviconWidth)
+        bad_refs = re.findall(r"faviconW(?!idth)", func_body)
+        assert bad_refs == [], f"Found undefined variable references: {bad_refs}"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -21,13 +21,13 @@ tests/
 ├── test_img_util.py             # Image conversion tests (~55 tests)
 ├── test_favicon_validation.py   # Favicon validation tests (~9 tests)
 ├── test_fragment_variants.py    # Fragment variant duplicate detection (~8 tests)
-├── test_integration_pages.py    # Integration tests (~20 tests)
-├── test_js_escaping.py          # JavaScript escaping tests (~9 tests)
+├── test_integration_pages.py    # Integration tests (~21 tests)
+├── test_js_escaping.py          # JavaScript escaping tests (~13 tests)
 ├── test_markdown_escaping.py    # Markdown link escaping tests (~31 tests)
 └── test_url_decoding.py         # URL decoding tests (~6 tests)
 ```
 
-**Total: 323 test cases across 14 test modules**
+**Total: 328 test cases across 14 test modules**
 
 ## Module-by-Module Coverage
 
@@ -201,14 +201,14 @@ tests/
 - All three options present with correct values
 - Pydantic-style fragment fallback
 
-### 10. `test_integration_pages.py` (~20 tests)
+### 10. `test_integration_pages.py` (~21 tests)
 **Purpose:** Integration tests for URL/fragment/title handling via Flask test client
 
 **Test Classes:**
 - `TestFragmentResolution` (4 tests) - Fragment text resolution
 - `TestTitleVariants` (3 tests) - Title variant generation
 - `TestURLVariants` (3 tests) - URL variant generation
-- `TestMirrorLinksEndpoint` (3 tests) - /mirror-links endpoint
+- `TestMirrorLinksEndpoint` (4 tests) - /mirror-links endpoint
 - `TestTestPageEndpoint` (7 tests) - /test-page endpoint
 
 **Coverage:**
@@ -216,12 +216,14 @@ tests/
 - Title and URL variant generation
 - Emoji in page content
 - Batch ID parameter handling
+- buildHtmlLink uses favW (not undefined faviconW) in rendered JS
 
-### 11. `test_js_escaping.py` (~9 tests)
-**Purpose:** Test JavaScript string escaping in mirror-links template
+### 11. `test_js_escaping.py` (~13 tests)
+**Purpose:** Test JavaScript string escaping and variable references in mirror-links template
 
 **Test Classes:**
 - `TestMirrorLinksJsEscaping` (7 tests) - JS string escaping via tojson filter
+- `TestBuildHtmlLinkTemplate` (4 tests) - buildHtmlLink JS variable references
 - Additional tests for markdown escape template logic
 
 **Coverage:**
@@ -229,6 +231,9 @@ tests/
 - Title with Unicode characters
 - Null favicon handling
 - Markdown link template URL wrapping logic
+- buildHtmlLink uses favW/favH local consts (not undefined faviconW/faviconHeight)
+- Local constant definitions present before favicon branches
+- No undefined variable references in buildHtmlLink function body
 
 ### 12. `test_markdown_escaping.py` (~31 tests)
 **Purpose:** Test Markdown link escaping (escapeMarkdownText, buildMarkdownLink)
