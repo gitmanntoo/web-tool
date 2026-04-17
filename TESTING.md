@@ -151,6 +151,14 @@ Tests for `validate_top_candidates()` function:
 - Returns single valid link
 - Returns multiple valid links up to max_count
 
+#### `TestPrettifyHtml` (5 tests)
+Tests for `prettify_html()` function in `html_util.py`:
+- Empty string returns empty string
+- None input returns None
+- Simple HTML is prettified with proper indentation
+- Self-closing tags are handled correctly
+- Plain text (not valid HTML) is wrapped by lxml
+
 #### `TestPageMetadataUrlDecoding` (6 tests)
 Tests for URL decoding in `PageMetadata`:
 - URL with fragment containing dots is properly decoded

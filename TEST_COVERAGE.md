@@ -13,33 +13,33 @@ tests/
 ├── __init__.py
 ├── test_title_variants.py       # Title variant generation (~40 tests)
 ├── test_title_strings.py        # Test data for title variants
-├── test_unicode_util.py         # Unicode utility tests (~20 tests)
-├── test_text_util.py            # Text processing tests (~30 tests)
-├── test_url_util.py             # URL parsing tests (~10 tests)
-├── test_html_util.py            # HTML/favicon tests (~35 tests)
-├── test_docker_util.py          # Container detection tests (~15 tests)
-├── test_img_util.py             # Image conversion tests (~30 tests)
-├── test_favicon_validation.py   # Favicon validation tests (~6 tests)
+├── test_unicode_util.py         # Unicode utility tests (~13 tests)
+├── test_text_util.py            # Text processing tests (~44 tests)
+├── test_url_util.py             # URL parsing tests (~22 tests)
+├── test_html_util.py            # HTML/favicon tests (~37 tests)
+├── test_docker_util.py          # Container detection tests (~16 tests)
+├── test_img_util.py             # Image conversion tests (~55 tests)
+├── test_favicon_validation.py   # Favicon validation tests (~9 tests)
 ├── test_fragment_variants.py    # Fragment variant duplicate detection (~8 tests)
-├── test_integration_pages.py    # Integration tests (~17 tests)
+├── test_integration_pages.py    # Integration tests (~20 tests)
 ├── test_js_escaping.py          # JavaScript escaping tests (~9 tests)
 ├── test_markdown_escaping.py    # Markdown link escaping tests (~31 tests)
 └── test_url_decoding.py         # URL decoding tests (~6 tests)
 ```
 
-**Total: 303 test cases across 14 test modules**
+**Total: 310 test cases across 14 test modules**
 
 ## Module-by-Module Coverage
 
-### 1. `test_unicode_util.py` (~20 tests)
+### 1. `test_unicode_util.py` (~13 tests)
 **Purpose:** Test Unicode category analysis and utilities
 
 **Test Classes:**
-- `TestGeneralCategoryNames` (20 tests)
+- `TestGeneralCategoryNames` (9 tests)
   - Tests all 30 Unicode general categories
   - Validates letter, mark, number, separator, symbol, punctuation categories
   - Ensures all values are non-empty strings
-- `TestCategoryNames` (7 tests)
+- `TestCategoryNames` (4 tests)
   - Tests ordered dictionary of major categories
   - Validates frequency ordering
 
@@ -48,7 +48,7 @@ tests/
 - Data structure integrity
 - Category frequency ordering
 
-### 2. `test_text_util.py` (~30 tests)
+### 2. `test_text_util.py` (~44 tests)
 **Purpose:** Test text processing and parsing functions
 
 **Test Classes:**
@@ -69,13 +69,13 @@ tests/
 - Text pattern recognition (email, URL, HTML)
 - Word categorization and validation
 
-### 3. `test_url_util.py` (~10 tests)
+### 3. `test_url_util.py` (~22 tests)
 **Purpose:** Test URL parsing, validation, and manipulation
 
 **Test Classes:**
 - `TestGetUserAgent` (2 tests) - User agent retrieval
 - `TestSerializedResponseError` (2 tests) - Exception handling
-- `TestSerializedResponse` (5 tests) - Response dataclass
+- `TestSerializedResponse` (4 tests) - Response dataclass
 - `TestGetUrlRoot` (4 tests) - URL root extraction
 - `TestGetUrlHost` (4 tests) - Host extraction
 - `TestMakeAbsoluteUrls` (5 tests) - URL resolution
@@ -88,18 +88,19 @@ tests/
 - HTTPS/HTTP protocol handling
 - Error handling and defaults
 
-### 4. `test_html_util.py` (~35 tests)
+### 4. `test_html_util.py` (~37 tests)
 **Purpose:** Test HTML parsing, favicon discovery, and metadata
 
 **Test Classes:**
-- `TestRelLink` (6 tests) - RelLink dataclass
-- `TestFaviconConstants` (6 tests) - Favicon configuration
+- `TestRelLink` (5 tests) - RelLink dataclass
+- `TestFaviconConstants` (7 tests) - Favicon configuration
 - `TestFaviconCacheStructure` (3 tests) - Cache path configuration
 - `TestRelLinkValidation` (5 tests) - Link validation logic
 - `TestRelLinkComparison` (3 tests) - Link comparison
 - `TestRelLinkInlineImage` (3 tests) - inline_image field handling
 - `TestGetFaviconCacheDictFormat` (3 tests) - Dict-format cache entries
 - `TestGetFaviconCacheSource` (3 tests) - Cache source detection with dict format
+- `TestPrettifyHtml` (5 tests) - HTML pretty-printing
 
 **Coverage:**
 - Favicon link representation and validation
@@ -108,8 +109,9 @@ tests/
 - Favicon constants and paths
 - Inline base64 image storage in cache
 - Dict-format cache entry handling
+- HTML pretty-printing
 
-### 5. `test_docker_util.py` (~15 tests)
+### 5. `test_docker_util.py` (~16 tests)
 **Purpose:** Test container detection logic
 
 **Test Classes:**
@@ -130,17 +132,18 @@ tests/
 - Exception handling for missing/unreadable files
 - Integration with actual system
 
-### 6. `test_img_util.py` (~30 tests)
+### 6. `test_img_util.py` (~55 tests)
 **Purpose:** Test image conversion utilities
 
 **Test Classes:**
 - `TestImageConversionConstants` (3 tests) - SVG dimension constants
-- `TestConvertIco` (8 tests) - ICO to PNG conversion
-- `TestConvertSvg` (8 tests) - SVG to PNG conversion
+- `TestConvertIco` (11 tests) - ICO to PNG conversion
+- `TestConvertSvg` (10 tests) - SVG to PNG conversion (incl. walrus operator regression tests)
 - `TestImageConversionIntegration` (4 tests) - Integration tests
-- `TestImageConversionEdgeCases` (4 tests) - Edge cases
-- `TestEncodeFaviconInline` (10 tests) - Favicon inline base64 encoding
+- `TestImageConversionEdgeCases` (2 tests) - Edge cases
+- `TestEncodeFaviconInline` (12 tests) - Favicon inline base64 encoding
 - `TestEncodeFaviconInlineIntegration` (2 tests) - Integration tests
+- `TestEncodeImageInline` (11 tests) - Image inline base64 encoding
 
 **Coverage:**
 - Function signatures and parameters
@@ -149,16 +152,18 @@ tests/
 - Format conversion options
 - Empty and malformed input handling
 - Favicon inline base64 encoding with height-based resizing
+- Walrus operator precedence regression tests (ICO and SVG)
+- Image inline base64 encoding
 
 ### 7. `test_title_variants.py` (~40 tests)
 **Purpose:** Test title variant generation (existing tests)
 
 **Test Classes:**
-- `TestAsciiAndEmojis` (10 tests)
+- `TestAsciiAndEmojis` (9 tests)
 - `TestAsciiOnly` (5 tests)
 - `TestPathSafeFilename` (13 tests)
-- `TestTitleVariants` (8 tests)
-- `TestEdgeCases` (8 tests)
+- `TestTitleVariants` (7 tests)
+- `TestEdgeCases` (6 tests)
 
 **Coverage:**
 - ASCII and Unicode text conversion
@@ -167,11 +172,12 @@ tests/
 - Cross-platform path safety (Windows, macOS, Linux)
 - Edge cases (empty strings, combining diacriticals, long titles)
 
-### 8. `test_favicon_validation.py` (~6 tests)
+### 8. `test_favicon_validation.py` (~9 tests)
 **Purpose:** Test favicon validation pipeline
 
 **Test Classes:**
 - `TestGetValidFaviconLinks` (6 tests) - Validates favicon links pipeline
+- `TestValidateTopCandidates` (3 tests) - Validates top candidate selection
 
 **Coverage:**
 - `get_valid_favicon_links()` composing `get_favicon_links`, `sort_favicon_links`, and `validate_top_candidates`
@@ -190,7 +196,7 @@ tests/
 - All three options present with correct values
 - Pydantic-style fragment fallback
 
-### 10. `test_integration_pages.py` (~17 tests)
+### 10. `test_integration_pages.py` (~20 tests)
 **Purpose:** Integration tests for URL/fragment/title handling via Flask test client
 
 **Test Classes:**
