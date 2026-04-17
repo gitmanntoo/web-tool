@@ -9,10 +9,12 @@ import pytest
 from library.url_util import (
     SerializedResponse,
     SerializedResponseError,
+    get_first_path_segment,
     get_url_host,
     get_url_root,
     get_user_agent,
     make_absolute_urls,
+    normalize_netloc,
 )
 
 
@@ -165,6 +167,42 @@ class TestMakeAbsoluteUrls:
         result = make_absolute_urls("http://example.com/page.html", "#anchor")
         # Should reference the same page with anchor
         assert "example.com" in result
+
+
+class TestNormalizeNetloc:
+    """Tests for normalize_netloc function."""
+
+    def test_strips_www_prefix(self):
+        """Test that www. prefix is stripped from netloc."""
+        assert normalize_netloc("https://www.example.com/path") == "example.com"
+
+    def test_no_www(self):
+        """Test that netloc without www. is unchanged."""
+        assert normalize_netloc("https://example.com/path") == "example.com"
+
+    def test_www_in_path(self):
+        """Test that www. in path does not affect netloc stripping."""
+        assert normalize_netloc("https://www.example.com/www/page") == "example.com"
+
+
+class TestGetFirstPathSegment:
+    """Tests for get_first_path_segment function."""
+
+    def test_simple_path(self):
+        """Test extraction of first path segment."""
+        assert get_first_path_segment("https://example.com/blog/post") == "blog"
+
+    def test_no_path(self):
+        """Test URL with no path returns empty string."""
+        assert get_first_path_segment("https://example.com") == ""
+
+    def test_root_path(self):
+        """Test URL with root path returns empty string."""
+        assert get_first_path_segment("https://example.com/") == ""
+
+    def test_single_segment(self):
+        """Test URL with single path segment."""
+        assert get_first_path_segment("https://example.com/blog") == "blog"
 
 
 class TestUrlValidation:

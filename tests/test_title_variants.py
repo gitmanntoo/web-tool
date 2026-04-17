@@ -19,6 +19,7 @@ import pytest
 
 from library.util import (
     TitleVariants,
+    deduplicate_variants,
     path_safe_filename,
     text_ascii_only,
     text_with_ascii_and_emojis,
@@ -283,6 +284,76 @@ class TestTitleVariants:
         tv = TitleVariants('My <File>: Document? "Final" |Edition*')
         result = tv.path_safe
         assert all(c not in result for c in ["<", ">", ":", '"', "/", "\\", "|", "?", "*"])
+
+
+class TestDeduplicateVariants:
+    """Tests for deduplicate_variants function."""
+
+    def test_basic_deduplication(self):
+        """Duplicate values should be marked with is_duplicate=True."""
+        variants = [
+            ("hello", "Original"),
+            ("hello", "Duplicate"),
+            ("world", "Unique"),
+        ]
+        result = deduplicate_variants(variants)
+        assert len(result) == 3
+        assert result[0] == {"value": "hello", "label": "Original", "is_duplicate": False}
+        assert result[1] == {"value": "hello", "label": "Duplicate", "is_duplicate": True}
+        assert result[2] == {"value": "world", "label": "Unique", "is_duplicate": False}
+
+    def test_empty_input(self):
+        """Empty input should return empty list."""
+        assert deduplicate_variants([]) == []
+
+    def test_all_unique(self):
+        """All unique values should have is_duplicate=False."""
+        variants = [
+            ("alpha", "A"),
+            ("beta", "B"),
+            ("gamma", "C"),
+        ]
+        result = deduplicate_variants(variants)
+        assert len(result) == 3
+        assert all(not item["is_duplicate"] for item in result)
+
+    def test_duplicate_labels_skipped(self):
+        """Duplicate labels should be skipped; first label wins."""
+        variants = [
+            ("value1", "Label"),
+            ("value2", "Label"),
+            ("value3", "Other"),
+        ]
+        result = deduplicate_variants(variants)
+        assert len(result) == 2
+        assert result[0] == {"value": "value1", "label": "Label", "is_duplicate": False}
+        assert result[1] == {"value": "value3", "label": "Other", "is_duplicate": False}
+
+    def test_url_deduplication(self):
+        """URL scenario: duplicate URLs marked, empty filtered before calling."""
+        # Simulates the URL variant pattern (empty strings pre-filtered)
+        variants = [
+            ("https://example.com/page", "Original"),
+            ("https://example.com/page#section", "With Fragment"),
+            ("https://example.com", "Root"),
+        ]
+        result = deduplicate_variants(variants)
+        assert len(result) == 3
+        assert result[0]["is_duplicate"] is False
+        assert result[1]["is_duplicate"] is False
+        assert result[2]["is_duplicate"] is False
+
+        # Duplicate URL appears again
+        variants_with_dup = [
+            ("https://example.com/page", "Original"),
+            ("https://example.com/page", "Duplicate Original"),
+            ("https://example.com", "Root"),
+        ]
+        result = deduplicate_variants(variants_with_dup)
+        assert len(result) == 3
+        assert result[0]["is_duplicate"] is False
+        assert result[1]["is_duplicate"] is True
+        assert result[2]["is_duplicate"] is False
 
 
 class TestEdgeCases:
