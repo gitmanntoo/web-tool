@@ -11,7 +11,7 @@ The test suite is organized in the `tests/` directory with the following structu
 ```
 tests/
 ├── __init__.py
-├── test_title_variants.py       # Title variant generation (~40 tests)
+├── test_title_variants.py       # Title variant generation (~46 tests)
 ├── test_title_strings.py        # Test data for title variants
 ├── test_unicode_util.py         # Unicode utility tests (~13 tests)
 ├── test_text_util.py            # Text processing tests (~44 tests)
@@ -27,7 +27,7 @@ tests/
 └── test_url_decoding.py         # URL decoding tests (~6 tests)
 ```
 
-**Total: 310 test cases across 14 test modules**
+**Total: 323 test cases across 14 test modules**
 
 ## Module-by-Module Coverage
 
@@ -69,7 +69,7 @@ tests/
 - Text pattern recognition (email, URL, HTML)
 - Word categorization and validation
 
-### 3. `test_url_util.py` (~22 tests)
+### 3. `test_url_util.py` (~29 tests)
 **Purpose:** Test URL parsing, validation, and manipulation
 
 **Test Classes:**
@@ -79,6 +79,8 @@ tests/
 - `TestGetUrlRoot` (4 tests) - URL root extraction
 - `TestGetUrlHost` (4 tests) - Host extraction
 - `TestMakeAbsoluteUrls` (5 tests) - URL resolution
+- `TestNormalizeNetloc` (3 tests) - Netloc normalization (www stripping, schemeless URLs)
+- `TestGetFirstPathSegment` (4 tests) - First path segment extraction
 - `TestUrlValidation` (1 test) - Integration test
 
 **Coverage:**
@@ -87,6 +89,8 @@ tests/
 - Query string and fragment handling
 - HTTPS/HTTP protocol handling
 - Error handling and defaults
+- `normalize_netloc()` - www prefix stripping, schemeless URL support
+- `get_first_path_segment()` - path segment extraction for cache key scoping
 
 ### 4. `test_html_util.py` (~37 tests)
 **Purpose:** Test HTML parsing, favicon discovery, and metadata
@@ -155,7 +159,7 @@ tests/
 - Walrus operator precedence regression tests (ICO and SVG)
 - Image inline base64 encoding
 
-### 7. `test_title_variants.py` (~40 tests)
+### 7. `test_title_variants.py` (~46 tests)
 **Purpose:** Test title variant generation (existing tests)
 
 **Test Classes:**
@@ -163,6 +167,7 @@ tests/
 - `TestAsciiOnly` (5 tests)
 - `TestPathSafeFilename` (13 tests)
 - `TestTitleVariants` (7 tests)
+- `TestDeduplicateVariants` (6 tests)
 - `TestEdgeCases` (6 tests)
 
 **Coverage:**
@@ -515,6 +520,6 @@ class TestNewFeature:
 
 ---
 
-**Last Updated:** April 17, 2026
+**Last Updated:** April 17, 2026 (updated for PR #33 - code simplification)
 **Test Framework:** pytest 9.0.3+
 **Python Version:** 3.13+

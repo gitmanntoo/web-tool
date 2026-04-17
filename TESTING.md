@@ -122,6 +122,15 @@ Tests for `TitleVariants` class:
 - Consistency across variants
 - Type checking
 
+#### `TestDeduplicateVariants` (6 tests)
+Tests for `deduplicate_variants()` function:
+- Empty list returns empty list
+- Single variant returns unchanged
+- Unique variants preserved
+- Exact duplicates removed
+- Case-insensitive duplicates detected
+- Whitespace-normalized duplicates detected
+
 #### `TestEdgeCases` (6 tests)
 Edge case testing:
 - Empty and whitespace input
@@ -167,6 +176,21 @@ Tests for URL decoding in `PageMetadata`:
 - URL with `%23` (encoded `#`) is decoded to `#`
 - Already-decoded URLs pass through unchanged
 - Empty URL handled gracefully
+
+#### `TestNormalizeNetloc` (3 tests)
+Tests for `normalize_netloc()` function in `url_util.py`:
+- Strips www. prefix from domain
+- Handles URLs without www
+- Handles www in path (not prefix)
+- Supports schemeless URLs
+
+#### `TestGetFirstPathSegment` (4 tests)
+Tests for `get_first_path_segment()` function in `url_util.py`:
+- Extracts first path segment from URL
+- Handles URLs without path
+- Handles root path
+- Handles single path segment
+- Supports schemeless URLs
 
 #### `TestMirrorLinksJsEscaping` (7 tests)
 Tests for JavaScript string escaping in `mirror-links.html` template:
@@ -419,6 +443,31 @@ uv run pytest tests/
    ```bash
    uv run pytest tests/test_feature.py -v
    ```
+
+## Test Classes Summary
+
+| Test Class | File | Tests | Description |
+|------------|------|-------|-------------|
+| `TestAsciiAndEmojis` | test_title_variants.py | 9 | ASCII/emoji text conversion |
+| `TestAsciiOnly` | test_title_variants.py | 5 | ASCII-only text filtering |
+| `TestPathSafeFilename` | test_title_variants.py | 13 | Cross-platform filename sanitization |
+| `TestTitleVariants` | test_title_variants.py | 7 | Title variant generation |
+| `TestDeduplicateVariants` | test_title_variants.py | 6 | Variant deduplication logic |
+| `TestEdgeCases` | test_title_variants.py | 6 | Edge case handling |
+| `TestFragmentVariants` | test_fragment_variants.py | 8 | Fragment duplicate detection |
+| `TestGetValidFaviconLinks` | test_favicon_validation.py | 6 | Favicon validation pipeline |
+| `TestValidateTopCandidates` | test_favicon_validation.py | 3 | Top candidate validation |
+| `TestPrettifyHtml` | test_html_util.py | 5 | HTML prettification |
+| `TestPageMetadataUrlDecoding` | test_url_decoding.py | 6 | URL percent-decoding |
+| `TestNormalizeNetloc` | test_url_util.py | 3 | Netloc normalization |
+| `TestGetFirstPathSegment` | test_url_util.py | 4 | Path segment extraction |
+| `TestMirrorLinksJsEscaping` | test_js_escaping.py | 7 | JavaScript string escaping |
+| `TestEscapeMarkdownText` | test_markdown_escaping.py | 9 | Markdown text escaping |
+| `TestMarkdownUrlWrapping` | test_markdown_escaping.py | 9 | Markdown URL wrapping |
+| `TestBuildMarkdownLink` | test_markdown_escaping.py | 8 | Markdown link construction |
+| `TestRealWorldExamples` | test_markdown_escaping.py | 4 | Real-world escaping scenarios |
+
+**Total: 323 tests across 14 test modules**
 
 ## Continuous Integration
 
