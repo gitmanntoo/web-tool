@@ -330,6 +330,19 @@ def get_mirror_favicons():
     return resp
 
 
+def save_favicon_override(overrides: dict, header_lines: list[str]) -> None:
+    """Write overrides back to the YAML file, preserving header comments."""
+    with open(html_util.FAVICON_OVERRIDES, "w") as f:
+        for line in header_lines:
+            f.write(line)
+        yaml.dump(overrides, f, sort_keys=True)
+
+    # Invalidate in-memory cache
+    file_path_str = str(html_util.FAVICON_OVERRIDES)
+    if file_path_str in html_util._favicon_yaml_cache:
+        del html_util._favicon_yaml_cache[file_path_str]
+
+
 @app.route('/add-favicon-override', methods=['POST'])
 def add_favicon_override():
     """Add a favicon override to the user override file.
@@ -399,17 +412,7 @@ def add_favicon_override():
             overrides[cache_key] = favicon_url
 
         # Write back to file with preserved header
-        with open(html_util.FAVICON_OVERRIDES, "w") as f:
-            # Write header comments first
-            for line in header_lines:
-                f.write(line)
-            # Write YAML data in sorted order
-            yaml.dump(overrides, f, sort_keys=True)
-
-        # Invalidate in-memory cache
-        file_path_str = str(html_util.FAVICON_OVERRIDES)
-        if file_path_str in html_util._favicon_yaml_cache:
-            del html_util._favicon_yaml_cache[file_path_str]
+        save_favicon_override(overrides, header_lines)
 
         return json_response({
             'success': True,
