@@ -423,10 +423,10 @@ For each segment, displays:
 - **Path Safe:** Title converted to valid filename (removes invalid characters, converts unicode)
 
 **Link Formats Generated (all use selected title and URL variants):**
-- **HTML:** `<a target="_blank" href="url">text</a>` — standard HTML anchor
-- **Markdown:** `[text](url)` — standard Markdown link format
-- **Wiki-link:** `[text|url]` — Obsidian/piped link format
-- **Simple:** `url text` — plain text with URL followed by title
+- **HTML:** `<a target="_blank" href="url">text</a>` — standard HTML anchor (URLs HTML-escaped via `escapeHtml()`)
+- **Markdown:** `[text](url)` or `[text](<url>)` — Markdown link; link text escapes `[`, `]`, `\`; URL wrapped in `<>` when it contains `()`, `[]`, `<`, or spaces
+- **Wiki-link:** `[text|url]` — Obsidian/piped link format (no text escaping needed; URL HTML-escaped)
+- **Simple:** `url text` — plain text with URL followed by title (URL HTML-escaped)
 
 **Favicon Discovery:**
 - Automatically retrieves first cached favicon for the page domain
@@ -439,6 +439,14 @@ For each segment, displays:
 - Inline base64 option shown when favicon is stored with inline data in cache
 - **Pasted** option shown when a pasted image has been captured in the current session
 - URL option copies just the URL; Inline option copies full `<img>` tag with base64 data
+- Favicon `<img>` tags include both `height` and `width` attributes to prevent layout shift
+
+**Markdown Escaping:**
+
+The Markdown link format requires special escaping to produce valid CommonMark:
+- **Link text**: `[`, `]`, and `\` are backslash-escaped (e.g., `\[` prevents accidental link syntax)
+- **URL**: URLs containing `()`, `[]`, `<`, or spaces are wrapped in angle brackets (e.g., `[text](<url with (parens)>)`)
+- **Other formats**: HTML and Wiki-link use `escapeHtml()` for URLs; Simple format uses `escapeHtml()` for URLs
 
 **Implementation:** [web-tool.py](web-tool.py) - `get_mirror_links()` function; [library/util.py](library/util.py) - `TitleVariants` class; [library/url_util.py](library/url_util.py) - URL parsing functions
 

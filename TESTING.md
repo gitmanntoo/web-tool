@@ -12,18 +12,19 @@ web-tool/
 │   ├── __init__.py
 │   ├── conftest.py                   # Pytest fixtures (app_client, test_page_builder)
 │   ├── test_docker_util.py         # Tests for Docker detection
+│   ├── test_favicon_validation.py  # Tests for favicon validation (get_valid_favicon_links)
 │   ├── test_fragment_variants.py   # Tests for fragment variant duplicate detection
-│   ├── test_favicon_validation.py # Tests for favicon validation (get_valid_favicon_links)
-│   ├── test_html_util.py          # Tests for HTML parsing and favicon discovery
-│   ├── test_img_util.py           # Tests for image conversion
-│   ├── test_integration_pages.py  # Integration tests for URL/fragment/title handling
-│   ├── test_js_escaping.py        # Tests for JavaScript string escaping in templates
-│   ├── test_text_util.py          # Tests for text utilities
-│   ├── test_title_strings.py      # Test data for title variants
-│   ├── test_title_variants.py     # Tests for title variant generation
-│   ├── test_unicode_util.py       # Tests for Unicode utilities
-│   ├── test_url_decoding.py       # Tests for URL encoding/decoding
-│   └── test_url_util.py           # Tests for URL utilities
+│   ├── test_html_util.py           # Tests for HTML parsing and favicon discovery
+│   ├── test_img_util.py            # Tests for image conversion
+│   ├── test_integration_pages.py   # Integration tests for URL/fragment/title handling
+│   ├── test_js_escaping.py         # Tests for JavaScript string escaping in templates
+│   ├── test_markdown_escaping.py   # Tests for Markdown link escaping (escapeMarkdownText, buildMarkdownLink)
+│   ├── test_text_util.py           # Tests for text utilities
+│   ├── test_title_strings.py       # Test data for title variants
+│   ├── test_title_variants.py      # Tests for title variant generation
+│   ├── test_unicode_util.py        # Tests for Unicode utilities
+│   ├── test_url_decoding.py        # Tests for URL decoding in PageMetadata
+│   └── test_url_util.py            # Tests for URL utilities
 ├── pytest.ini                      # Pytest configuration
 ├── pyproject.toml                  # Project configuration with test dependencies
 └── [old test files - deprecated]
@@ -171,6 +172,48 @@ Tests for JavaScript string escaping in `mirror-links.html` template:
 - Empty fragment renders empty string for `fragmentText`
 - Null favicon renders as `null` in JavaScript
 - Favicon URL renders as JavaScript string
+
+#### `TestEscapeMarkdownText` (9 tests)
+Tests for `escapeMarkdownText()` function in `mirror-links.html` template:
+- Plain text passes through unchanged
+- Backslash escaped
+- Open bracket `[` escaped
+- Close bracket `]` escaped regardless of matching
+- Unmatched close bracket escaped
+- Backslash before open bracket: backslash escaped first
+- Backslash escape prevents double escaping
+- Mixed brackets and backslashes
+
+#### `TestMarkdownUrlWrapping` (9 tests)
+Tests for Markdown URL wrapping logic in `buildMarkdownLink()`:
+- Clean URLs remain unwrapped
+- URLs with open parenthesis wrapped in `<>`
+- URLs with close parenthesis wrapped in `<>`
+- URLs with both parentheses wrapped in `<>`
+- URLs with square brackets wrapped in `<>`
+- URLs with space wrapped in `<>`
+- URLs with `<` wrapped in `<>`
+- URLs with both `<` and `>` have `>` HTML-encoded
+- Fragment with parentheses gets wrapped
+
+#### `TestBuildMarkdownLink` (8 tests)
+Tests for `buildMarkdownLink()` function:
+- Simple link generation
+- Text with parentheses not escaped
+- Text with brackets escaped
+- Text with backslash escaped
+- URL with parentheses wrapped
+- URL with fragment parentheses wrapped
+- Fragment prefixes title
+- Both text brackets and URL parentheses handled
+- Wiki-link format unchanged
+
+#### `TestRealWorldExamples` (4 tests)
+Real-world Markdown escaping scenarios:
+- Pydantic JSON Schema URL with dots in fragment
+- URL with space in fragment
+- Fragment prefixes title in real pattern
+- Fragment prefixes title with brackets in text
 
 #### `TestFragmentResolution` (4 integration tests)
 Tests fragment text resolution via fragment handlers in `PageMetadata`:
