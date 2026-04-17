@@ -202,11 +202,11 @@
             const favH = faviconHeight || 20;
             const favW = faviconWidth || 20;
             if (faviconOption === 'pasted' && defaultValues.pastedFavicon) {
-                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="${favH}" width="${faviconW}" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="${favH}" width="${favW}" alt="Favicon" /> `;
             } else if (faviconOption === 'inline' && defaultValues.faviconInline) {
-                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="${favH}" width="${faviconW}" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="${favH}" width="${favW}" alt="Favicon" /> `;
             } else if (faviconOption === 'url' && defaultValues.favicon) {
-                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="${favH}" width="${faviconW}" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="${favH}" width="${favW}" alt="Favicon" /> `;
             }
 
             // Add link with appropriate text
