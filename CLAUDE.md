@@ -31,6 +31,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.14 only (`>=3.14,<3.15`). Using a pyenv-managed Python will fail to find test dependencies.
 - **Dev deps required:** Run `make dev` before `make test` or `uv run python -m pytest` — pytest/ruff are dev dependencies, not installed by `make install`
 
+## Python Version Upgrades
+- **Hard cutover:** Update `requires-python`, ruff `target-version`, Dockerfile base image, `.python-version`, and docs together
+- **PEP 649:** Python 3.14+ supports unquoted forward references; ruff `py314` target flags quoted annotations as unnecessary
+
+## Type Annotations
+- Use `Type | None` for optional/nullable fields (e.g., `parent: SoupElem | None` when None is passed)
+- Unquote forward references when upgrading to Python 3.14+ (PEP 649 deferred evaluation)
+
 ## Module Packaging
 - **New Python packages:** When adding new packages (e.g., `routes/`), update both `Dockerfile` (COPY command) and `pyproject.toml` (`packages` list in `[tool.setuptools]`)
 
@@ -42,6 +50,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## PR Review Comments
 - **View Copilot comments:** `gh api repos/<owner>/<repo>/pulls/<num>/comments` — addresses these before merge
+
+## Documentation
+- Keep TEST_COVERAGE.md dependency versions in sync with pyproject.toml constraints
 
 ## Testing
 - **Mocking Pillow images:** When mocking `Image.resize`, set `.resize.return_value = mock_img` so callers can chain `.width`/`.height` on the returned image
