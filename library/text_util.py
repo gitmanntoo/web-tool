@@ -427,6 +427,62 @@ class SoupElem:
         return 0.0
 
 
+def _process_script_element(
+    elem: element.Tag,
+    depth: int,
+    parent: SoupElem,
+    rollup: bool,
+) -> list[SoupElem]:
+    """Process a <script> element, extracting String tokens and recursing into HTML-like content."""
+    tree_elem = []
+
+    script_parent = SoupElem(
+        depth,
+        parent,
+        elem.name,
+        "",
+        attrs=elem.attrs,
+    )
+    tree_elem.append(script_parent)
+
+    elem_text = elem.text.strip()
+    if elem_text:
+        # Tokenize the script and extract the String tokens.
+        try:
+            tokens = esprima.tokenize(elem_text)
+            for tok in tokens:
+                if tok.type == "String":
+                    tok_value = tok.value.strip()
+                    if tok_value != "":
+                        tok_value = eval_script_text(tok_value)
+
+                        script_string_elem = SoupElem(
+                            depth + 1, script_parent, "script.String", tok_value
+                        )
+
+                        # Try to parse text as HTML?
+                        script_elem = []
+                        if like_html(tok_value):
+                            # Probable HTML.
+                            script_soup = BeautifulSoup(tok_value, "html.parser")
+                            script_elem = walk_soup_tree_strings(
+                                script_soup,
+                                depth + 2,
+                                parent=script_string_elem,
+                                rollup=rollup,
+                            )
+                            tok_value = ""
+
+                        tree_elem.append(script_string_elem)
+                        if tok_value == "":
+                            script_string_elem.text = tok_value
+                            tree_elem.extend(script_elem)
+        except Exception:
+            tree_elem.append(SoupElem(depth + 1, script_parent, "script.String", elem_text))
+
+    return tree_elem
+
+
 def walk_soup_tree_strings(
     elem: element.Tag,
     depth: int = 0,
@@ -438,49 +494,7 @@ def walk_soup_tree_strings(
     tree_elem = []
 
     if elem.name == "script":
-        script_parent = SoupElem(
-            depth,
-            parent,
-            elem.name,
-            "",
-            attrs=elem.attrs,
-        )
-        tree_elem.append(script_parent)
-
-        elem_text = elem.text.strip()
-        if elem_text:
-            # Tokenize the script and extract the String tokens.
-            try:
-                tokens = esprima.tokenize(elem_text)
-                for tok in tokens:
-                    if tok.type == "String":
-                        tok_value = tok.value.strip()
-                        if tok_value != "":
-                            tok_value = eval_script_text(tok_value)
-
-                            script_string_elem = SoupElem(
-                                depth + 1, script_parent, "script.String", tok_value
-                            )
-
-                            # Try to parse text as HTML?
-                            script_elem = []
-                            if like_html(tok_value):
-                                # Probable HTML.
-                                script_soup = BeautifulSoup(tok_value, "html.parser")
-                                script_elem = walk_soup_tree_strings(
-                                    script_soup,
-                                    depth + 2,
-                                    parent=script_string_elem,
-                                    rollup=rollup,
-                                )
-                                tok_value = ""
-
-                            tree_elem.append(script_string_elem)
-                            if tok_value == "":
-                                script_string_elem.text = tok_value
-                                tree_elem.extend(script_elem)
-            except Exception:
-                tree_elem.append(SoupElem(depth + 1, script_parent, "script.String", elem_text))
+        return _process_script_element(elem, depth, parent, rollup)
 
     if hasattr(elem, "children"):
         this_elem = SoupElem(
