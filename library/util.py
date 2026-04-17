@@ -1,5 +1,4 @@
 import base64
-import html
 import io
 import json
 import logging
@@ -15,13 +14,43 @@ import jsmin
 import psutil
 import pyperclip
 import yaml
-from anyascii import anyascii
 from bs4 import BeautifulSoup
 from flask import Response, abort, make_response, request
 from jinja2 import Environment, FileSystemLoader
 
 from library import html_util, url_util
+from library.fragment_handlers import (
+    fragment_handler_anchor_inside_heading,
+    fragment_handler_anchor_siblings,
+    fragment_handler_anchor_with_text,
+    fragment_handler_element_before_heading,
+    fragment_handler_heading_with_id,
+    fragment_handler_wrapper_with_id,
+)
 from library.html_util import RelLink
+
+# Re-exports for backward compatibility
+from library.text_format import (  # noqa: F401
+    ascii_text as ascii_text,
+)
+from library.text_format import (
+    html_text as html_text,
+)
+from library.text_format import (
+    path_safe_filename as path_safe_filename,
+)
+from library.text_format import (
+    text_ascii_only as text_ascii_only,
+)
+from library.text_format import (
+    text_with_ascii_and_emojis as text_with_ascii_and_emojis,
+)
+from library.title_variants import (  # noqa: F401
+    TitleVariants as TitleVariants,
+)
+from library.title_variants import (
+    deduplicate_variants as deduplicate_variants,
+)
 
 STATIC_DIR = Path("static")
 TEMPLATE_DIR = Path("templates")
@@ -35,8 +64,6 @@ CLIP_CACHE_TTL_SECONDS = 600  # 10 minutes
 CLIP_CACHE_MAX_BATCHES = 100  # Maximum number of batches to keep
 CLIP_CACHE_MAX_CHUNK_NUMBER = 10000  # Maximum chunk number allowed
 CLIP_CACHE_MEMORY_LIMIT_PCT = 0.5  # Maximum 50% of available memory
-
-HEADING_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6"]
 
 
 def cleanup_clip_cache():
@@ -376,99 +403,6 @@ class PageMetadata:
         # Fallback to using the URL.
         self.title = self.url
 
-    def _fragment_handler_heading_with_id(self):
-        """Handler: Heading element with id attribute matching fragment."""
-        heading = self.soup.find(HEADING_TAGS, id=self.parsed_url.fragment)
-        if heading and (text := heading.text.strip()):
-            return text
-        return None
-
-    def _fragment_handler_anchor_inside_heading(self):
-        """Handler: Anchor tag inside heading (e.g., <h2>Text<a href="#fragment">¶</a></h2>)."""
-        anchor = self._find_fragment_anchor()
-        if anchor and anchor.parent and anchor.parent.name in HEADING_TAGS:
-            heading_text = anchor.parent.get_text(strip=True)
-            anchor_text = anchor.get_text(strip=True)
-            if anchor_text and heading_text.endswith(anchor_text):
-                heading_text = heading_text[: -len(anchor_text)].strip()
-            if heading_text:
-                return heading_text
-        return None
-
-    def _fragment_handler_element_before_heading(self):
-        """Handler: Element with id/name before a heading."""
-        # Try id attribute
-        element = self.soup.find(id=self.parsed_url.fragment)
-        if element:
-            next_elem = element.find_next_sibling()
-            if next_elem and next_elem.name in HEADING_TAGS:
-                if text := next_elem.text.strip():
-                    return text
-
-        # Try name attribute (older HTML)
-        element = self.soup.find(attrs={"name": self.parsed_url.fragment})
-        if element:
-            next_elem = element.find_next_sibling()
-            if next_elem and next_elem.name in HEADING_TAGS:
-                if text := next_elem.text.strip():
-                    return text
-        return None
-
-    def _fragment_handler_wrapper_with_id(self):
-        """Handler: Wrapper element (section/div/article) with id containing a heading."""
-        wrapper = self.soup.find(["section", "div", "article"], id=self.parsed_url.fragment)
-        if wrapper:
-            heading = wrapper.find(HEADING_TAGS)
-            if heading and (text := heading.text.strip()):
-                return text
-        return None
-
-    def _fragment_handler_anchor_with_text(self):
-        """Handler: Anchor tag with href matching fragment that has text content."""
-        anchor = self._find_fragment_anchor()
-        if anchor and (text := anchor.text.strip()):
-            return text
-        return None
-
-    def _fragment_handler_anchor_siblings(self):
-        """Handler: Previous or next sibling heading of anchor without text."""
-        anchor = self._find_fragment_anchor()
-        if not anchor:
-            return None
-
-        # Check previous sibling
-        prev = anchor.find_previous_sibling()
-        if prev and prev.name in HEADING_TAGS:
-            if text := prev.text.strip():
-                return text
-
-        # Check next sibling
-        next_elem = anchor.find_next_sibling()
-        if next_elem and next_elem.name in HEADING_TAGS:
-            if text := next_elem.text.strip():
-                return text
-        return None
-
-    def _find_fragment_anchor(self):
-        """Find anchor tag with href matching the fragment."""
-        # Look for anchor with fragment as href
-        anchor = self.soup.find(href=f"#{self.parsed_url.fragment}")
-        if anchor:
-            return anchor
-
-        # Look for anchor with full URL as href
-        url_with_fragment = urlunparse(
-            (
-                self.parsed_url.scheme,
-                self.parsed_url.netloc,
-                self.parsed_url.path,
-                "",
-                "",
-                self.parsed_url.fragment,
-            )
-        )
-        return self.soup.find(href=url_with_fragment)
-
     def resolve_fragment_text(self):
         """
         Resolve the fragment text from the URL using a series of handlers.
@@ -486,17 +420,17 @@ class PageMetadata:
 
         # List of fragment handlers to try in order
         handlers = [
-            self._fragment_handler_heading_with_id,
-            self._fragment_handler_anchor_inside_heading,
-            self._fragment_handler_element_before_heading,
-            self._fragment_handler_wrapper_with_id,
-            self._fragment_handler_anchor_with_text,
-            self._fragment_handler_anchor_siblings,
+            fragment_handler_heading_with_id,
+            fragment_handler_anchor_inside_heading,
+            fragment_handler_element_before_heading,
+            fragment_handler_wrapper_with_id,
+            fragment_handler_anchor_with_text,
+            fragment_handler_anchor_siblings,
         ]
 
         # Try each handler until one returns text
         for handler in handlers:
-            if text := handler():
+            if text := handler(self.soup, self.parsed_url, self.parsed_url.fragment):
                 self.fragment_text = text
                 return
 
@@ -568,7 +502,6 @@ def get_javascript_file(filename: str, mode: str, template_env=None, format: str
 
     # Return the contents
     return contents
-
 
 
 def handle_clipboard_error(metadata: PageMetadata):
@@ -701,140 +634,3 @@ def plain_text_response(
 
     resp = make_response(rendered_html)
     return resp
-
-
-def ascii_text(text: str) -> str:
-    return anyascii(text)
-
-
-def html_text(text: str) -> str:
-    return html.escape(text)
-
-
-def text_with_ascii_and_emojis(text: str) -> str:
-    """
-    Convert text to ASCII and emojis only (removes unicode accents/symbols).
-    Preserves emoji characters while converting other unicode to ASCII equivalents.
-    """
-    result = []
-    for char in text:
-        # Check if character is an emoji or symbol (Unicode category So, No, Po, or emoji blocks)
-        if ord(char) > 127:
-            # Check common emoji ranges
-            code = ord(char)
-            # Emoji ranges: Emoticons, Transport, Miscellaneous Symbols, etc.
-            if (
-                0x1F300 <= code <= 0x1F9FF  # Emoji blocks (most comprehensive)
-                or 0x2600 <= code <= 0x26FF  # Miscellaneous Symbols
-                or 0x2700 <= code <= 0x27BF  # Dingbats
-                or 0x1F000 <= code <= 0x1F02F
-            ):  # Mahjong Tiles, Domino Tiles
-                result.append(char)
-            else:
-                # Convert non-emoji unicode to ASCII
-                result.append(anyascii(char))
-        else:
-            result.append(char)
-    return "".join(result)
-
-
-def text_ascii_only(text: str) -> str:
-    """
-    Convert text to ASCII only (converts all unicode and emojis to ASCII).
-    Emojis are converted to their text equivalents (e.g., 👋 → :wave:).
-    """
-    return anyascii(text)
-
-
-def path_safe_filename(text: str, replacement: str = "_") -> str:
-    r"""
-    Convert text to a path-safe filename that works on macOS, Linux, and Windows.
-
-    Removes/replaces characters that are invalid or problematic in filenames:
-    - Windows: < > : " / \ | ? *
-    - Unix: / (null is also invalid but rare in text)
-    - macOS: : (treated as path separator, though HFS+ uses it)
-    - All: control characters, leading/trailing spaces/dots
-
-    Args:
-        text: The text to convert
-        replacement: Character to use for invalid characters (default: underscore)
-
-    Returns:
-        A filename-safe string
-    """
-    import re
-
-    # First convert to ASCII to remove unicode/emojis
-    safe = anyascii(text)
-
-    # Remove/replace invalid filename characters
-    # Invalid on Windows: < > : " / \ | ? *
-    # Invalid on Unix: / and null
-    # Invalid on macOS: : (path separator in classic Mac OS)
-    invalid_chars = r'[<>:"/\\|?*\x00@]'  # Added @ for safety in edge cases
-    safe = re.sub(invalid_chars, replacement, safe)
-
-    # Remove control characters
-    safe = re.sub(r"[\x01-\x1f]", "", safe)
-
-    # Remove leading/trailing spaces and dots (problematic on Windows)
-    safe = safe.strip(". ")
-
-    # Remove consecutive replacements (e.g., multiple underscores)
-    safe = re.sub(f"{re.escape(replacement)}+", replacement, safe)
-
-    # Ensure filename is not empty
-    if not safe or safe == replacement:
-        safe = "untitled"
-
-    return safe
-
-
-class TitleVariants:
-    """Container for title variants with different transformations."""
-
-    def __init__(self, original: str):
-        """
-        Generate all title variants from an original title string.
-
-        Args:
-            original: The original title text
-        """
-        self.original = original
-        self.ascii_and_emojis = text_with_ascii_and_emojis(original)
-        self.ascii_only = text_ascii_only(original)
-        self.path_safe = path_safe_filename(original)
-
-    def __repr__(self) -> str:
-        return (
-            f"TitleVariants(\n"
-            f"  original={self.original!r},\n"
-            f"  ascii_and_emojis={self.ascii_and_emojis!r},\n"
-            f"  ascii_only={self.ascii_only!r},\n"
-            f"  path_safe={self.path_safe!r}\n"
-            f")"
-        )
-
-
-def deduplicate_variants(variants: list[tuple[str, str]]) -> list[dict]:
-    """Deduplicate variant tuples, tracking duplicates by value.
-
-    Args:
-        variants: List of (value, label) tuples.
-
-    Returns:
-        List of dicts with 'value', 'label', and 'is_duplicate' keys.
-        Duplicate labels are skipped. Duplicate values are marked.
-    """
-    seen_labels = set()
-    seen_values = set()
-    result = []
-    for value, label in variants:
-        if label in seen_labels:
-            continue
-        is_duplicate = value in seen_values
-        result.append({"value": value, "label": label, "is_duplicate": is_duplicate})
-        seen_labels.add(label)
-        seen_values.add(value)
-    return result
