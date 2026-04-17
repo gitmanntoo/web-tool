@@ -24,6 +24,11 @@ template_loader = FileSystemLoader(util.TEMPLATE_DIR)
 template_env = Environment(loader=template_loader)
 
 
+def json_response(data: dict, status: int = 200) -> tuple:
+    """Create a Flask JSON response tuple."""
+    return json.dumps(data), status, {"Content-Type": "application/json"}
+
+
 @app.before_request
 def before_request_cleanup():
     """Clean up expired clip_cache entries before each request."""
@@ -342,27 +347,19 @@ def add_favicon_override():
         save_inline = data.get('save_inline', False)
 
         if not favicon_url or not page_url:
-            return json.dumps({
+            return json_response({
                 'success': False,
                 'error': 'Missing favicon_url or page_url'
-            }), 400, {'Content-Type': 'application/json'}
+            }, 400)
 
         # Parse the URL to determine cache key
-        parsed = urlparse(page_url)
-
-        # Normalize netloc: always remove www. prefix for consistency
-        netloc = parsed.netloc
-        if netloc.startswith("www."):
-            netloc = netloc[4:]
+        netloc = url_util.normalize_netloc(page_url)
 
         if scope == 'path':
             # Use domain + first path segment
-            path_part = parsed.path
-            if path_part.startswith("/"):
-                path_part = path_part[1:]
-            if len(path_part) > 0:
-                path_part = path_part.split("/")[0]
-                cache_key = f"{netloc}/{path_part}"
+            path_segment = url_util.get_first_path_segment(page_url)
+            if path_segment:
+                cache_key = f"{netloc}/{path_segment}"
             else:
                 cache_key = netloc
         else:
@@ -408,16 +405,16 @@ def add_favicon_override():
         if file_path_str in html_util._favicon_yaml_cache:
             del html_util._favicon_yaml_cache[file_path_str]
 
-        return json.dumps({
+        return json_response({
             'success': True,
             'cache_key': cache_key
-        }), 200, {'Content-Type': 'application/json'}
+        })
 
     except Exception as e:
-        return json.dumps({
+        return json_response({
             'success': False,
             'error': str(e)
-        }), 500, {'Content-Type': 'application/json'}
+        }, 500)
 
 
 @app.route('/convert-ico-to-png', methods=['GET'])
@@ -464,7 +461,6 @@ def get_mirror_links():
     metadata = util.get_page_metadata()
 
     # build fragment variants with duplicate detection
-    fragment_variants = []
     fragment_variants_data = [
         ('', 'None'),
     ]
@@ -473,17 +469,7 @@ def get_mirror_links():
     if metadata.fragment_text:
         fragment_variants_data.append((metadata.fragment_text, 'Fragment Text'))
 
-    seen_values = set()
-    for fragment_value, label in fragment_variants_data:
-        # For 'None', use empty string as the value
-        value = fragment_value if label != 'None' else ''
-        is_duplicate = value in seen_values and label != 'None'
-        fragment_variants.append({
-            'value': value,
-            'label': label,
-            'is_duplicate': is_duplicate
-        })
-        seen_values.add(value)
+    fragment_variants = util.deduplicate_variants(fragment_variants_data)
 
     # build urls with labels - always start with Original
     url_variants = []
@@ -495,19 +481,11 @@ def get_mirror_links():
         (metadata.url_host, 'Host'),
     ]
 
-    seen_labels = set()
-    seen_values = set()
-    for url, label in url_variants_data:
-        if url:
-            if label not in seen_labels:
-                is_duplicate = url in seen_values
-                url_variants.append({
-                    'url': url,
-                    'label': label,
-                    'is_duplicate': is_duplicate
-                })
-                seen_labels.add(label)
-                seen_values.add(url)
+    url_variants_filtered = [(url, label) for url, label in url_variants_data if url]
+    url_variants = [
+        {'url': item['value'], 'label': item['label'], 'is_duplicate': item['is_duplicate']}
+        for item in util.deduplicate_variants(url_variants_filtered)
+    ]
 
     # build links
     links = []
@@ -527,18 +505,7 @@ def get_mirror_links():
         (title_obj.path_safe, 'Path Safe'),
     ]
     
-    seen_labels = set()
-    seen_values = set()
-    for title_value, label in title_variants_data:
-        if label not in seen_labels:
-            is_duplicate = title_value in seen_values
-            title_variant_list.append({
-                'value': title_value,
-                'label': label,
-                'is_duplicate': is_duplicate
-            })
-            seen_labels.add(label)
-            seen_values.add(title_value)
+    title_variant_list = util.deduplicate_variants(title_variants_data)
 
     # Get inline base64 favicon (from cache or generate on-the-fly)
     favicon_inline = None
@@ -643,19 +610,7 @@ def debug_title_variants():
                 (title_obj.ascii_only, 'ASCII Only'),
                 (title_obj.path_safe, 'Path Safe'),
             ]
-            
-            seen_labels = set()
-            seen_values = set()
-            for title_value, label in title_variants_data:
-                if label not in seen_labels:
-                    is_duplicate = title_value in seen_values
-                    title_variant_list.append({
-                        'value': title_value,
-                        'label': label,
-                        'is_duplicate': is_duplicate
-                    })
-                    seen_labels.add(label)
-                    seen_values.add(title_value)
+            title_variant_list = util.deduplicate_variants(title_variants_data)
     
     template = template_env.get_template('debug-title-variants.html')
     rendered_html = template.render({
@@ -706,20 +661,11 @@ def debug_url_variants():
                 (url_root, 'Root'),
                 (url_host, 'Host'),
             ]
-            
-            seen_labels = set()
-            seen_values = set()
-            for url_value, label in url_variants_data:
-                if url_value:
-                    if label not in seen_labels:
-                        is_duplicate = url_value in seen_values
-                        url_variant_list.append({
-                            'url': url_value,
-                            'label': label,
-                            'is_duplicate': is_duplicate
-                        })
-                        seen_labels.add(label)
-                        seen_values.add(url_value)
+            url_variants_filtered = [(url, label) for url, label in url_variants_data if url]
+            url_variant_list = [
+                {'url': item['value'], 'label': item['label'], 'is_duplicate': item['is_duplicate']}
+                for item in util.deduplicate_variants(url_variants_filtered)
+            ]
     
     template = template_env.get_template('debug-url-variants.html')
     rendered_html = template.render({
@@ -1158,50 +1104,50 @@ def debug_inline_image():
     try:
         data = request.get_json()
         if not data:
-            return json.dumps({"success": False, "error": "no JSON body"}), 400, {"Content-Type": "application/json"}
+            return json_response({"success": False, "error": "no JSON body"}, 400)
 
         image_data = data.get("image_data")
         height = int(data.get("height", 20))
 
         if not image_data:
-            return json.dumps({"success": False, "error": "image_data is required"}), 400, {"Content-Type": "application/json"}
+            return json_response({"success": False, "error": "image_data is required"}, 400)
 
         if not (1 <= height <= 200):
-            return json.dumps({"success": False, "error": "height must be between 1 and 200"}), 400, {"Content-Type": "application/json"}
+            return json_response({"success": False, "error": "height must be between 1 and 200"}, 400)
 
         # Decode base64 to raw bytes
         try:
             image_bytes = base64.b64decode(image_data, validate=True)
         except Exception:
-            return json.dumps({"success": False, "error": "invalid base64 data"}), 400, {"Content-Type": "application/json"}
+            return json_response({"success": False, "error": "invalid base64 data"}, 400)
 
         MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
         if len(image_bytes) > MAX_IMAGE_BYTES:
-            return json.dumps({"success": False, "error": f"image exceeds {MAX_IMAGE_BYTES // 1024 // 1024}MB limit"}), 400, {"Content-Type": "application/json"}
+            return json_response({"success": False, "error": f"image exceeds {MAX_IMAGE_BYTES // 1024 // 1024}MB limit"}, 400)
 
         # Process image
         from library.img_util import encode_image_inline
 
         result = encode_image_inline(image_bytes, target_height=height)
         if result is None:
-            return json.dumps({
+            return json_response({
                 "success": False,
                 "error": "image too large (>2000px in any dimension) or unsupported format",
-            }), 400, {"Content-Type": "application/json"}
+            }, 400)
 
         # Extract base64 portion for separate display
         base64_part = result["data_url"].split(",", 1)[1]
 
-        return json.dumps({
+        return json_response({
             "success": True,
             "inline": f'<img src="{result["data_url"]}" height="{result["height"]}" width="{result["width"]}" alt="Favicon" />',
             "base64": base64_part,
             "width": result["width"],
             "height": result["height"],
-        }), 200, {"Content-Type": "application/json"}
+        })
     except Exception as e:
         logging.exception("debug_inline_image failed")
-        return json.dumps({"success": False, "error": "internal server error"}), 500, {"Content-Type": "application/json"}
+        return json_response({"success": False, "error": "internal server error"}, 500)
 
 
 @app.route("/test-pages-interactive", methods=["GET"])
