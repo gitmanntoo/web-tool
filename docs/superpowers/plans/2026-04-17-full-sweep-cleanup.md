@@ -6,7 +6,7 @@
 
 **Architecture:** Four task groups executed sequentially: bug fix first (highest risk), then dead code removal, then doc/spec cleanup, then test additions. Each task is self-contained and produces a commit.
 
-**Tech Stack:** Python 3.13, pytest, Flask, lxml, BeautifulSoup4
+**Tech Stack:** Python 3.14, pytest, Flask, lxml, BeautifulSoup4
 
 ---
 
