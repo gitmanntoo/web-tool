@@ -80,6 +80,12 @@ class TestSerializedResponse:
         resp = SerializedResponse(source_url="http://example.com", content_type="text/html")
         assert resp.content_type == "text/html"
 
+    def test_get_text_decodes_content(self):
+        """get_text() should decode content bytes to string."""
+        resp = SerializedResponse(source_url="https://example.com")
+        resp.content = b"hello world"
+        assert resp.get_text() == "hello world"
+
 
 class TestGetUrlRoot:
     """Tests for get_url_root function."""

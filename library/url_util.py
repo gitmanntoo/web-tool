@@ -108,7 +108,7 @@ class SerializedResponse:
 
     def get_text(self) -> str:
         """Returns the response data as a string."""
-        return self.data.decode()
+        return self.content.decode()
 
     def as_dict(self) -> dict:
         """Returns the response as a dictionary without the data."""
