@@ -36,6 +36,8 @@ CLIP_CACHE_MAX_BATCHES = 100  # Maximum number of batches to keep
 CLIP_CACHE_MAX_CHUNK_NUMBER = 10000  # Maximum chunk number allowed
 CLIP_CACHE_MEMORY_LIMIT_PCT = 0.5  # Maximum 50% of available memory
 
+HEADING_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6"]
+
 
 def cleanup_clip_cache():
     """Remove expired batches and enforce size limits on clip_cache.
@@ -252,18 +254,15 @@ class PageMetadata:
     @property
     def override_domain(self) -> str:
         """Netloc with www. prefix stripped. Used for the Add Override form's scope."""
-        netloc = self.parsed_url.netloc
-        if netloc.startswith("www."):
-            netloc = netloc[4:]
-        return netloc
+        return url_util.normalize_netloc(self.url)
 
     @property
     def override_path_scope(self) -> str:
         """Netloc (www-stripped) + first path segment. Used for Add Override form scope."""
         netloc = self.override_domain
-        path_tokens = self.parsed_url.path.split("/")
-        if len(path_tokens) > 1 and path_tokens[1]:
-            return f"{netloc}/{path_tokens[1]}"
+        path_segment = url_util.get_first_path_segment(self.url)
+        if path_segment:
+            return f"{netloc}/{path_segment}"
         return netloc
 
     @property
@@ -379,7 +378,7 @@ class PageMetadata:
 
     def _fragment_handler_heading_with_id(self):
         """Handler: Heading element with id attribute matching fragment."""
-        heading = self.soup.find(["h1", "h2", "h3", "h4", "h5", "h6"], id=self.parsed_url.fragment)
+        heading = self.soup.find(HEADING_TAGS, id=self.parsed_url.fragment)
         if heading and (text := heading.text.strip()):
             return text
         return None
@@ -387,7 +386,7 @@ class PageMetadata:
     def _fragment_handler_anchor_inside_heading(self):
         """Handler: Anchor tag inside heading (e.g., <h2>Text<a href="#fragment">¶</a></h2>)."""
         anchor = self._find_fragment_anchor()
-        if anchor and anchor.parent and anchor.parent.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+        if anchor and anchor.parent and anchor.parent.name in HEADING_TAGS:
             heading_text = anchor.parent.get_text(strip=True)
             anchor_text = anchor.get_text(strip=True)
             if anchor_text and heading_text.endswith(anchor_text):
@@ -402,7 +401,7 @@ class PageMetadata:
         element = self.soup.find(id=self.parsed_url.fragment)
         if element:
             next_elem = element.find_next_sibling()
-            if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            if next_elem and next_elem.name in HEADING_TAGS:
                 if text := next_elem.text.strip():
                     return text
 
@@ -410,7 +409,7 @@ class PageMetadata:
         element = self.soup.find(attrs={"name": self.parsed_url.fragment})
         if element:
             next_elem = element.find_next_sibling()
-            if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            if next_elem and next_elem.name in HEADING_TAGS:
                 if text := next_elem.text.strip():
                     return text
         return None
@@ -419,7 +418,7 @@ class PageMetadata:
         """Handler: Wrapper element (section/div/article) with id containing a heading."""
         wrapper = self.soup.find(["section", "div", "article"], id=self.parsed_url.fragment)
         if wrapper:
-            heading = wrapper.find(["h1", "h2", "h3", "h4", "h5", "h6"])
+            heading = wrapper.find(HEADING_TAGS)
             if heading and (text := heading.text.strip()):
                 return text
         return None
@@ -439,13 +438,13 @@ class PageMetadata:
 
         # Check previous sibling
         prev = anchor.find_previous_sibling()
-        if prev and prev.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+        if prev and prev.name in HEADING_TAGS:
             if text := prev.text.strip():
                 return text
 
         # Check next sibling
         next_elem = anchor.find_next_sibling()
-        if next_elem and next_elem.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+        if next_elem and next_elem.name in HEADING_TAGS:
             if text := next_elem.text.strip():
                 return text
         return None
@@ -816,3 +815,26 @@ class TitleVariants:
             f"  path_safe={self.path_safe!r}\n"
             f")"
         )
+
+
+def deduplicate_variants(variants: list[tuple[str, str]]) -> list[dict]:
+    """Deduplicate variant tuples, tracking duplicates by value.
+
+    Args:
+        variants: List of (value, label) tuples.
+
+    Returns:
+        List of dicts with 'value', 'label', and 'is_duplicate' keys.
+        Duplicate labels are skipped. Duplicate values are marked.
+    """
+    seen_labels = set()
+    seen_values = set()
+    result = []
+    for value, label in variants:
+        if label in seen_labels:
+            continue
+        is_duplicate = value in seen_values
+        result.append({"value": value, "label": label, "is_duplicate": is_duplicate})
+        seen_labels.add(label)
+        seen_values.add(value)
+    return result
