@@ -14,7 +14,6 @@ import fitz
 import jsmin
 import psutil
 import pyperclip
-import tldextract
 import yaml
 from anyascii import anyascii
 from bs4 import BeautifulSoup
@@ -249,16 +248,6 @@ class PageMetadata:
         return urlunparse((self.parsed_url.scheme, self.parsed_url.netloc, "", "", "", "")).rstrip(
             "/"
         )
-
-    @property
-    def url_domain(self):
-        extracted = tldextract.extract(self.parsed_url.netloc)
-
-        # Return domain name starting with www if subdomain is 'www'
-        if extracted.subdomain == "www":
-            return f"{extracted.subdomain}.{extracted.domain}.{extracted.suffix}"
-        else:
-            return f"{extracted.domain}.{extracted.suffix}"
 
     @property
     def override_domain(self) -> str:
@@ -582,33 +571,6 @@ def get_javascript_file(filename: str, mode: str, template_env=None, format: str
     return contents
 
 
-def parse_cookie_string(cookie_string, url):
-    """
-    Parse a cookie string into a list of dictionaries with keys: name, value, domain, path
-    - Ignored: expires, size, httpOnly, secure, sameSite
-    """
-    cookie_string = cookie_string.strip()
-    if not cookie_string:
-        return []
-
-    parsed_url = urlparse(url)
-    domain = parsed_url.netloc
-
-    cookies = []
-    for cookie in cookie_string.split(";"):
-        tokens = cookie.split("=", 1)
-        c = {
-            "name": tokens[0].strip(),
-            "value": "",
-            "domain": domain,
-            "path": "/",
-        }
-        if len(tokens) > 1:
-            c["value"] = tokens[1].strip()
-        cookies.append(c)
-
-    return cookies
-
 
 def handle_clipboard_error(metadata: PageMetadata):
     """
@@ -656,49 +618,6 @@ def get_page_metadata() -> PageMetadata:
     # Load clipboard data.
     if metadata.clipboard_error:
         handle_clipboard_error(metadata)
-
-    # # Try to parse HTML from the clipboard.
-    # metadata["soup"] = None
-    # try:
-    #     metadata["soup"] = BeautifulSoup(metadata["html"], "html.parser")
-
-    #     if not metadata.get("title"):
-    #         # Get title from the first H1 tag.
-    #         h1 = metadata["soup"].find("h1")
-    #         if h1:
-    #             metadata["title"] = h1.text
-
-    #     # If URL has a fragment, get the text from the fragment.
-    #     metadata["fragment_text"] = get_fragment_text(
-    #         metadata["soup"], metadata["url"])
-    #     if metadata["fragment_text"]:
-    #         metadata["fragment_title"] = (
-    #             f'{metadata["fragment_text"]} - {metadata["title"]}')
-    # except Exception:
-    #     pass
-
-    # # Generate ASCII version of title
-    # metadata["title_ascii"] = anyascii(metadata["title"])
-    # metadata["fragment_title_ascii"] = anyascii(
-    #     metadata.get("fragment_title", ""))
-
-    # # Generate HTML-safe title
-    # metadata["title_html"] = html.escape(metadata["title_ascii"])
-    # metadata["fragment_title_html"] = html.escape(
-    #     metadata.get("fragment_title", ""))
-
-    # # Parse url into variations.
-    # parsed = urlparse(metadata.get("url", ""))
-    # metadata["url_host"] = urlunparse((
-    #     parsed.scheme, parsed.netloc, "", "", "", ""))
-    # metadata["url_root"] = url_util.get_url_root(metadata.get("url", ""))
-    # metadata["url_clean"] = urlunparse((
-    #     parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
-
-    # # Parse the cookie string into a dictionary.
-    # metadata["cookies"] = parse_cookie_string(
-    #     metadata.get("cookieString", ""), metadata.get("url", "")
-    # )
 
     return metadata
 
