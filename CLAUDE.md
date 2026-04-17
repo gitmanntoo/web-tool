@@ -31,11 +31,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.13. Using a pyenv-managed Python will fail to find test dependencies.
 - **Dev deps required:** Run `make dev` before `make test` or `uv run python -m pytest` — pytest/ruff are dev dependencies, not installed by `make install`
 
+## Module Packaging
+- **New Python packages:** When adding new packages (e.g., `routes/`), update both `Dockerfile` (COPY command) and `pyproject.toml` (`packages` list in `[tool.setuptools]`)
+
+## Template Security
+- **XSS prevention:** Use `|e` filter for HTML context, `|tojson` filter for JavaScript context when rendering user-controlled data in templates
+
+## URL Parsing
+- **Schemeless URLs:** `urlparse()` treats schemeless inputs as paths; handle by reparsing with `//` prefix when `netloc` is empty and scheme is missing
+
+## PR Review Comments
+- **View Copilot comments:** `gh api repos/<owner>/<repo>/pulls/<num>/comments` — addresses these before merge
+
 ## Testing
 - **Mocking Pillow images:** When mocking `Image.resize`, set `.resize.return_value = mock_img` so callers can chain `.width`/`.height` on the returned image
-- **Doc sync:** When adding/removing test files or test classes, update `TESTING.md` and `TEST_COVERAGE.md` in the same commit or a follow-up
+- **Doc sync:** When adding/removing test files or test classes, update `TESTING.md` and `TEST_COVERAGE.md` in the same commit or a follow-up — update both test count totals and list new classes
 - **Unused variables:** Run `ruff check --select F841` before committing; unused assignments in tests often indicate incomplete assertions
 - **Test pattern consistency:** When adding paired tests (e.g., ICO/SVG variants), match the existing test's structure exactly — don't assign `result` if sibling test doesn't use it
+- **Test count tracking:** Total test count is tracked in `TEST_COVERAGE.md` — update when adding tests (current: 323)
 
 ## Workflow
 - **Multi-step implementations:** Use `superpowers:subagent-driven-development` skill. Create tasks with `TaskCreate`, set dependencies, dispatch one `general-purpose` subagent per task.
