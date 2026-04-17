@@ -202,11 +202,11 @@
             const favH = faviconHeight || 20;
             const favW = faviconWidth || 20;
             if (faviconOption === 'pasted' && defaultValues.pastedFavicon) {
-                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="${faviconH}" width="${faviconW}" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.pastedFavicon)}" height="${favH}" width="${faviconW}" alt="Favicon" /> `;
             } else if (faviconOption === 'inline' && defaultValues.faviconInline) {
-                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="${faviconH}" width="${faviconW}" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.faviconInline)}" height="${favH}" width="${faviconW}" alt="Favicon" /> `;
             } else if (faviconOption === 'url' && defaultValues.favicon) {
-                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="${faviconH}" width="${faviconW}" alt="Favicon" /> `;
+                html += `<img src="${escapeHtml(defaultValues.favicon)}" height="${favH}" width="${faviconW}" alt="Favicon" /> `;
             }
 
             // Add link with appropriate text
@@ -244,13 +244,13 @@
         // Function to build a link in Wiki-link format
         function buildWikiLink(title, fragmentText, url) {
             const linkText = buildLinkText(title, fragmentText);
-            return `[${linkText}|${url}]`;
+            return `[${linkText}|${escapeHtml(url)}]`;
         }
 
         // Function to build a link in Simple text format
         function buildSimpleLink(title, fragmentText, url) {
             const linkText = buildLinkText(title, fragmentText);
-            return `${url} ${linkText}`;
+            return `${escapeHtml(url)} ${linkText}`;
         }
 
         // Function to render the current state to the DOM

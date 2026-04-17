@@ -18,10 +18,16 @@ tests/
 ├── test_url_util.py             # URL parsing tests (~15 tests)
 ├── test_html_util.py            # HTML/favicon tests (~35 tests)
 ├── test_docker_util.py          # Container detection tests (~15 tests)
-└── test_img_util.py             # Image conversion tests (~30 tests)
+├── test_img_util.py             # Image conversion tests (~30 tests)
+├── test_favicon_validation.py   # Favicon validation tests (~6 tests)
+├── test_fragment_variants.py    # Fragment variant duplicate detection (~8 tests)
+├── test_integration_pages.py    # Integration tests (~17 tests)
+├── test_js_escaping.py          # JavaScript escaping tests (~9 tests)
+├── test_markdown_escaping.py    # Markdown link escaping tests (~31 tests)
+└── test_url_decoding.py         # URL decoding tests (~6 tests)
 ```
 
-**Total: ~210+ test cases across 8 test modules**
+**Total: 308 test cases across 14 test modules**
 
 ## Module-by-Module Coverage
 
@@ -162,6 +168,89 @@ tests/
 - Cross-platform path safety (Windows, macOS, Linux)
 - Edge cases (empty strings, combining diacriticals, long titles)
 
+### 8. `test_favicon_validation.py` (~6 tests)
+**Purpose:** Test favicon validation pipeline
+
+**Test Classes:**
+- `TestGetValidFaviconLinks` (6 tests) - Validates favicon links pipeline
+
+**Coverage:**
+- `get_valid_favicon_links()` composing `get_favicon_links`, `sort_favicon_links`, and `validate_top_candidates`
+- Filtering out broken favicon URLs
+- Passing `max_count` and `favicon_height` parameters
+
+### 9. `test_fragment_variants.py` (~8 tests)
+**Purpose:** Test fragment variant generation and duplicate detection
+
+**Test Classes:**
+- `TestFragmentVariants` (8 tests) - Fragment variant duplicate detection
+
+**Coverage:**
+- None option never marked duplicate
+- Fragment Text marked duplicate when equal to Fragment
+- All three options present with correct values
+- Pydantic-style fragment fallback
+
+### 10. `test_integration_pages.py` (~17 tests)
+**Purpose:** Integration tests for URL/fragment/title handling via Flask test client
+
+**Test Classes:**
+- `TestFragmentResolution` (4 tests) - Fragment text resolution
+- `TestTitleVariants` (3 tests) - Title variant generation
+- `TestURLVariants` (3 tests) - URL variant generation
+- `TestMirrorLinksEndpoint` (3 tests) - /mirror-links endpoint
+- `TestTestPageEndpoint` (7 tests) - /test-page endpoint
+
+**Coverage:**
+- Fragment resolution via PageMetadata handlers
+- Title and URL variant generation
+- Emoji in page content
+- Batch ID parameter handling
+
+### 11. `test_js_escaping.py` (~9 tests)
+**Purpose:** Test JavaScript string escaping in mirror-links template
+
+**Test Classes:**
+- `TestMirrorLinksJsEscaping` (7 tests) - JS string escaping via tojson filter
+- Additional tests for markdown escape template logic
+
+**Coverage:**
+- Fragment text with newlines/special characters properly escaped
+- Title with Unicode characters
+- Null favicon handling
+- Markdown link template URL wrapping logic
+
+### 12. `test_markdown_escaping.py` (~31 tests)
+**Purpose:** Test Markdown link escaping (escapeMarkdownText, buildMarkdownLink)
+
+**Test Classes:**
+- `TestEscapeMarkdownText` (9 tests) - Backslash, bracket escaping
+- `TestMarkdownUrlWrapping` (9 tests) - URL angle bracket wrapping
+- `TestBuildMarkdownLink` (8 tests) - Full link construction
+- `TestRealWorldExamples` (4 tests) - Real-world escaping scenarios
+
+**Coverage:**
+- Plain text passthrough
+- Escaping `[`, `]`, `\` in link text
+- Wrapping URLs in `<>` when containing `()`, `[]`, `<`, spaces
+- HTML-encoding `>` inside `<>`-wrapped URLs
+- Fragment prefixing in link text
+- Wiki-link format unchanged
+
+### 13. `test_url_decoding.py` (~6 tests)
+**Purpose:** Test URL decoding in PageMetadata
+
+**Test Classes:**
+- `TestPageMetadataUrlDecoding` (6 tests) - URL percent-decoding behavior
+
+**Coverage:**
+- URL with fragment containing dots
+- URL without fragment
+- URL with query string
+- URL with percent-encoded hash
+- Already-decoded URLs
+- Empty URL handling
+
 ## Testing Best Practices Implemented
 
 ### 1. **Test Organization**
@@ -286,6 +375,11 @@ pip install pytest pytest-cov
 | docker_util | 95%+ | ✅ Excellent |
 | img_util | 85%+ | ✅ Comprehensive |
 | title_variants | 100% | ✅ Complete |
+| markdown_escaping | 95%+ | ✅ Comprehensive |
+| js_escaping | 85%+ | ✅ Comprehensive |
+| url_decoding | 90%+ | ✅ Comprehensive |
+| favicon_validation | 80%+ | ✅ Comprehensive |
+| fragment_variants | 90%+ | ✅ Comprehensive |
 
 ## Areas for Future Enhancement
 
@@ -416,6 +510,6 @@ class TestNewFeature:
 
 ---
 
-**Last Updated:** February 1, 2026
-**Test Framework:** pytest 9.0.2+
+**Last Updated:** April 17, 2026
+**Test Framework:** pytest 9.0.3+
 **Python Version:** 3.13+

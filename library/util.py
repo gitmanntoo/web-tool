@@ -261,6 +261,23 @@ class PageMetadata:
             return f"{extracted.domain}.{extracted.suffix}"
 
     @property
+    def override_domain(self) -> str:
+        """Netloc with www. prefix stripped. Used for the Add Override form's scope."""
+        netloc = self.parsed_url.netloc
+        if netloc.startswith("www."):
+            netloc = netloc[4:]
+        return netloc
+
+    @property
+    def override_path_scope(self) -> str:
+        """Netloc (www-stripped) + first path segment. Used for Add Override form scope."""
+        netloc = self.override_domain
+        path_tokens = self.parsed_url.path.split("/")
+        if len(path_tokens) > 1 and path_tokens[1]:
+            return f"{netloc}/{path_tokens[1]}"
+        return netloc
+
+    @property
     def cache_key(self):
         """
         Returns the cache key for the page. Used for favicon caching.
