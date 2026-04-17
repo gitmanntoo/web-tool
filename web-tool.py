@@ -680,7 +680,7 @@ def debug_url_variants():
         
         if input_url:
             # Parse the URL
-            from urllib.parse import urlparse, urlunparse
+            from urllib.parse import urlunparse
             parsed_url = urlparse(input_url)
             
             # Generate URL variants similar to metadata properties
