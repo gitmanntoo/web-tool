@@ -423,7 +423,7 @@ def add_favicon_override():
 
 @app.route('/convert-ico-to-png', methods=['GET'])
 def convert_ico_to_png():
-    """Convert """
+    """Convert an ICO favicon to PNG format."""
     ico_url = request.args.get('url')
 
     if not ico_url:
@@ -441,13 +441,13 @@ def convert_ico_to_png():
 
 @app.route('/convert-svg-to-png', methods=['GET'])
 def convert_svg_to_png():
-    """Convert """
-    ico_url = request.args.get('url')
+    """Convert an SVG favicon to PNG format."""
+    svg_url = request.args.get('url')
 
-    if not ico_url:
+    if not svg_url:
         return "URL parameter 'url' is required", 400
 
-    png_bytes = img_util.convert_svg(ico_url)
+    png_bytes = img_util.convert_svg(svg_url)
     if png_bytes is not None:
         # Create a response with PNG bytes
         response = make_response(png_bytes)

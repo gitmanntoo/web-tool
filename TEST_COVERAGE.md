@@ -15,7 +15,7 @@ tests/
 ├── test_title_strings.py        # Test data for title variants
 ├── test_unicode_util.py         # Unicode utility tests (~20 tests)
 ├── test_text_util.py            # Text processing tests (~30 tests)
-├── test_url_util.py             # URL parsing tests (~15 tests)
+├── test_url_util.py             # URL parsing tests (~10 tests)
 ├── test_html_util.py            # HTML/favicon tests (~35 tests)
 ├── test_docker_util.py          # Container detection tests (~15 tests)
 ├── test_img_util.py             # Image conversion tests (~30 tests)
@@ -27,7 +27,7 @@ tests/
 └── test_url_decoding.py         # URL decoding tests (~6 tests)
 ```
 
-**Total: 308 test cases across 14 test modules**
+**Total: 303 test cases across 14 test modules**
 
 ## Module-by-Module Coverage
 
@@ -69,14 +69,13 @@ tests/
 - Text pattern recognition (email, URL, HTML)
 - Word categorization and validation
 
-### 3. `test_url_util.py` (~15 tests)
+### 3. `test_url_util.py` (~10 tests)
 **Purpose:** Test URL parsing, validation, and manipulation
 
 **Test Classes:**
 - `TestGetUserAgent` (2 tests) - User agent retrieval
 - `TestSerializedResponseError` (2 tests) - Exception handling
 - `TestSerializedResponse` (5 tests) - Response dataclass
-- `TestGetTopDomainName` (5 tests) - Domain extraction
 - `TestGetUrlRoot` (4 tests) - URL root extraction
 - `TestGetUrlHost` (4 tests) - Host extraction
 - `TestMakeAbsoluteUrls` (5 tests) - URL resolution

@@ -27,9 +27,6 @@ web-tool/
 │   └── test_url_util.py            # Tests for URL utilities
 ├── pytest.ini                      # Pytest configuration
 ├── pyproject.toml                  # Project configuration with test dependencies
-└── [old test files - deprecated]
-    ├── test_title_variants.py      # Deprecated - see tests/
-    └── test_title_strings.py       # Deprecated - see tests/
 ```
 
 ## Installation
@@ -389,14 +386,6 @@ cd /Users/keith/github/gitmanntoo/web-tool
 uv run pytest tests/
 ```
 
-### Deprecated Test Files
-
-The old test files (`test_title_variants.py` and `test_title_strings.py` in the root directory) are deprecated. Use the versions in the `tests/` directory instead.
-
-To remove the deprecated files:
-```bash
-rm test_title_variants.py test_title_strings.py
-```
 
 ## Adding New Tests
 
