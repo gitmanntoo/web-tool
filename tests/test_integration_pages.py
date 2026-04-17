@@ -260,6 +260,32 @@ class TestMirrorLinksEndpoint:
         result_html = resp.get_data(as_text=True)
         assert "Emoji Test" in result_html
 
+    def test_mirror_links_with_favicon_renders_js_correctly(self, app_client):
+        """buildHtmlLink uses favW (defined const), not faviconW (undefined).
+
+        Regression test: a typo caused buildHtmlLink to reference the
+        undefined variable faviconW instead of the local const favW,
+        crashing render() on every page with a favicon.
+        """
+        url = "http://localhost/test"
+        html = (
+            "<html><head><title>Fav Test</title>"
+            '<link rel="icon" href="/favicon.png">'
+            "</head><body><h1>Fav Test</h1></body></html>"
+        )
+        batch_id, text_len = _submit_clipboard(
+            app_client, url, "Fav Test", html, "550e8400-e29b-41d4-a716-446655440009"
+        )
+
+        resp = _get_mirror_links(app_client, url, batch_id, text_len)
+        assert resp.status_code == 200
+        result_html = resp.get_data(as_text=True)
+
+        # The rendered JS must use favW in img width attributes
+        assert 'width="${favW}"' in result_html
+        # Must NOT use the undefined variable faviconW in template literals
+        assert 'width="${faviconW}"' not in result_html
+
 
 @pytest.mark.integration
 class TestTestPageEndpoint:

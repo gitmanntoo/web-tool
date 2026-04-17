@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 
 ## Python Runtime
-- **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.13. Using a pyenv-managed Python will fail to find test dependencies.
+- **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.13 only (`>=3.13,<3.14`). Using a pyenv-managed Python will fail to find test dependencies.
 - **Dev deps required:** Run `make dev` before `make test` or `uv run python -m pytest` — pytest/ruff are dev dependencies, not installed by `make install`
 
 ## Module Packaging
@@ -48,7 +48,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Doc sync:** When adding/removing test files or test classes, update `TESTING.md` and `TEST_COVERAGE.md` in the same commit or a follow-up — update both test count totals and list new classes
 - **Unused variables:** Run `ruff check --select F841` before committing; unused assignments in tests often indicate incomplete assertions
 - **Test pattern consistency:** When adding paired tests (e.g., ICO/SVG variants), match the existing test's structure exactly — don't assign `result` if sibling test doesn't use it
-- **Test count tracking:** Total test count is tracked in `TEST_COVERAGE.md` — update when adding tests (current: 323)
+- **Test count tracking:** Total test count is tracked in `TEST_COVERAGE.md` — update when adding tests (current: 328)
+- **JS template testing:** Template rendering tests (`test_js_escaping.py`) verify JS variable names and structure in rendered output, but cannot catch runtime ReferenceErrors — use Playwright/browser testing for JS runtime bugs
 
 ## Workflow
 - **Multi-step implementations:** Use `superpowers:subagent-driven-development` skill. Create tasks with `TaskCreate`, set dependencies, dispatch one `general-purpose` subagent per task.
@@ -63,15 +64,15 @@ The `web-tool` is a utility for extracting and processing information from web p
 3. **Processing**: The `library/` directory contains the core logic for HTML parsing, text extraction, and favicon management.
 
 ### Key Components
-- **Core Application**: `web-tool.py` - The main entry point and Flask server.
-- **Logic Library**: `library/` — `util.py` (PageMetadata, MirrorData, TitleVariants, ClipCache), `html_util.py` (favicon system, link parsing), `text_util.py` (NLP extraction), `url_util.py` (URL parsing, fetching), `img_util.py` (ICO/SVG conversion), `unicode_util.py` (category names), `docker_util.py` (container detection)
+- **Core Application**: `web-tool.py` - The main entry point and Flask server. Registers blueprints from `routes/` (`mirror_links`, `mirror_favicons`, `javascript`, `debug`).
+- **Logic Library**: `library/` — `util.py` (PageMetadata, MirrorData, TitleVariants, ClipCache), `html_util.py` (favicon system, link parsing), `text_util.py` (NLP extraction), `text_format.py` (ascii_text, html_text, path_safe_filename), `title_variants.py` (deduplicate_variants), `url_util.py` (URL parsing, fetching), `img_util.py` (ICO/SVG conversion), `unicode_util.py` (category names), `content_type.py` (MIME type detection), `fragment_handlers.py` (anchor/heading fragment resolution), `docker_util.py` (container detection)
 - **Favicon System**: Implements a three-tier cache for favicons:
     1. `static/favicon-overrides.yml` (User Overrides - Highest priority)
     2. `static/favicon.yml` (App Defaults - Medium priority)
     3. `local-cache/favicon.yml` or `/data/favicon.yml` (Auto-discovered - Lowest priority)
 - **Static Assets**: `static/` contains CSS and favicon YAML configs. Bookmarklet JS is served dynamically via `/js/<name>.js` from `mirror.js` in templates; only `inline-image.js` and `paste-favicon.js` live in `static/js/`.
 - **Templates**: `templates/` — key templates: `mirror-links.html` (link generation), `mirror-favicons.html` (favicon management), `plain_text.html` (auto-copy wrapper), `clip-proxy.html` (container clipboard bridge)
-- **Specs**: `specs/` contains 18 page specs and a parent spec. See `specs/web-tool-spec.md` for the full index.
+- **Specs**: `specs/` contains 17 page specs and a parent spec. See `specs/web-tool-spec.md` for the full index.
 
 ### Specs Conventions
 - Each web-tool page has a spec at `specs/pages/<name>.md` following the `mirror-links.md` format

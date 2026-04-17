@@ -202,6 +202,13 @@ Tests for JavaScript string escaping in `mirror-links.html` template:
 - Null favicon renders as `null` in JavaScript
 - Favicon URL renders as JavaScript string
 
+#### `TestBuildHtmlLinkTemplate` (4 tests)
+Regression tests for `buildHtmlLink` JS variable references in `mirror-links.html`:
+- `buildHtmlLink` uses `favW` (local const) in width attributes, not `faviconW` (undefined)
+- `buildHtmlLink` uses `favH` (local const) in height attributes, not `faviconHeight` (parameter)
+- Local constants `favH` and `favW` are defined before favicon branches
+- No undefined variable references (`faviconW`) appear in the function body
+
 #### `TestEscapeMarkdownText` (9 tests)
 Tests for `escapeMarkdownText()` function in `mirror-links.html` template:
 - Plain text passes through unchanged
@@ -263,11 +270,12 @@ Tests URL variant generation:
 - Root variant returns scheme://netloc/first-path-segment
 - Host variant returns scheme://netloc only
 
-#### `TestMirrorLinksEndpoint` (3 integration tests)
+#### `TestMirrorLinksEndpoint` (4 integration tests)
 Tests the `/mirror-links` endpoint:
 - Accepts batchId parameter for clipboard data
 - Returns HTML containing the page title
 - Handles emoji in page content
+- Verifies `buildHtmlLink` uses `favW` (not undefined `faviconW`) in rendered JS
 
 #### `TestTestPageEndpoint` (7 integration tests)
 Tests the `/test-page` endpoint:
@@ -462,12 +470,13 @@ uv run pytest tests/
 | `TestNormalizeNetloc` | test_url_util.py | 3 | Netloc normalization |
 | `TestGetFirstPathSegment` | test_url_util.py | 4 | Path segment extraction |
 | `TestMirrorLinksJsEscaping` | test_js_escaping.py | 7 | JavaScript string escaping |
+| `TestBuildHtmlLinkTemplate` | test_js_escaping.py | 4 | buildHtmlLink JS variable references |
 | `TestEscapeMarkdownText` | test_markdown_escaping.py | 9 | Markdown text escaping |
 | `TestMarkdownUrlWrapping` | test_markdown_escaping.py | 9 | Markdown URL wrapping |
 | `TestBuildMarkdownLink` | test_markdown_escaping.py | 8 | Markdown link construction |
 | `TestRealWorldExamples` | test_markdown_escaping.py | 4 | Real-world escaping scenarios |
 
-**Total: 323 tests across 14 test modules**
+**Total: 328 tests across 14 test modules**
 
 ## Continuous Integration
 
