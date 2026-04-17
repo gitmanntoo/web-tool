@@ -436,7 +436,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -527,4 +527,4 @@ class TestNewFeature:
 
 **Last Updated:** April 17, 2026 (updated for PR #33 - code simplification)
 **Test Framework:** pytest 9.0.3+
-**Python Version:** 3.13+
+**Python Version:** 3.14+
