@@ -25,7 +25,6 @@ NOTES:
 """
 
 MAX_WORD_LEN = len("pneumonoultramicroscopicsilicovolcanoconiosis")
-PUNCT_THRESHOLD = 0.3333333333333333
 
 # Special tags for code and HTML sections.
 NONE_TAG = "<!none!>"
