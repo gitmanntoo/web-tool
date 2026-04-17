@@ -11,7 +11,6 @@ from flask import request
 from magika import Magika
 from PIL import Image
 
-from library import url_util
 
 DEFAULT_TIMEOUT = 5
 
