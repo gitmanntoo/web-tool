@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 
 ## Python Runtime
-- **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.13 only (`>=3.13,<3.14`). Using a pyenv-managed Python will fail to find test dependencies.
+- **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.14 only (`>=3.14,<3.15`). Using a pyenv-managed Python will fail to find test dependencies.
 - **Dev deps required:** Run `make dev` before `make test` or `uv run python -m pytest` — pytest/ruff are dev dependencies, not installed by `make install`
 
 ## Module Packaging
@@ -88,7 +88,7 @@ The `web-tool` is a utility for extracting and processing information from web p
 - Walrus operator precedence: `(t := resp.get_type()) != "image/svg"` — parentheses required around walrus assignment before comparison
 
 ### Technical Stack
-- **Backend**: Python 3.13, Flask
+- **Backend**: Python 3.14, Flask
 - **HTML Parsing**: BeautifulSoup4, lxml
 - **Image/SVG Processing**: CairoSVG, Pillow, Magika, PyMuPDF
 - **Text Processing**: NLTK, anyascii

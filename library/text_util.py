@@ -256,7 +256,7 @@ class SoupToken:
 class SoupLine:
     """A single line of text from a SoupElem."""
 
-    parent: "SoupElem"
+    parent: SoupElem
     name: str
     text: str
     keep: bool = True
@@ -327,7 +327,7 @@ class SoupElem:
     """A string token from a soup tree."""
 
     depth: int
-    parent: "SoupElem"
+    parent: SoupElem
     name: str
     text: str
     keep: bool = True

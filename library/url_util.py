@@ -70,7 +70,7 @@ class SerializedResponse:
     # Exception if request failed.
     error: str = None
 
-    def from_response(self, resp: requests.Response) -> "SerializedResponse":
+    def from_response(self, resp: requests.Response) -> SerializedResponse:
         """Initialize from a requests.Response object."""
         self.resolved_url = resp.url
         self.status_code = resp.status_code

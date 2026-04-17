@@ -264,7 +264,9 @@ class TestBuildHtmlLinkTemplate:
 
         # Extract the buildHtmlLink function body
         func_start = rendered.index("function buildHtmlLink(")
-        func_end = rendered.index("}", rendered.index("// Add link with appropriate text", func_start))
+        func_end = rendered.index(
+            "}", rendered.index("// Add link with appropriate text", func_start)
+        )
         func_body = rendered[func_start:func_end]
 
         # faviconW must not appear as a standalone token (not part of faviconWidth)

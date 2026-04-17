@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # Install system deps + clean apt cache in one layer
 RUN apt-get update && \
@@ -7,7 +7,7 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install uv from official image (avoids extra pip layer)
-COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.11.6 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
