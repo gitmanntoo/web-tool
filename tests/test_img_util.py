@@ -215,6 +215,48 @@ class TestConvertSvg:
         sig = inspect.signature(convert_svg)
         assert "to_format" in sig.parameters
 
+    @patch("library.img_util.svg2png")
+    @patch("library.img_util.url_util.get_url")
+    def test_svg_file_passes_magika_check(self, mock_get_url, mock_svg2png):
+        """Regression: walrus operator precedence must not short-circuit SVG files.
+
+        Without parentheses, `t := resp.get_type() != "image/svg"` evaluates as
+        `t := (resp.get_type() != "image/svg")`, making t a boolean. Since
+        `False != "image/svg"` is True, the early return fires even for valid
+        SVG files. This test verifies svg2png is called (not short-circuited).
+        """
+        mock_response = MagicMock()
+        mock_response.get_type.return_value = "image/svg"
+        mock_response.content = b"<svg></svg>"
+        mock_get_url.return_value = mock_response
+        mock_svg2png.return_value = None
+
+        convert_svg.cache_clear()
+        result = convert_svg("http://example.com/icon.svg")
+
+        # svg2png MUST be called — assert no early return at magika check
+        assert mock_svg2png.called
+
+    @patch("library.img_util.svg2png")
+    @patch("library.img_util.url_util.get_url")
+    def test_svg_walrus_operator_captures_type_string_not_boolean(self, mock_get_url, mock_svg2png):
+        """Regression: verify t captures the type string, not a comparison result.
+
+        If the walrus has wrong precedence, t becomes a bool (False when types
+        match), causing incorrect early returns for valid SVG files.
+        """
+        mock_response = MagicMock()
+        mock_response.get_type.return_value = "image/svg"
+        mock_response.content = b"<svg></svg>"
+        mock_get_url.return_value = mock_response
+        mock_svg2png.return_value = None
+
+        convert_svg.cache_clear()
+        convert_svg("http://example.com/icon.svg")
+
+        # svg2png must be called — no early return
+        assert mock_svg2png.called
+
     def test_default_format_is_png(self):
         """Test that default format for SVG conversion is PNG."""
         import inspect
