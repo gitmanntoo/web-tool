@@ -398,23 +398,6 @@ class SoupElem:
             m = mgk.identify_bytes(self.text.encode())
             self.magika_type = f"{m.output.group}/{m.output.ct_label}"
 
-    def __str__(self) -> str:
-        n = f"<{self.name}>" if self.name is not None else NONE_TAG
-
-        return (
-            f"{self.depth:6d} {n:20s} "
-            f"L={self.line_count:3d} "
-            f"W={self.word_count:3d}/{self.token_count:3d}/{self.word_pct():.2f} "
-            f"C={self.alnum_count:3d}/{self.char_count:3d}/{self.alnum_pct():.2f} "
-            f"{self.magika_type:20s} | {self.text}"
-        )
-        # f"words:{self.word_count:3d}/{self.tok_count():3d} "
-        # f"({self.word_pct():3.2f}) "
-        # f"alnum:{self.alnum_count:3d}/{self.char_count:3d} "
-        # f"({self.alnum_pct():3.2f}) "
-        # f"{self.magika_type} "
-        # f"{self.text}")
-
     def get_name(self) -> str:
         if self.name is None:
             return NONE_TAG
@@ -443,12 +426,6 @@ class SoupElem:
         """Return percentage of tokens that are words."""
         if self.token_count > 0:
             return self.word_count / self.token_count
-        return 0.0
-
-    def alnum_pct(self) -> float:
-        """Return percentage of characters that are alphanumeric."""
-        if self.char_count > 0:
-            return self.alnum_count / self.char_count
         return 0.0
 
 
