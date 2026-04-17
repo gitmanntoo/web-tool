@@ -61,7 +61,7 @@ def convert_svg(href: str, to_format: str = "PNG") -> bytes:
         resp.raise_for_status()
 
         # Check if the response is an SVG image.
-        if t := resp.get_type() != "image/svg":
+        if (t := resp.get_type()) != "image/svg":
             logging.warning(f"Not an SVG file (magika): {href} {t}")
             return None
 
