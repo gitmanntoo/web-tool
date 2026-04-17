@@ -8,11 +8,11 @@ from urllib.parse import urlparse
 import esprima
 import yaml
 from bs4 import BeautifulSoup, element
-from magika import Magika
 from nltk.corpus import wordnet as wn
 from nltk.corpus import words
 
 from library import unicode_util
+from library.content_type import mgk
 
 """
 NOTES:
@@ -60,7 +60,6 @@ def split_special_tag(s: str) -> tuple[str, str]:
 
 
 # Build set of nltk words for lookups.
-mgk = Magika()
 nltk_words = set([x.lower() for x in words.words()])
 
 

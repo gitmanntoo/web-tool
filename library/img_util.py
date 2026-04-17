@@ -4,13 +4,10 @@ from functools import lru_cache
 from io import BytesIO
 
 from cairosvg import svg2png
-from magika import Magika
 from PIL import Image
 
 from library import url_util
-
-# Initialize the Magika object for image type detection.
-mgk = Magika()
+from library.content_type import mgk
 
 # SVG conversion width and height.
 SVG_WIDTH = 256

@@ -8,8 +8,9 @@ from urllib.parse import urljoin
 
 import requests
 from flask import request
-from magika import Magika
 from PIL import Image
+
+from library.content_type import mgk
 
 
 DEFAULT_TIMEOUT = 5
@@ -19,9 +20,6 @@ DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 )
-
-# Initialize Magika for response type detection.
-mgk = Magika()
 
 
 def get_user_agent() -> str:
@@ -278,3 +276,26 @@ def make_absolute_urls(page_url, linked_url):
         return linked_url
     else:
         return str(urljoin(page_url, linked_url))
+
+
+def normalize_netloc(url: str) -> str:
+    """Strip www. prefix from a URL's netloc for consistent cache key matching."""
+    parsed = urllib.parse.urlparse(url)
+    netloc = parsed.netloc
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+    return netloc
+
+
+def get_first_path_segment(url: str) -> str:
+    """Extract the first path segment from a URL, stripping leading slash.
+
+    Returns empty string if there is no path segment.
+    """
+    parsed = urllib.parse.urlparse(url)
+    path_part = parsed.path
+    if path_part.startswith("/"):
+        path_part = path_part[1:]
+    if len(path_part) > 0:
+        return path_part.split("/")[0]
+    return ""
