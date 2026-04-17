@@ -1,10 +1,8 @@
-import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlencode, urlparse, urlunparse
 
-import pyperclip
 import yaml
 from bs4 import BeautifulSoup
 from flask import request
@@ -122,68 +120,6 @@ class RelLink:
     def is_valid(self) -> bool:
         """Return True if the link is valid."""
         return self.resolved_href is not None and self.image_type is not None
-
-
-@dataclass
-class PageMetadata:
-    # Passed in parameters
-    title: str
-    url: str
-    html: str = None
-    # Derived values.
-    clean_url: str = None
-    host_url: str = None
-    host: str = None
-    favicons: list[RelLink] = field(default_factory=list)
-    error: str = None
-
-
-def get_page_metadata(
-    meta: PageMetadata = None, max_favicon_links: int = 1, favicon_height: int = FAVICON_HEIGHT
-) -> PageMetadata:
-    """Add metadata to PageMetadata object."""
-
-    if meta is None:
-        # Get metadata from rueqest parameters.
-        meta = PageMetadata(
-            title=request.args.get("title", ""),
-            url=request.args.get("url", ""),
-        )
-
-        # Read clipboard contents.
-        clip = pyperclip.paste()
-
-        # If contents are not valid JSON, return plain text.
-        try:
-            clip_json = json.loads(clip)
-            meta.html = clip_json.get("html", "")
-        except json.JSONDecodeError as e:
-            meta.error = str(e)
-
-    # Reconstruct the URL without the query and fragment.
-    parsed = urlparse(meta.url)
-    meta.clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
-
-    # Get the host from the URL
-    meta.host_url = f"{parsed.scheme}://{parsed.netloc}"
-    meta.host = parsed.netloc
-
-    # If an error occurred, do not attempt to parse the HTML.
-    if meta.error is not None:
-        return meta
-
-    # Prettify HTML
-    if meta.html:
-        meta.html = prettify_html(meta.html)
-
-    # Extract favicon links from the HTML page sorted by optimal size.
-    favicon_links = get_favicon_links(meta.url, meta.html)
-    sorted_links = sort_favicon_links(favicon_links, favicon_height, max_favicon_links)
-
-    # Validate only the top candidates (lazy validation)
-    meta.favicons = validate_top_candidates(sorted_links, max_count=max_favicon_links)
-
-    return meta
 
 
 def _load_yaml_with_cache(file_path: Path) -> dict:
@@ -573,17 +509,6 @@ def get_valid_favicon_links(
     links = get_favicon_links(page_url, soup)
     sorted_links = sort_favicon_links(links, favicon_height)
     return validate_top_candidates(sorted_links, max_count)
-
-
-def get_common_favicon_links(page_url):
-    """Get the common favicon links for the page URL."""
-
-    # Build links for the common favicon files.
-    links = []
-    for f in COMMON_FAVICON_FILES:
-        links.append(RelLink(url_util.make_absolute_urls(page_url, f)))
-
-    return links
 
 
 def sort_favicon_links(
