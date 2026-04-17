@@ -232,7 +232,7 @@ class TestConvertSvg:
         mock_svg2png.return_value = None
 
         convert_svg.cache_clear()
-        result = convert_svg("http://example.com/icon.svg")
+        convert_svg("http://example.com/icon.svg")
 
         # svg2png MUST be called — assert no early return at magika check
         assert mock_svg2png.called
