@@ -5,7 +5,6 @@ import time
 import uuid
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
 from flask import Flask, abort, request, make_response, redirect, Response
 from jinja2 import Environment, FileSystemLoader
 import markdown
