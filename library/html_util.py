@@ -176,6 +176,15 @@ def _load_yaml_with_cache(file_path: Path) -> dict:
     return data
 
 
+def _load_all_favicon_caches() -> tuple[dict, dict, dict]:
+    """Load all three favicon cache tiers."""
+    return (
+        _load_yaml_with_cache(FAVICON_LOCAL_CACHE),
+        _load_yaml_with_cache(FAVICON_DEFAULTS),
+        _load_yaml_with_cache(FAVICON_OVERRIDES),
+    )
+
+
 def get_favicon_cache(page_url) -> RelLink:
     """Get the favicon cache for the page URL.
 
@@ -189,26 +198,19 @@ def get_favicon_cache(page_url) -> RelLink:
     """
 
     # Load caches using cached loader (respects mtime and TTL)
-    discovered_cache = _load_yaml_with_cache(FAVICON_LOCAL_CACHE)
-    defaults_cache = _load_yaml_with_cache(FAVICON_DEFAULTS)
-    overrides_cache = _load_yaml_with_cache(FAVICON_OVERRIDES)
+    discovered_cache, defaults_cache, overrides_cache = _load_all_favicon_caches()
 
     # Search for matches from url_root to top level domain.
     search_paths = []
     parsed = urlparse(page_url)
 
     # Normalize netloc by stripping www. prefix for consistent matching
-    netloc = parsed.netloc
-    if netloc.startswith("www."):
-        netloc = netloc[4:]
+    netloc = url_util.normalize_netloc(page_url)
 
     # Get the first part of the path.
-    path_part = parsed.path
-    if path_part.startswith("/"):
-        path_part = path_part[1:]
-    if len(path_part) > 0:
-        path_part = path_part.split("/")[0]
-        search_paths.append(f"{netloc}/{path_part}")
+    path_segment = url_util.get_first_path_segment(page_url)
+    if path_segment:
+        search_paths.append(f"{netloc}/{path_segment}")
 
     # Split the netloc into parts and add paths until there are just two parts.
     tokens = netloc.split(".")
@@ -266,26 +268,19 @@ def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
         - 'precedence': 1 (highest) | 2 | 3 (lowest) | None
     """
     # Load caches using cached loader (respects mtime and TTL)
-    discovered_cache = _load_yaml_with_cache(FAVICON_LOCAL_CACHE)
-    defaults_cache = _load_yaml_with_cache(FAVICON_DEFAULTS)
-    overrides_cache = _load_yaml_with_cache(FAVICON_OVERRIDES)
+    discovered_cache, defaults_cache, overrides_cache = _load_all_favicon_caches()
 
     # Generate search paths for the page URL
     search_paths = []
     parsed = urlparse(page_url)
 
     # Normalize netloc by stripping www. prefix for consistent matching
-    netloc = parsed.netloc
-    if netloc.startswith("www."):
-        netloc = netloc[4:]
+    netloc = url_util.normalize_netloc(page_url)
 
     # Get the first part of the path
-    path_part = parsed.path
-    if path_part.startswith("/"):
-        path_part = path_part[1:]
-    if len(path_part) > 0:
-        path_part = path_part.split("/")[0]
-        search_paths.append(f"{netloc}/{path_part}")
+    path_segment = url_util.get_first_path_segment(page_url)
+    if path_segment:
+        search_paths.append(f"{netloc}/{path_segment}")
 
     # Split the netloc into parts and add paths until there are just two parts
     tokens = netloc.split(".")
