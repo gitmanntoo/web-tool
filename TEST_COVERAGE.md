@@ -526,5 +526,5 @@ class TestNewFeature:
 ---
 
 **Last Updated:** April 17, 2026 (updated for PR #33 - code simplification)
-**Test Framework:** pytest 9.0.3+
+**Test Framework:** pytest 8.0.0+
 **Python Version:** 3.14+
