@@ -20,7 +20,7 @@ Exclude from build context:
 ### 2. Optimized Single-Stage Dockerfile
 
 ```
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # Install system deps + clean apt cache in one layer
 RUN apt-get update && \

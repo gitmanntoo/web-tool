@@ -1,6 +1,6 @@
 # Test Pages
 
-[re — Regular expression operations — Python 3.13.1 documentation](https://docs.python.org/3/library/re.html#re.Match)
+[re — Regular expression operations — Python documentation](https://docs.python.org/3/library/re.html#re.Match)
 
 - Search for `fullmatch`
     - `<dt>` element should combine to form string `re.fullmatch(pattern, string, flags=0)¶`

@@ -6,7 +6,7 @@
 
 **Architecture:** Modify `_resize_image()` to return dimensions alongside the resized image, update `encode_image_inline()` to return a structured result with width/height metadata, and update all callers (endpoint, templates) to render both dimensions.
 
-**Tech Stack:** Python 3.13, Pillow for image processing, Flask for the web endpoint, JavaScript for client-side rendering.
+**Tech Stack:** Python 3.14, Pillow for image processing, Flask for the web endpoint, JavaScript for client-side rendering.
 
 ---
 
