@@ -8,13 +8,13 @@
     <h1>Clipboard Proxy Debug Test</h1>
     <p>This page tests the clipboard proxy by submitting test data to /mirror-clip.</p>
     <p><strong>Test Data:</strong></p>
-    <pre>{{ test_data_json }}</pre>
+    <pre>{{ test_data_json | e }}</pre>
     <button onclick="submitTest()">Submit Test Data</button>
     <div id="result" style="margin-top: 20px;"></div>
 
     <script>
         function submitTest() {
-            const testData = {{ test_data_js }};
+            const testData = {{ test_data_js | tojson }};
             const batchId = crypto.randomUUID();
 
             // POST the test data to clip-collector

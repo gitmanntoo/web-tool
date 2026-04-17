@@ -191,7 +191,7 @@ def get_mirror_text():
 
     seen_text = set()
     txt = []
-    for idx, x in enumerate(extracted_text):
+    for x in extracted_text:
         if x.keep:
             if x.name == "script.String":
                 if x.text in seen_text:

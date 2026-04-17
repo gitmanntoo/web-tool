@@ -169,6 +169,10 @@ def add_favicon_override():
     """
     try:
         data = request.get_json()
+        if data is None:
+            return json_response(
+                {"success": False, "error": "Invalid JSON body"}, 400
+            )
         favicon_url = data.get("favicon_url")
         page_url = data.get("page_url")
         scope = data.get("scope", "domain")

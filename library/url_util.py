@@ -281,6 +281,10 @@ def normalize_netloc(url: str) -> str:
     """Strip www. prefix from a URL's netloc for consistent cache key matching."""
     parsed = urllib.parse.urlparse(url)
     netloc = parsed.netloc
+    # Support schemeless inputs like "example.com/path", which urlparse()
+    # treats as a path unless prefixed with "//".
+    if not netloc and not parsed.scheme:
+        netloc = urllib.parse.urlparse(f"//{url}").netloc
     if netloc.startswith("www."):
         netloc = netloc[4:]
     return netloc
@@ -292,6 +296,9 @@ def get_first_path_segment(url: str) -> str:
     Returns empty string if there is no path segment.
     """
     parsed = urllib.parse.urlparse(url)
+    # Handle schemeless URLs where urlparse treats the domain as path
+    if not parsed.netloc and not parsed.scheme:
+        parsed = urllib.parse.urlparse(f"//{url}")
     path_part = parsed.path
     if path_part.startswith("/"):
         path_part = path_part[1:]

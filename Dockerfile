@@ -14,6 +14,7 @@ WORKDIR /app
 # Copy all source + manifests before deps install (setuptools requires all package dirs present)
 COPY pyproject.toml uv.lock ./
 COPY library/ ./library/
+COPY routes/ ./routes/
 COPY static/ ./static/
 COPY templates/ ./templates/
 COPY web-tool.py README.md ./
