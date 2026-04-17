@@ -1,18 +1,13 @@
 """Mirror favicons and favicon override routes."""
 
-import json
-
 import yaml
 from flask import Blueprint, current_app, make_response, request
 
 from library import html_util, img_util, url_util, util
 
+from . import json_response
+
 bp = Blueprint("mirror_favicons", __name__)
-
-
-def json_response(data: dict, status: int = 200) -> tuple:
-    """Create a Flask JSON response tuple."""
-    return json.dumps(data), status, {"Content-Type": "application/json"}
 
 
 def validate_favicons(favicons: list, url: str) -> list:

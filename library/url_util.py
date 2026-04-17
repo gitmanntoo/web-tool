@@ -12,7 +12,6 @@ from PIL import Image
 
 from library.content_type import mgk
 
-
 DEFAULT_TIMEOUT = 5
 
 # Brave Browser
@@ -206,7 +205,7 @@ def get_image_size(url):
     """
 
     try:
-        resp = url_util.get_url(url)
+        resp = get_url(url)
         if resp.status_code == 200:
             return ImageSize(resp.image_width, resp.image_height, resp.get_type())
     except Exception as e:

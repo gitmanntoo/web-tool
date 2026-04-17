@@ -10,7 +10,7 @@ from flask import Blueprint, current_app, make_response, request
 
 from library import docker_util, html_util, util
 
-from .mirror_favicons import json_response
+from . import json_response
 
 bp = Blueprint("debug", __name__)
 

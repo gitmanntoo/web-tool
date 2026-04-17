@@ -202,7 +202,6 @@ def get_favicon_cache(page_url) -> RelLink:
 
     # Search for matches from url_root to top level domain.
     search_paths = []
-    parsed = urlparse(page_url)
 
     # Normalize netloc by stripping www. prefix for consistent matching
     netloc = url_util.normalize_netloc(page_url)
@@ -272,7 +271,6 @@ def get_favicon_cache_source(page_url: str, favicon_href: str) -> dict:
 
     # Generate search paths for the page URL
     search_paths = []
-    parsed = urlparse(page_url)
 
     # Normalize netloc by stripping www. prefix for consistent matching
     netloc = url_util.normalize_netloc(page_url)
