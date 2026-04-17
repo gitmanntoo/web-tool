@@ -9,7 +9,6 @@ import pytest
 from library.url_util import (
     SerializedResponse,
     SerializedResponseError,
-    get_top_domain_name,
     get_url_host,
     get_url_root,
     get_user_agent,
@@ -80,35 +79,6 @@ class TestSerializedResponse:
         """Test content_type field."""
         resp = SerializedResponse(source_url="http://example.com", content_type="text/html")
         assert resp.content_type == "text/html"
-
-
-class TestGetTopDomainName:
-    """Tests for get_top_domain_name function."""
-
-    def test_simple_domain(self):
-        """Test extraction of top domain."""
-        result = get_top_domain_name("http://example.com")
-        assert result == "example.com"
-
-    def test_subdomain_extraction(self):
-        """Test extraction with subdomain."""
-        result = get_top_domain_name("http://www.example.com")
-        assert "example.com" in result
-
-    def test_url_with_path(self):
-        """Test extraction from URL with path."""
-        result = get_top_domain_name("http://example.com/path/to/page")
-        assert result == "example.com"
-
-    def test_https_url(self):
-        """Test with HTTPS URL."""
-        result = get_top_domain_name("https://example.com")
-        assert result == "example.com"
-
-    def test_with_query_string(self):
-        """Test URL with query string."""
-        result = get_top_domain_name("http://example.com/page?query=value")
-        assert result == "example.com"
 
 
 class TestGetUrlRoot:

@@ -7,7 +7,6 @@ from io import BytesIO
 from urllib.parse import urljoin
 
 import requests
-import tldextract
 from flask import request
 from magika import Magika
 from PIL import Image
@@ -192,78 +191,6 @@ def get_url(url: str) -> SerializedResponse:
 
     logging.info(f"get_url END: {time.time() - start_time:.3f}s {url}")
     return out
-
-
-@lru_cache(maxsize=64)
-def head_url(url: str) -> SerializedResponse:
-    """
-    Makes a HEAD request to a URL. This is more efficient than get_url when you only need headers.
-    Returns a SerializedResponse with only headers and status information (no content).
-    """
-    logging.info(f"head_url START: {url}")
-    start_time = time.time()
-
-    out = SerializedResponse(source_url=url)
-    try:
-        resp = requests.head(url, headers={"User-Agent": get_user_agent()}, timeout=DEFAULT_TIMEOUT)
-        resp.raise_for_status()
-        out.from_response(resp)
-    except requests.exceptions.RequestException as e:
-        out.error = str(e)
-
-    logging.info(f"head_url END: {time.time() - start_time:.3f}s {url}")
-    return out
-
-
-@lru_cache(maxsize=64)
-def check_url_exists(url: str) -> bool:
-    """
-    Checks if a URL exists.
-
-    Returns True if the URL exists, False otherwise.
-    """
-
-    resp = get_url(url)
-    return resp.status_code == 200
-
-
-def get_url_bytes(url: str) -> bytes | None:
-    """
-    Gets the bytes of a URL. Returns None if the URL does not exist.
-    """
-
-    resp = get_url(url)
-    return resp.content
-
-
-@lru_cache(maxsize=64)
-def get_top_domain_name(url):
-    """
-    Given a URL, this function extracts the top-level domain (TLD) from the URL.
-
-    Parameters:
-        url (str): The URL from which to extract the TLD.
-
-    Returns:
-        str: The d
-
-    Raises:
-        None
-
-    Example:
-        >>> get_top_domain_name("https://www.example.com")
-        'example.com'
-    """
-
-    parsed_url = urllib.parse.urlparse(url)
-    subdomain = parsed_url.netloc
-    extracted = tldextract.extract(subdomain)
-
-    # Return domain name starting with www if subdomain is 'www'
-    if extracted.subdomain == "www":
-        return f"{extracted.subdomain}.{extracted.domain}.{extracted.suffix}"
-    else:
-        return f"{extracted.domain}.{extracted.suffix}"
 
 
 @dataclass
