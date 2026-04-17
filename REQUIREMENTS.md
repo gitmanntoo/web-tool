@@ -1071,5 +1071,4 @@ Key external libraries and their roles:
 | [Jinja2](https://jinja.palletsprojects.com/) | Template rendering for bookmarklets and pages |
 | [pyperclip](https://pypi.org/project/pyperclip/) | Local clipboard access (non-container) |
 | [psutil](https://psutil.readthedocs.io/) | System memory monitoring |
-| [tldextract](https://github.com/John-Lin/tldextract) | Domain parsing for favicon cache keys |
 

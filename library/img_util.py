@@ -49,7 +49,7 @@ def convert_ico(href: str, to_format: str = "PNG") -> bytes | None:
 
 
 @lru_cache(maxsize=64)
-def convert_svg(href: str, to_format: str = "PNG") -> bytes:
+def convert_svg(href: str, to_format: str = "PNG") -> bytes | None:
     """Convert an SVG image to another format (default PNG)
 
     Returns a bytes object containing the converted image.

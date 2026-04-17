@@ -254,6 +254,5 @@ All dependencies are listed in `pyproject.toml` and installed via `uv`.
 | `psutil` | Memory usage measurement for `clip_cache` cleanup |
 | `markdown` | README rendering at root `/` route |
 | `pymupdf` | PDF metadata extraction in clipboard error handling |
-| `tldextract` | Domain extraction for `PageMetadata.url_domain` |
 | `jsmin` | JavaScript minification for bookmarklet serving |
 | `esprima` | JavaScript AST parsing for bookmarklet serving |

@@ -75,7 +75,7 @@ The `web-tool` is a utility for extracting and processing information from web p
 - **Image/SVG Processing**: CairoSVG, Pillow, Magika, PyMuPDF
 - **Text Processing**: NLTK, anyascii
 - **JS Processing**: jsmin, esprima (bookmarklet minification and parsing)
-- **URL Handling**: tldextract (domain parsing for favicon cache keys)
+- **URL Handling**: urllib.parse (URL parsing), requests (HTTP fetching)
 - **Package Management**: `uv`
 - **Linting/Formatting**: Ruff
 - **Testing**: coverage.py (via `make testcov`)

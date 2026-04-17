@@ -96,7 +96,7 @@ uv run pytest tests/ -x
 
 ### Test Classes
 
-#### `TestAsciiAndEmojis` (10 tests)
+#### `TestAsciiAndEmojis` (9 tests)
 Tests for `text_with_ascii_and_emojis()` function:
 - Pure ASCII text passthrough
 - Emoji preservation
@@ -122,7 +122,7 @@ Tests for `TitleVariants` class:
 - Consistency across variants
 - Type checking
 
-#### `TestEdgeCases` (5 tests)
+#### `TestEdgeCases` (6 tests)
 Edge case testing:
 - Empty and whitespace input
 - Combining diacriticals
