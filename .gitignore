@@ -69,6 +69,7 @@ uv.lock
 
 # Local dev artifacts
 .mcp.json
+.playwright-mcp/
 .superpowers/
 
 # Node (not used by this Python project but sometimes present)
