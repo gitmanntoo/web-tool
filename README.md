@@ -39,17 +39,23 @@ If the port is changed, the bookmarklets will need to be updated with the new po
 
 ## Use Docker
 
-This shell script will run web-tool on the default port 8532 with local storage for the favicon cache.
+Stops any running container, pulls the latest image, and starts with auto-restart and local favicon cache storage:
 
-<pre>
+```bash
+PORT=8532
+DATA_DIR=$(pwd)/web-tool
+
 # Stop and remove the currently running web-tool, ignoring errors.
 docker stop web-tool || true
 docker rm web-tool || true
 
 # Download the latest image and run it.
 docker pull dockmann/web-tool
-docker run -d --restart always -p 8532:8532 -v $(pwd)/web-tool:/data --name web-tool dockmann/web-tool
-</pre>
+docker run -d --restart always \
+  -p ${PORT}:8532 \
+  -v ${DATA_DIR}:/data \
+  --name web-tool dockmann/web-tool
+```
 
 ## Dependencies
 
