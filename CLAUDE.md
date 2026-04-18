@@ -78,6 +78,18 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria enable independent progress. Weak criteria ("make it work") require constant clarification.
 
+#### 5. Testable Code
+
+Write code that can be tested without external dependencies.
+
+- **Isolate side effects** — I/O, network calls, and external services should be behind interfaces that can be mocked or stubbed.
+- **Avoid global state** — Functions should receive dependencies as parameters, not reach for globals.
+- **Prefer pure functions** — Given the same inputs, always return the same outputs with no side effects. Easiest to test.
+- **Don't test through the database** — Business logic shouldn't require a running database to verify.
+- **Constructor injection over service locators** — Explicit dependencies are clearer and easier to fake.
+
+**The test:** Can you run the test suite offline? If not, the code is too coupled.
+
 ## Development Commands
 
 ### Setup & Running
