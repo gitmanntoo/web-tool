@@ -25,9 +25,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Stop container**: `make docker-stop`
 
 ### Git Workflow
+
+#### Branch Verification Check
+- **Always verify branch before committing** — run `git branch --show-current` after subagent work completes
+- **Subagents may not respect branch rules** — the parent session must enforce branch discipline
+- **If on main/master/develop/trunk after subagent work**: stop and create feature branch before proceeding
+
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 - **Feature branches**: Never commit directly to `main`/`master` — always create feature branch first
 - **Style hygiene**: Move inline styles to CSS classes; use existing design tokens before creating new ones
+- **Worktrees:** Use `git worktree add .worktrees/<branch> -b <branch>` for isolated feature work. Always run `make dev` and `make test` in the worktree before dispatching subagents
 
 ## Python Runtime
 - **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.14 only (`>=3.14,<3.15`). Using a pyenv-managed Python will fail to find test dependencies.
@@ -49,8 +56,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## CSS Design System
 - **Tokens:** Use CSS custom properties (`--color-*`, `--space-*`, `--font-size-*`) from `static/mirror.css`
+- **Fluid widths:** Use `width: clamp(min, preferred%, max)` instead of media queries for responsive containers
 - **Components:** Prefer semantic classes (`.panel`, `.variant-row`, `.btn-copy`) over inline styles
 - **Tooltip positioning:** Add `window.scrollX/Y` to `getBoundingClientRect()` coords for accurate placement
+- **Long metadata strings:** Add `word-wrap: break-word` to any text container that may hold long unbreakable strings (cookie strings, base64, URLs)
 
 ## Shared JavaScript
 - **tooltip.js:** Shared `showTooltip()` and `attachCopyListeners()` functions — import in templates with `<script src="/static/js/tooltip.js">`
@@ -109,6 +118,7 @@ The `web-tool` is a utility for extracting and processing information from web p
 - `buildHtmlLink` uses `favH`/`favW` (the local const aliases, not the outer parameter names)
 - Template domain extraction must use backend-computed `override_domain`/`override_path_scope` — string-splitting on `/` reverses the TLD
 - Walrus operator precedence: `(t := resp.get_type()) != "image/svg"` — parentheses required around walrus assignment before comparison
+- **Dynamic radio buttons:** `querySelectorAll` at `DOMContentLoaded` misses elements added later. Use event delegation on a parent container that exists at load time (e.g., `#favicon-options`) for dynamically added radio/checkbox groups
 
 ### Technical Stack
 - **Backend**: Python 3.14, Flask

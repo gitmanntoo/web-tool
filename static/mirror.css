@@ -175,6 +175,13 @@ h1 {
     word-break: break-all;
 }
 
+/* Hide the display preview for non-HTML link formats.
+   The first .link-format-row (HTML) shows a rendered link preview.
+   Markdown/Wiki/Simple show only the raw text line (in .link-format-row__plain below). */
+.link-format-row:nth-child(n+2) .link-format-row__main > span:not(.variant-label):not(.btn-copy) {
+    display: none;
+}
+
 /* ============================================
    Copy Button
    ============================================ */
@@ -348,6 +355,8 @@ h1 {
 .metadata-item {
     margin-bottom: var(--space-sm);
     font-size: var(--font-size-sm);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .metadata-item strong {
