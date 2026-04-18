@@ -211,6 +211,28 @@ class TestRelLinkInlineImage:
         )
         assert link.inline_image == inline_data
 
+    def test_inline_image_src_with_string(self):
+        """inline_image_src returns the string when inline_image is a string."""
+        data_url = "data:image/png;base64,abc123"
+        link = RelLink(href="http://example.com/favicon.ico")
+        link.inline_image = data_url
+        assert link.inline_image_src == data_url
+
+    def test_inline_image_src_with_dict(self):
+        """inline_image_src returns data_url key when inline_image is a dict."""
+        link = RelLink(href="http://example.com/favicon.ico")
+        link.inline_image = {
+            "data_url": "data:image/png;base64,abc123",
+            "width": 20,
+            "height": 20,
+        }
+        assert link.inline_image_src == "data:image/png;base64,abc123"
+
+    def test_inline_image_src_with_none(self):
+        """inline_image_src returns None when inline_image is None."""
+        link = RelLink(href="http://example.com/favicon.ico")
+        assert link.inline_image_src is None
+
 
 class TestGetFaviconCacheDictFormat:
     """Tests for get_favicon_cache handling dict-format cache entries."""

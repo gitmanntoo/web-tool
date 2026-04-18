@@ -4,10 +4,13 @@
     <title>Mirror Favicons</title>
     <link rel="stylesheet" href="/static/default.css">
     <link rel="stylesheet" href="/static/mirror.css">
+    <script src="/static/js/paste-favicon.js"></script>
     <script>
         function addOverride(faviconHref, pageUrl, formId) {
             const form = document.getElementById(formId);
-            const scope = form.querySelector('input[name="scope"]:checked').value;
+            const scopeRadio = form.querySelector('input[name^="scope-"]:checked');
+            if (!scopeRadio) return;
+            const scope = scopeRadio.value;
             const saveInline = form.querySelector('input[name="save_inline"]').checked;
             const messageEl = form.querySelector('.override-message');
             const button = form.querySelector('button');
@@ -33,9 +36,53 @@
                 if (data.success) {
                     messageEl.textContent = '✓ Override added: ' + data.cache_key;
                     messageEl.className = 'override-message override-success';
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    button.disabled = true;
+
+                    const entry = form.closest('.favicon-entry');
+
+                    // Revert OVERRIDE badges on all other entries
+                    document.querySelectorAll('.favicon-entry').forEach(otherEntry => {
+                        if (otherEntry === entry) return;
+                        const overrideDot = otherEntry.querySelector('.badge-dot--primary');
+                        if (overrideDot) {
+                            const badgeEl = overrideDot.closest('.badge');
+                            if (badgeEl && badgeEl.textContent.includes('OVERRIDE')) {
+                                overrideDot.classList.remove('badge-dot--primary');
+                                overrideDot.classList.add('badge-dot--muted');
+                                badgeEl.lastChild.textContent = 'NOT CACHED';
+                            }
+                        }
+                        // Show override form on other entries
+                        const otherForm = otherEntry.querySelector('.override-form');
+                        if (otherForm) otherForm.style.display = '';
+                        const otherBtn = otherForm ? otherForm.querySelector('button') : null;
+                        if (otherBtn) otherBtn.disabled = false;
+                        const otherMsg = otherEntry.querySelector('.override-message');
+                        if (otherMsg) { otherMsg.textContent = ''; otherMsg.className = 'override-message'; }
+                    });
+
+                    // Update badge on this entry to OVERRIDE
+                    if (entry) {
+                        const notCachedDot = entry.querySelector('.badge-dot--muted');
+                        if (notCachedDot) {
+                            notCachedDot.classList.remove('badge-dot--muted');
+                            notCachedDot.classList.add('badge-dot--primary');
+                            const badge = notCachedDot.closest('.badge');
+                            if (badge) badge.lastChild.textContent = 'OVERRIDE';
+                        }
+                        // Hide override form on this entry since it's now an override
+                        const thisForm = entry.querySelector('.override-form');
+                        if (thisForm) thisForm.style.display = 'none';
+                    }
+
+                    // Increment override cache count
+                    const overrideCount = document.querySelector('.cache-item--override .badge');
+                    if (overrideCount) {
+                        const match = overrideCount.textContent.match(/(\d+)/);
+                        if (match) {
+                            overrideCount.lastChild.textContent = (parseInt(match[1]) + 1) + ' entries';
+                        }
+                    }
                 } else {
                     messageEl.textContent = '✗ Error: ' + data.error;
                     messageEl.className = 'override-message override-error';
@@ -48,6 +95,80 @@
                 button.disabled = false;
             });
         }
+
+        function truncateMiddle(str, maxLen) {
+            if (str.length <= maxLen) return str;
+            const half = Math.floor((maxLen - 3) / 2);
+            return str.slice(0, half) + '...' + str.slice(-half);
+        }
+
+        function addPastedFaviconEntry(data, pageUrl, overrideDomain, overridePathScope, hasPathScope) {
+            const pastePanel = document.getElementById('paste-favicon-panel');
+            if (!pastePanel) return;
+            const dataUrl = `data:image/png;base64,${data.base64}`;
+            const escapedDataUrl = escapeHtml(dataUrl);
+            const escapedBase64 = escapeHtml(data.base64);
+            const escapedPageUrl = escapeHtml(pageUrl);
+            const escapedOverrideDomain = escapeHtml(overrideDomain);
+            const escapedOverridePathScope = escapeHtml(overridePathScope);
+
+            const pastedDiv = document.createElement('div');
+            pastedDiv.className = 'favicon-entry favicon-pasted-entry';
+            pastedDiv.innerHTML = `
+                <p>
+                    <span class="variant-value">${truncateMiddle(escapedBase64, 60)}</span>
+                    <span class="badge"><span class="badge-dot badge-dot--muted"></span>NOT CACHED</span>
+                    <span class="badge"><span class="badge-dot badge-dot--primary"></span>PASTED</span>
+                </p>
+                <p>Image Type: image/png | Size: ${escapeHtml(data.height_orig) || escapeHtml(data.height) || 20}x${escapeHtml(data.width_orig) || escapeHtml(data.width) || 20} (original, stored scaled to 20px)</p>
+                <p>
+                    <img src="${escapedDataUrl}" height="20" alt="20px height preview" /> 20px height preview
+                </p>
+                <div class="override-form" id="form-pasted-1">
+                    <strong>Add Override:</strong>
+                    <label>
+                        <input type="radio" name="scope-pasted-1" value="domain" checked>
+                        Domain only (${escapedOverrideDomain})
+                    </label>
+                    ${hasPathScope ? `
+                    <label>
+                        <input type="radio" name="scope-pasted-1" value="path">
+                        Domain + first path (${escapedOverridePathScope})
+                    </label>
+                    ` : ''}
+                    <label>
+                        <input type="checkbox" name="save_inline" checked disabled>
+                        Save as inline (base64)
+                    </label>
+                    <button class="btn-primary" onclick="addOverride('${escapedDataUrl}', '${escapedPageUrl}', 'form-pasted-1')">
+                        Add to Overrides
+                    </button>
+                    <div class="override-message"></div>
+                </div>
+            `;
+            pastePanel.insertAdjacentElement('afterend', pastedDiv);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const pasteBtn = document.getElementById('paste-favicon-btn');
+
+            if (pasteBtn) {
+                pasteBtn.addEventListener('click', () => {
+                    handlePasteFavicon(pasteBtn, null, {
+                        onPasted: (data) => {
+                            pasteBtn.textContent = 'Paste Favicon';
+                            addPastedFaviconEntry(
+                                data,
+                                '{{ url|e }}',
+                                '{{ override_domain }}',
+                                '{{ override_path_scope }}',
+                                {{ 'true' if url.split('/')|length > 3 and url.split('/')[3] else 'false' }}
+                            );
+                        }
+                    });
+                });
+            }
+        });
     </script>
 </head>
 <body>
@@ -83,11 +204,25 @@
         </p>
     </div>
 
+    <div class="panel" id="paste-favicon-panel">
+        <div class="panel-label">Paste Favicon</div>
+        <div class="variant-list" id="paste-favicon-section">
+        </div>
+        <div class="variant-row">
+            <button class="paste-favicon-btn" id="paste-favicon-btn">Paste Favicon</button>
+            <span class="variant-label"><strong>&lt;-- Click to paste</strong></span>
+        </div>
+    </div>
+
     <h2>Available Favicons (sorted by preference)</h2>
     {% for f in favicons %}
     <div class="favicon-entry{% if f.image_type == 'invalid' %} invalid{% endif %}">
         <p>
+            {% if f.href.startswith('data:') %}
+            <span class="variant-value">{{ f.href[:30]|e }}...{{ f.href[-20:]|e }}</span>
+            {% else %}
             <a href="{{ f.href }}">{{ f.href|e }}</a>
+            {% endif %}
 
             {% if f.cache_source.file %}
                 {% if f.cache_source.file == 'override' %}
@@ -118,16 +253,22 @@
 
         {% if f.image_type != 'invalid' %}
         <p>
+            {% if f.href.startswith('data:') and f.inline_image_src %}
+            <img src="{{ f.inline_image_src }}" height="20" alt="20px height preview" /> 20px height preview
+            {% else %}
             <img src="{{ f.href }}" height="20" alt="20px height preview" /> 20px height preview
+            {% endif %}
         </p>
-        {% if f.inline_image %}
+        {% if f.inline_image_src %}
         <p>
-            <img src="{{ f.inline_image }}" alt="Inline preview" /> Inline (base64, 20px height)
+            <img src="{{ f.inline_image_src }}" alt="Inline preview" /> Inline (base64, 20px height)
         </p>
         {% endif %}
+        {% if not f.href.startswith('data:') %}
         <p>
             <img src="{{ f.href }}" alt="Full size"/> Full size ({{ f.width }}x{{ f.height }})
         </p>
+        {% endif %}
         {% else %}
         <p><em>Image failed to load - URL may be broken or inaccessible</em></p>
         {% endif %}
@@ -136,12 +277,12 @@
         <div class="override-form" id="form-{{ loop.index }}">
             <strong>Add Override:</strong>
             <label>
-                <input type="radio" name="scope" value="domain" checked>
+                <input type="radio" name="scope-{{ loop.index }}" value="domain" checked>
                 Domain only ({{ override_domain }})
             </label>
             {% if url.split('/')|length > 3 and url.split('/')[3] %}
             <label>
-                <input type="radio" name="scope" value="path">
+                <input type="radio" name="scope-{{ loop.index }}" value="path">
                 Domain + first path ({{ override_path_scope }})
             </label>
             {% endif %}

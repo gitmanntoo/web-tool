@@ -2,6 +2,131 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Preferences
+
+### Implementation Plans
+
+**Always create an implementation plan before making changes if one does not exist.**
+
+For any non-trivial task, create a plan using any available mechanism (`TaskCreate`, `superpowers:writing-plans` skill, `superpowers:feature-dev` skill, or manual planning). Then:
+
+1. Mark plan items as `in_progress` when starting work on them
+2. Mark plan items as `completed` when finished
+3. Create corresponding git commits to track progress
+
+**Commit linkage:** Each git commit message should reference the plan item it completes (e.g., "feat: add error handling for edge cases - completes plan item #3").
+
+This ensures:
+- Clear visibility into what was done and what's remaining
+- Git history that maps directly to the implementation plan
+- Easy to resume work if interrupted
+
+### Coding Guidelines
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+#### 1. Think Before Coding
+
+Don't assume. Don't hide confusion. Surface tradeoffs.
+
+Before implementing:
+- State assumptions explicitly. If uncertain, ask.
+- If multiple valid approaches exist, present them — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+#### 2. Simplicity First
+
+Write the minimum code that solves the problem. Nothing speculative.
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+- Ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+#### 3. Surgical Changes
+
+Touch only what you must. Clean up only your own mess.
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it — don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+**The test:** Every changed line should trace directly to the user's request.
+
+#### 4. Goal-Driven Execution
+
+Define success criteria. Loop until verified.
+
+Transform vague tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+
+Strong success criteria enable independent progress. Weak criteria ("make it work") require constant clarification.
+
+#### 5. Testable Code
+
+Write code that can be tested without external dependencies.
+
+- **Isolate side effects** — I/O, network calls, and external services should be behind interfaces that can be mocked or stubbed.
+- **Avoid global state** — Functions should receive dependencies as parameters, not reach for globals.
+- **Prefer pure functions** — Given the same inputs, always return the same outputs with no side effects. Easiest to test.
+- **Don't test through the database** — Business logic shouldn't require a running database to verify.
+- **Constructor injection over service locators** — Explicit dependencies are clearer and easier to fake.
+
+**The test:** Can you run the test suite offline? If not, the code is too coupled.
+
+#### 6. Stay Focused
+
+Keep work narrowly scoped to the current task. Resist the urge to improve adjacent code.
+
+- **Don't simplify existing code** just because you notice it could be shorter or clearer.
+- **Don't refactor** unless it's directly required to implement the requested change.
+- **Don't improve** variable names, comments, or formatting in code you aren't otherwise touching.
+- **If you discover issues** — bugs, security holes, or needed improvements — surface them to the user immediately, then ask:
+  - Address now?
+  - Add to ISSUES.md for later?
+  - Ignore for now?
+- **Don't fix pre-existing bugs** you encounter unless the user explicitly says yes.
+
+**The test:** After completing the task, only the lines directly related to the request should have changed. If you "couldn't help but notice" something and fixed it, you went too far.
+
+### Pull Request Discipline
+
+**Never create a pull request without asking the user first.**
+
+- Do not run `gh pr create` or equivalent commands unless explicitly instructed.
+- Do not push branches to remote without confirmation.
+- When work is complete, present a summary and ask: "Ready to create a PR?" or "Shall I push this branch?"
+- Wait for explicit user approval before creating PRs, pushing branches, or opening GitHub/Merge requests.
+
+This prevents surprise PRs and ensures the user controls when and how their work is shared.
+
+#### 7. Test Documentation
+
+When writing tests, always add a comment describing what the test does and why it is important.
+
+- **Describe the behavior being tested** — What specific scenario or edge case does this cover?
+- **Explain the importance** — Why does this test matter? What would break if this behavior changed?
+- **Keep it concise** — One or two sentences is usually sufficient.
+- **Update comments when tests change** — Ensure the description stays accurate.
+
+**The test:** Can someone reading the test file understand the intent without reading the implementation?
+
 ## Development Commands
 
 ### Setup & Running
@@ -79,7 +204,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Doc sync:** When adding/removing test files or test classes, update `TESTING.md` and `TEST_COVERAGE.md` in the same commit or a follow-up — update both test count totals and list new classes
 - **Unused variables:** Run `ruff check --select F841` before committing; unused assignments in tests often indicate incomplete assertions
 - **Test pattern consistency:** When adding paired tests (e.g., ICO/SVG variants), match the existing test's structure exactly — don't assign `result` if sibling test doesn't use it
-- **Test count tracking:** Total test count is tracked in `TEST_COVERAGE.md` — update when adding tests (current: 328)
+- **Test count tracking:** Total test count is tracked in `TEST_COVERAGE.md` — update when adding tests (current: 340)
 - **JS template testing:** Template rendering tests (`test_js_escaping.py`) verify JS variable names and structure in rendered output, but cannot catch runtime ReferenceErrors — use Playwright/browser testing for JS runtime bugs
 
 ## Workflow

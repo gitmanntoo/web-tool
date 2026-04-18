@@ -102,12 +102,12 @@
             <div class="panel-label">Favicon</div>
             <div class="variant-list" id="favicon-options">
                 <div class="variant-row">
-                    <input type="radio" name="favicon_option" value="none"{% if not favicon %} checked{% endif %}>
+                    <input type="radio" name="favicon_option" value="none"{% if not favicon and not favicon_inline %} checked{% endif %}>
                     <span class="variant-label"><strong>None</strong></span>
                 </div>
-                {% if favicon %}
+                {% if favicon and not favicon.startswith('data:') %}
                 <div class="variant-row">
-                    <input type="radio" name="favicon_option" value="url"{% if favicon %} checked{% endif %}>
+                    <input type="radio" name="favicon_option" value="url" checked>
                     <button class="btn-copy" data-html="{{ favicon|e }}">Copy</button>
                     <span class="variant-label"><strong>URL</strong></span>
                     <img src="{{ favicon }}" height="20" width="{{ favicon_width or 20 }}" alt="Favicon" />
@@ -122,6 +122,14 @@
                     <span class="variant-value favicon-inline-preview">{{ favicon_inline[:25] }}...{{ favicon_inline[-20:] }}</span>
                 </div>
                 {% endif %}
+                {% elif favicon_inline %}
+                <div class="variant-row">
+                    <input type="radio" name="favicon_option" value="inline" checked>
+                    <button class="btn-copy" data-html='&lt;img src="{{ favicon_inline|e }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" /&gt;'>Copy</button>
+                    <span class="variant-label"><strong>Inline</strong></span>
+                    <img src="{{ favicon_inline }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" />
+                    <span class="variant-value favicon-inline-preview">{{ favicon_inline[:25] }}...{{ favicon_inline[-20:] }}</span>
+                </div>
                 {% endif %}
                 <div class="variant-row">
                     <button class="paste-favicon-btn" id="paste-favicon-btn">Paste Favicon</button>

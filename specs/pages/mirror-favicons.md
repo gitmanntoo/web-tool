@@ -121,6 +121,47 @@ web-tool.py:get_mirror_favicons()
 
 ## Page Sections
 
+### 0. Paste Favicon
+
+A panel section for pasting a favicon image directly from clipboard. When an image is pasted, a new `.favicon-entry.favicon-pasted-entry` block is dynamically inserted below the button, styled like discovered favicon entries. The pasted block can be added to overrides via the "Add to Overrides" form.
+
+**Visual structure:**
+```html
+<div class="panel">
+  <div class="panel-label">Paste Favicon</div>
+  <div class="variant-list" id="paste-favicon-section">
+    <div class="variant-row">
+      <button class="paste-favicon-btn" id="paste-favicon-btn">Paste Favicon</button>
+      <span class="variant-label"><strong>&lt;-- Click to paste</strong></span>
+    </div>
+  </div>
+</div>
+```
+
+**Behavior:**
+1. User clicks "Paste Favicon" button → button text changes to "Waiting for paste... (Esc to cancel)", paste listener armed
+2. User pastes an image (Ctrl/Cmd+V or Edit → Paste) → image blob captured from clipboard
+3. Image sent to `POST /debug/inline-image` → receives resized base64 data
+4. Dynamically inserts `.favicon-entry.favicon-pasted-entry` into `#paste-favicon-section`
+5. Block stays visible after "Add to Overrides" success; page reloads after 1.5s
+
+**Pasted block badges (always shown):**
+| Badge | Dot class |
+|-------|-----------|
+| NOT CACHED | `.badge-dot--muted` |
+| PASTED | `.badge-dot--primary` |
+| INLINE | `.badge-dot--primary` |
+
+**Inline checkbox:** `checked disabled` — pasted images are always inline (base64 from server), user cannot change this.
+
+**Error states:**
+- No image in clipboard → "Paste Failed" tooltip
+- Image too large (>5MB) → "Paste Failed" tooltip
+- Server call fails → "Paste Failed" tooltip
+- Esc cancels paste mode → button reverts to "Paste Favicon"
+
+---
+
 ### 1. Three-Tier Cache System (cache-panel)
 
 Displays a summary of all three favicon cache files in precedence order.
@@ -245,6 +286,21 @@ function addOverride(faviconHref, pageUrl, formId) {
 
 ---
 
+## addPastedFaviconEntry() JavaScript Function
+
+Builds and inserts a pasted favicon block into `#paste-favicon-section`. All user-controlled values are escaped via `escapeHtml()` before insertion into innerHTML.
+
+**Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `data` | `object` | Server response from `/debug/inline-image`: `{inline, base64, width, height}` |
+| `pageUrl` | `string` | Current page URL (escaped) |
+| `overrideDomain` | `string` | Domain for "Domain only" scope label (escaped) |
+| `overridePathScope` | `string` | Domain + first path for "Domain + path" scope label (escaped) |
+| `hasPathScope` | `boolean` | Whether to show the path scope radio option |
+
+---
+
 ## CSS Classes
 
 | Class | Element | Description |
@@ -267,8 +323,10 @@ function addOverride(faviconHref, pageUrl, formId) {
 | `.badge-dot--muted` | Dot modifier | Muted/gray dot for not cached |
 | `.badge-dot--error` | Dot modifier | Error/red dot for invalid |
 | `.page-url` | Paragraph | Current URL display (smaller, muted text) |
-| `.favicon-entry` | Entry container | Each favicon in the list |
+| `.favicon-entry` | Entry container | Each favicon in the list (discovered and pasted) |
 | `.favicon-entry.invalid` | Entry modifier | Applied when `image_type == 'invalid'` (yellow background) |
+| `.favicon-entry.favicon-pasted-entry` | Entry modifier | Dynamically inserted pasted favicon block |
+| `.paste-favicon-btn` | Button | "Paste Favicon" button in the paste panel |
 | `.btn-primary` | Button | "Add Override" button (primary action) |
 | `.override-form` | Form container | Add Override form per favicon (gray background panel) |
 | `.override-message` | Message div | Status message area |
@@ -321,6 +379,9 @@ function addOverride(faviconHref, pageUrl, formId) {
 | `save_inline = true` but encoding fails | Falls back to storing plain URL |
 | `www.` prefix in URL | Stripped from netloc for cache key matching and display |
 | HTML clipboard parse fails | `metadata.error` set; page renders without favicons |
+| Paste with no image in clipboard | Button text → "Paste Failed", tooltip shows "No image in clipboard" |
+| Paste image too large (>5MB) | Button text → "Paste Failed", tooltip shows "Image too large (max 5MB)" |
+| Paste server call fails | Button text → "Paste Failed", tooltip shows error message |
 
 ---
 
@@ -332,7 +393,8 @@ function addOverride(faviconHref, pageUrl, formId) {
 - **img_util** — `encode_favicon_inline()` for inline base64 encoding
 - **url_util** — `get_image_size()`, `make_absolute_urls()`
 - **Jinja2** — server-side template rendering
-- **JavaScript (vanilla)** — `addOverride()` function, no framework
+- **JavaScript (vanilla)** — `addOverride()`, `addPastedFaviconEntry()`, `handlePasteFavicon()` functions
+- **paste-favicon.js** — shared paste handling utilities (`handlePasteFavicon`, `blobToBase64`, `sendToServer`, `showPasteTooltip`, `escapeHtml`)
 
 ---
 
@@ -354,3 +416,10 @@ function addOverride(faviconHref, pageUrl, formId) {
 - [ ] Inline preview shown when `inline_image` is present
 - [ ] `addOverride()` shows success message with cache key, then reloads
 - [ ] `addOverride()` shows error message on failure, re-enables button
+- [ ] Paste Favicon button present in new panel section
+- [ ] Click "Paste Favicon" → button changes to "Waiting for paste... (Esc to cancel)"
+- [ ] Esc cancels paste mode → button reverts to "Paste Favicon"
+- [ ] Paste non-image content → "Paste Failed" tooltip
+- [ ] Paste valid image → pasted block appears with PASTED, INLINE, NOT CACHED badges
+- [ ] Pasted block inline checkbox is checked and disabled
+- [ ] Pasted block "Add to Overrides" → success message, reloads after 1.5s

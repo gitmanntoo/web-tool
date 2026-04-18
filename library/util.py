@@ -367,8 +367,24 @@ class PageMetadata:
                     f"{len(self.mirror_data.clipboard)} does not match text length "
                     f"{self.text_length}"
                 )
+        elif self.batch_id:
+            # batch_id present but not in cache (stale/expired batch).
+            # This happens when the page reloads after an action like
+            # "Add to Overrides" — the batch was already consumed.
+            logging.warning(f"Batch {self.batch_id} not found in cache (already consumed)")
+            self.clipboard_error = "stale_batch"
+            self.page_content = url_util.get_url(self.url)
+            if not self.page_content.error:
+                self.content_type = self.page_content.content_type
         else:
-            self.mirror_data = MirrorData(pyperclip.paste())
+            try:
+                self.mirror_data = MirrorData(pyperclip.paste())
+            except pyperclip.PyperclipException:
+                logging.warning("No clipboard mechanism available (no X11/Wayland)")
+                self.clipboard_error = "clipboard_unavailable"
+                self.page_content = url_util.get_url(self.url)
+                if not self.page_content.error:
+                    self.content_type = self.page_content.content_type
 
     def parse_html(self):
         """
