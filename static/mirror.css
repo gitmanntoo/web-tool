@@ -50,7 +50,7 @@ body {
 }
 
 .page-container {
-    max-width: 720px;
+    width: clamp(720px, 95%, 1600px);
     margin: 0 auto;
 }
 
