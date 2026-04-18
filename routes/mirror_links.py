@@ -172,7 +172,12 @@ def get_mirror_links():
             "html_size": metadata.mirror_data.htmlSize if metadata.mirror_data else 0,
             "url_variants": url_variants,
             "links": links,
-            "favicon": metadata.favicon_url,
+            "favicon": (
+                None
+                if metadata.favicon_url
+                and metadata.favicon_url.startswith("data:")
+                else metadata.favicon_url
+            ),
             "favicon_inline": favicon_inline,
             "favicon_width": favicon_width,
             "favicon_height": favicon_height,
