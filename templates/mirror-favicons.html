@@ -38,8 +38,30 @@
                     messageEl.className = 'override-message override-success';
                     button.disabled = true;
 
-                    // Update badge from NOT CACHED to OVERRIDE
                     const entry = form.closest('.favicon-entry');
+
+                    // Revert OVERRIDE badges on all other entries
+                    document.querySelectorAll('.favicon-entry').forEach(otherEntry => {
+                        if (otherEntry === entry) return;
+                        const overrideDot = otherEntry.querySelector('.badge-dot--primary');
+                        if (overrideDot) {
+                            const badgeEl = overrideDot.closest('.badge');
+                            if (badgeEl && badgeEl.textContent.includes('OVERRIDE')) {
+                                overrideDot.classList.remove('badge-dot--primary');
+                                overrideDot.classList.add('badge-dot--muted');
+                                badgeEl.lastChild.textContent = 'NOT CACHED';
+                            }
+                        }
+                        // Show override form on other entries
+                        const otherForm = otherEntry.querySelector('.override-form');
+                        if (otherForm) otherForm.style.display = '';
+                        const otherBtn = otherForm ? otherForm.querySelector('button') : null;
+                        if (otherBtn) otherBtn.disabled = false;
+                        const otherMsg = otherEntry.querySelector('.override-message');
+                        if (otherMsg) { otherMsg.textContent = ''; otherMsg.className = 'override-message'; }
+                    });
+
+                    // Update badge on this entry to OVERRIDE
                     if (entry) {
                         const notCachedDot = entry.querySelector('.badge-dot--muted');
                         if (notCachedDot) {
@@ -48,6 +70,9 @@
                             const badge = notCachedDot.closest('.badge');
                             if (badge) badge.lastChild.textContent = 'OVERRIDE';
                         }
+                        // Hide override form on this entry since it's now an override
+                        const thisForm = entry.querySelector('.override-form');
+                        if (thisForm) thisForm.style.display = 'none';
                     }
 
                     // Increment override cache count
