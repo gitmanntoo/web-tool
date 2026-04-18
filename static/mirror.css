@@ -1,307 +1,521 @@
-/* Cache Badge Styles */
-.cache-badge {
+/* ============================================
+   Mirror Design System — Clean Modern
+   ============================================ */
+
+:root {
+    /* Colors */
+    --color-primary: #3b82f6;
+    --color-primary-hover: #2563eb;
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-text: #1e293b;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-border: #e2e8f0;
+    --color-border-subtle: #f1f5f9;
+
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+
+    /* Border radius */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-pill: 20px;
+
+    /* Typography */
+    --font-sans: system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', monospace;
+    --font-size-xs: 11px;
+    --font-size-sm: 12px;
+    --font-size-base: 14px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+}
+
+/* ============================================
+   Page Layout
+   ============================================ */
+
+body {
+    background: var(--color-bg);
+    font-family: var(--font-sans);
+    color: var(--color-text);
+    padding: var(--space-lg);
+}
+
+.page-container {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+h1 {
+    color: var(--color-text);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-md);
+}
+
+/* ============================================
+   Panel (replaces .metadata-panel, .cache-panel, .favicon-section)
+   ============================================ */
+
+.panel {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+
+.panel h2 {
+    margin-top: 0;
+    margin-bottom: var(--space-md);
+    font-size: var(--font-size-lg);
+    color: var(--color-text);
+}
+
+.panel-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+}
+
+/* ============================================
+   Variant Row (replaces .url-item)
+   ============================================ */
+
+.variant-list {
+    margin: var(--space-sm) 0;
+}
+
+.variant-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+    font-size: var(--font-size-base);
+}
+
+.variant-row:last-child {
+    border-bottom: none;
+}
+
+.variant-row--duplicate {
+    opacity: 0.45;
+}
+
+.variant-row--duplicate,
+.variant-row--duplicate * {
+    color: var(--color-text-muted);
+}
+
+.variant-row input[type="radio"] {
+    accent-color: var(--color-primary);
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.variant-row a {
+    color: var(--color-primary);
+    word-break: break-all;
+}
+
+.variant-label {
+    min-width: 75px;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    flex-shrink: 0;
+}
+
+.variant-value {
+    flex: 1;
+    min-width: 0;
+    word-break: break-all;
+}
+
+/* ============================================
+   Link Format Row (for mirror-links HTML/MD/Wiki/Simple)
+   ============================================ */
+
+.link-format-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.link-format-row:last-child {
+    border-bottom: none;
+}
+
+.link-format-row__main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+.link-format-row__plain {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--space-xs);
+    word-break: break-all;
+}
+
+/* ============================================
+   Copy Button
+   ============================================ */
+
+.btn-copy {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: bold;
-    margin-left: 8px;
+    padding: 3px 10px;
+    background: var(--color-primary);
     color: white;
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    flex-shrink: 0;
 }
 
-.cache-override {
-    background-color: #0066cc;
+.btn-copy:hover {
+    background: var(--color-primary-hover);
 }
 
-.cache-default {
-    background-color: #28a745;
+.btn-copy:disabled {
+    background: var(--color-text-muted);
+    cursor: not-allowed;
 }
 
-.cache-discovered {
-    background-color: #ffc107;
-    color: #333;
+/* ============================================
+   Primary Button
+   ============================================ */
+
+.btn-primary {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    font-family: var(--font-sans);
 }
 
-.cache-none {
-    background-color: #6c757d;
+.btn-primary:hover {
+    background: var(--color-primary-hover);
 }
 
-.cache-invalid {
-    background-color: #dc3545;
+.btn-primary:disabled {
+    background: var(--color-text-muted);
+    cursor: not-allowed;
 }
 
-.cache-key-info {
-    font-size: 12px;
-    color: #666;
-    margin-left: 8px;
+/* ============================================
+   Badge (replaces .cache-badge)
+   ============================================ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
 }
 
-/* Favicon Entry Styles */
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.badge-dot--primary { background: var(--color-primary); }
+.badge-dot--success { background: var(--color-success); }
+.badge-dot--warning { background: var(--color-warning); }
+.badge-dot--muted { background: var(--color-text-muted); }
+.badge-dot--error { background: var(--color-error); }
+
+/* ============================================
+   Cache Item (replaces .cache-file-item)
+   ============================================ */
+
+.cache-item {
+    padding: var(--space-sm) var(--space-md);
+    margin: var(--space-xs) 0;
+    border-left: 3px solid var(--color-text-muted);
+    background: var(--color-surface);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.cache-item--override { border-left-color: var(--color-primary); }
+.cache-item--default { border-left-color: var(--color-success); }
+.cache-item--discovered { border-left-color: var(--color-warning); }
+
+.cache-item__name {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+}
+
+.cache-item__path {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.cache-item__stats {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--space-xs);
+}
+
+/* ============================================
+   Favicon Entry
+   ============================================ */
+
 .favicon-entry {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    margin-bottom: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
 }
 
 .favicon-entry.invalid {
-    background-color: #fff3cd;
-    border-color: #ffc107;
+    background: #fffbeb;
+    border-color: var(--color-warning);
 }
 
-/* Override Form Styles */
+.favicon-entry img {
+    flex-shrink: 0;
+}
+
+/* ============================================
+   Override Form
+   ============================================ */
+
 .override-form {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #f8f9fa;
-    border-radius: 3px;
+    margin-top: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
 }
 
 .override-form label {
     display: block;
-    margin: 5px 0;
-    font-size: 13px;
+    margin: var(--space-xs) 0;
+    font-size: var(--font-size-sm);
 }
 
 .override-form input[type="radio"] {
-    margin-right: 5px;
+    margin-right: var(--space-xs);
+    accent-color: var(--color-primary);
 }
 
-.override-form button {
-    margin-top: 8px;
-    padding: 5px 12px;
-    background-color: #0066cc;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-.override-form button:hover {
-    background-color: #0052a3;
-}
-
-.override-form button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
+.override-message {
+    font-size: var(--font-size-sm);
+    margin-top: var(--space-xs);
 }
 
 .override-success {
-    color: #28a745;
-    font-size: 12px;
-    margin-top: 5px;
+    color: var(--color-success);
 }
 
 .override-error {
-    color: #dc3545;
-    font-size: 12px;
-    margin-top: 5px;
+    color: var(--color-error);
 }
 
-/* Cache Panel Styles */
-.cache-panel {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-.cache-panel h2 {
-    margin-top: 0;
-    font-size: 18px;
-    color: #333;
-}
-
-.cache-file-list {
-    margin: 10px 0;
-}
-
-.cache-file-item {
-    padding: 8px;
-    margin: 5px 0;
-    border-left: 4px solid #6c757d;
-    background-color: white;
-}
-
-.cache-file-item.precedence-1 {
-    border-left-color: #0066cc;
-}
-
-.cache-file-item.precedence-2 {
-    border-left-color: #28a745;
-}
-
-.cache-file-item.precedence-3 {
-    border-left-color: #ffc107;
-}
-
-.cache-file-name {
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.cache-file-path {
-    font-size: 11px;
-    color: #666;
-    font-family: monospace;
-}
-
-.cache-file-stats {
-    font-size: 12px;
-    color: #666;
-    margin-top: 3px;
-}
-
-/* Metadata Panel Styles */
-.metadata-panel {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-.metadata-panel h2 {
-    margin-top: 0;
-    font-size: 18px;
-    color: #333;
-}
+/* ============================================
+   Metadata Item
+   ============================================ */
 
 .metadata-item {
-    margin-bottom: 10px;
-    font-size: 13px;
+    margin-bottom: var(--space-sm);
+    font-size: var(--font-size-sm);
 }
 
 .metadata-item strong {
-    color: #333;
+    color: var(--color-text);
 }
 
-/* URL List Styles */
-.url-list {
-    margin: 10px 0;
+/* ============================================
+   Text Input
+   ============================================ */
+
+.text-input {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+    font-size: var(--font-size-base);
+    font-family: var(--font-sans);
+    background: var(--color-surface);
 }
 
-.url-item {
-    padding: 8px;
-    margin: 5px 0;
-    border-left: 4px solid #0066cc;
-    background-color: white;
-    font-size: 12px;
+.text-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+
+.text-input:disabled {
+    background: var(--color-border-subtle);
+    color: var(--color-text-muted);
+}
+
+/* ============================================
+   Code Block
+   ============================================ */
+
+.code-block {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
     word-break: break-all;
-    font-family: monospace;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
-.url-item .copy-btn {
-    flex-shrink: 0;
-    margin: 0;
+/* ============================================
+   Tooltip
+   ============================================ */
+
+.tooltip {
+    position: absolute;
+    background: var(--color-text);
+    color: white;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
 }
 
-.url-item a {
-    word-break: break-all;
-}
+/* ============================================
+   Paste Favicon Button
+   ============================================ */
 
-/* Favicon Section Styles */
-.favicon-section {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.favicon-section h2 {
-    margin-top: 0;
-    font-size: 16px;
-    color: #333;
-}
-
-.favicon-display {
-    margin: 10px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.favicon-display img {
-    flex-shrink: 0;
-}
-
-.favicon-display .copy-btn {
-    flex-shrink: 0;
-    margin: 0;
-}
-
-.favicon-display a {
-    word-break: break-all;
-    font-size: 12px;
-}
-
-/* Links Section Styles */
-.links-section {
-    margin-bottom: 20px;
-}
-
-.links-section h2 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 18px;
-    color: #333;
-}
-
-.link-entry {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.link-entry h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 14px;
-    color: #0066cc;
-}
-
-.link-html-rendered {
-    padding: 10px;
-    background-color: #f8f9fa;
-    border-radius: 3px;
-    margin-bottom: 8px;
-    border: 1px solid #dee2e6;
-}
-
-.link-html-code {
-    padding: 10px;
-    background-color: #f5f5f5;
-    border-radius: 3px;
-    margin-bottom: 8px;
-    font-size: 12px;
-    word-break: break-all;
-    font-family: monospace;
-    border: 1px solid #ddd;
-    color: #333;
-}
-
-/* Copy Button Styles */
-.copy-btn {
-    padding: 5px 12px;
-    background-color: #0066cc;
+.paste-favicon-btn {
+    padding: 4px 8px;
+    font-size: var(--font-size-base);
+    background: var(--color-primary);
     color: white;
     border: none;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 12px;
 }
 
-.copy-btn:hover {
-    background-color: #0052a3;
+.paste-favicon-btn:hover {
+    background: var(--color-primary-hover);
 }
 
-.copy-btn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
+/* ============================================
+   Inline Favicon Preview
+   ============================================ */
+
+.favicon-inline-preview {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--color-text-secondary);
+    word-break: break-all;
+}
+
+/* ============================================
+   Page URL (small text below cache panel)
+   ============================================ */
+
+.page-url {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--space-sm);
+}
+
+/* ============================================
+   Form Row (for debug input forms)
+   ============================================ */
+
+.form-row {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+/* ============================================
+   Height Control Row (for debug-inline-image)
+   ============================================ */
+
+.height-row {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.height-row input[type="number"] {
+    width: 80px;
+}
+
+/* ============================================
+   Image Input Row (for debug-inline-image)
+   ============================================ */
+
+.image-input-row {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.image-input-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--space-xs);
+}
+
+/* ============================================
+   File Input Override
+   ============================================ */
+
+#file-input::file-selector-button {
+    padding: 8px 16px;
+    font-size: var(--font-size-base);
+    border: none;
+    background: var(--color-primary);
+    color: white;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+}
+
+#file-input::file-selector-button:hover {
+    background: var(--color-primary-hover);
+}
+
+/* ============================================
+   Output Section (for debug-inline-image)
+   ============================================ */
+
+.output-section {
+    margin-top: var(--space-sm);
+}
+
+.output-dimensions {
+    margin-top: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-base);
 }
