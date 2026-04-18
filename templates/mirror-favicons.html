@@ -74,12 +74,9 @@
                     <span class="badge"><span class="badge-dot badge-dot--muted"></span>NOT CACHED</span>
                     <span class="badge"><span class="badge-dot badge-dot--primary"></span>PASTED</span>
                 </p>
-                <p>Image Type: image/png | Size: ${escapeHtml(data.height_orig) || escapeHtml(data.height) || 20}x${escapeHtml(data.width_orig) || escapeHtml(data.width) || 20}</p>
+                <p>Image Type: image/png | Size: ${escapeHtml(data.height_orig) || escapeHtml(data.height) || 20}x${escapeHtml(data.width_orig) || escapeHtml(data.width) || 20} (original, stored scaled to 20px)</p>
                 <p>
                     <img src="${escapedDataUrl}" height="20" alt="20px height preview" /> 20px height preview
-                </p>
-                <p>
-                    <img src="${escapedDataUrl}" alt="Full size" /> Full size (${escapeHtml(data.width_orig) || escapeHtml(data.width) || 20}x${escapeHtml(data.height_orig) || escapeHtml(data.height) || 20})
                 </p>
                 <div class="override-form" id="form-pasted-1">
                     <strong>Add Override:</strong>
