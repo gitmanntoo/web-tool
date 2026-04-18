@@ -90,6 +90,21 @@ Write code that can be tested without external dependencies.
 
 **The test:** Can you run the test suite offline? If not, the code is too coupled.
 
+#### 6. Stay Focused
+
+Keep work narrowly scoped to the current task. Resist the urge to improve adjacent code.
+
+- **Don't simplify existing code** just because you notice it could be shorter or clearer.
+- **Don't refactor** unless it's directly required to implement the requested change.
+- **Don't improve** variable names, comments, or formatting in code you aren't otherwise touching.
+- **If you discover issues** — bugs, security holes, or needed improvements — surface them to the user immediately, then ask:
+  - Address now?
+  - Add to ISSUES.md for later?
+  - Ignore for now?
+- **Don't fix pre-existing bugs** you encounter unless the user explicitly says yes.
+
+**The test:** After completing the task, only the lines directly related to the request should have changed. If you "couldn't help but notice" something and fixed it, you went too far.
+
 ## Development Commands
 
 ### Setup & Running
