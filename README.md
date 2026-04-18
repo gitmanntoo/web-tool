@@ -10,7 +10,7 @@ Tools use the following pattern:
 
 All endpoints are hosted at <http://localhost:8532>.
 
-## Bookmarklets
+## Bookmarklet Endpoints
 
 Each of the links below will open the bookmarklet JavaScript in a new page and copy it to the clipboard. Add a bookmark in your
 browser using the bookmarklet JavaScript for the URL. Name it anything you would like!
@@ -36,6 +36,47 @@ If the port is changed, the bookmarklets will need to be updated with the new po
 - <a href="http://localhost:8532/js/mirror-html-source.js?mode=bookmarklet&format=text" target="_blank">html-source-text</a>
     - Display the HTML source of the page using plain text.
     - This should always work.
+
+## Debug Endpoints
+
+Container detection status and clipboard proxy testing are available at:
+
+- <a href="http://localhost:8532/debug/container" target="_blank">container status</a>
+    - Returns JSON with `running_in_container` flag to verify container detection logic.
+    - Use this to confirm whether the app is detecting a Docker container correctly.
+
+- <a href="http://localhost:8532/debug/clip-cache" target="_blank">clip cache state</a>
+    - Returns JSON with current clip_cache state including batch count, memory usage, and individual batch details.
+    - Shows TTL, size limits, and how close the cache is to configured limits.
+
+- <a href="http://localhost:8532/debug/clipboard-proxy" target="_blank">clipboard proxy test</a>
+    - Interactive test page for the clipboard proxy functionality.
+    - Simulates what happens when a bookmarklet successfully captures clipboard data.
+    - Submit test data through the proxy to verify `/clip-collector` and `/mirror-clip` work correctly.
+
+- <a href="http://localhost:8532/debug/favicon-files" target="_blank">favicon files</a>
+    - Returns JSON showing the three-tier favicon cache system in precedence order.
+    - Displays file paths, existence, size, modification time, entry count, and in-memory cache status.
+    - Shows sample entries from each cache file (overrides, defaults, auto-discovered).
+
+- <a href="http://localhost:8532/debug/title-variants" target="_blank">title variants</a>
+    - Interactive test page for generating title string variants.
+    - Enter any title string and click Generate to see all variants (Original, ASCII + Emoji, ASCII Only, Path Safe).
+    - Duplicate variants are visually indicated with reduced opacity and gray background.
+
+- <a href="http://localhost:8532/debug/url-variants" target="_blank">url variants</a>
+    - Interactive test page for generating URL variants.
+    - Enter any URL and click Generate to see all variants (Original, With Fragment, Clean, Root, Host).
+    - Duplicate variants are visually indicated with reduced opacity and gray background.
+
+- <a href="http://localhost:8532/debug/inline-image" target="_blank">inline image</a>
+    - Convert pasted or uploaded images to inline base64 `<img>` tags.
+    - Adjustable output height; useful for generating favicon-style inline images.
+
+- <a href="http://localhost:8532/test-pages-interactive" target="_blank">test pages</a>
+    - <strong><a href="http://localhost:8532/test-pages-interactive" target="_blank">Interactive test page builder</a></strong> — configure parameters and load test pages in the browser
+    - <a href="http://localhost:8532/test-page" target="_blank">Raw test page</a> — parameterized endpoint for direct URL access
+    - Parameters: `title`, `fragment`, `anchor-fragment`, `wrap-fragment`, `url-has-parens`, `url-has-brackets`, `url-has-space`, `unicode-content`, `emoji-content`
 
 ## Favicon Configuration
 
@@ -93,51 +134,14 @@ docs.python.org/3: https://docs.python.org/3/_static/py.svg
 stackoverflow.com/questions: https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico
 </pre>
 
-## Debug
+## Running with Docker
 
-Container detection status and clipboard proxy testing are available at:
-
-- <a href="http://localhost:8532/debug/container" target="_blank">container status</a>
-    - Returns JSON with `running_in_container` flag to verify container detection logic.
-    - Use this to confirm whether the app is detecting a Docker container correctly.
-
-- <a href="http://localhost:8532/debug/clip-cache" target="_blank">clip cache state</a>
-    - Returns JSON with current clip_cache state including batch count, memory usage, and individual batch details.
-    - Shows TTL, size limits, and how close the cache is to configured limits.
-
-- <a href="http://localhost:8532/debug/clipboard-proxy" target="_blank">clipboard proxy test</a>
-    - Interactive test page for the clipboard proxy functionality.
-    - Simulates what happens when a bookmarklet successfully captures clipboard data.
-    - Submit test data through the proxy to verify `/clip-collector` and `/mirror-clip` work correctly.
-
-- <a href="http://localhost:8532/debug/favicon-files" target="_blank">favicon files</a>
-    - Returns JSON showing the three-tier favicon cache system in precedence order.
-    - Displays file paths, existence, size, modification time, entry count, and in-memory cache status.
-    - Shows sample entries from each cache file (overrides, defaults, auto-discovered).
-
-- <a href="http://localhost:8532/debug/title-variants" target="_blank">title variants</a>
-    - Interactive test page for generating title string variants.
-    - Enter any title string and click Generate to see all variants (Original, ASCII + Emoji, ASCII Only, Path Safe).
-    - Duplicate variants are visually indicated with reduced opacity and gray background.
-
-- <a href="http://localhost:8532/debug/url-variants" target="_blank">url variants</a>
-    - Interactive test page for generating URL variants.
-    - Enter any URL and click Generate to see all variants (Original, With Fragment, Clean, Root, Host).
-    - Duplicate variants are visually indicated with reduced opacity and gray background.
-
-- <a href="http://localhost:8532/debug/inline-image" target="_blank">inline image</a>
-    - Convert pasted or uploaded images to inline base64 `<img>` tags.
-    - Adjustable output height; useful for generating favicon-style inline images.
-
-- <a href="http://localhost:8532/test-pages-interactive" target="_blank">test pages</a>
-    - <strong><a href="http://localhost:8532/test-pages-interactive" target="_blank">Interactive test page builder</a></strong> — configure parameters and load test pages in the browser
-    - <a href="http://localhost:8532/test-page" target="_blank">Raw test page</a> — parameterized endpoint for direct URL access
-    - Parameters: `title`, `fragment`, `anchor-fragment`, `wrap-fragment`, `url-has-parens`, `url-has-brackets`, `url-has-space`, `unicode-content`, `emoji-content`
-
-## Use Docker
-
-Stops any running container, pulls the latest image, and starts with auto-restart and local favicon cache storage.
-- `DATA_DIR` is used to store an optional local favicon cache. If omitted, favicon overrides will not be saved.
+Stops any running container, pulls the latest image, and starts web-tool with auto-restart.
+- `-d` runs the container in the background
+- `--restart always` restarts the container if it crashes or when Docker restarts
+- `-p ${PORT}:8532` maps a host port to the container's port 8532
+- `-v ${DATA_DIR}:/data` persists the favicon cache to the host; omit to skip persistence
+- `mkdir -p` creates the data directory before Docker can create it as root
 
 <pre>
 PORT=8532
