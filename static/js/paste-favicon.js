@@ -21,21 +21,17 @@ let _pasteKeyHandler = null; // keydown handler for Esc cancel
  */
 function showPasteTooltip(btn, message) {
     // Remove any existing tooltip
-    const existing = btn.querySelector('.paste-tooltip');
+    const existing = document.body.querySelector('.tooltip');
     if (existing) existing.remove();
 
     const tooltip = document.createElement('span');
-    tooltip.className = 'paste-tooltip';
+    tooltip.className = 'tooltip';
     tooltip.textContent = message;
-    tooltip.style.cssText =
-        'position: fixed; background: #333; color: white; padding: 4px 8px; ' +
-        'border-radius: 4px; font-size: 12px; white-space: nowrap; z-index: 9999; ' +
-        'pointer-events: none; display: block;';
 
     const rect = btn.getBoundingClientRect();
-    // Position below the button, left-aligned
-    tooltip.style.left = rect.left + 'px';
-    tooltip.style.top = (rect.bottom + 4) + 'px';
+    // Position below the button, left-aligned (account for scroll)
+    tooltip.style.left = (rect.left + window.scrollX) + 'px';
+    tooltip.style.top = (rect.bottom + window.scrollY + 4) + 'px';
 
     document.body.appendChild(tooltip);
 
@@ -91,7 +87,7 @@ function addPastedFavicon(base64Image, container, onSelect) {
 
     // Create the pasted option div
     const pastedDiv = document.createElement('div');
-    pastedDiv.className = 'url-item favicon-pasted-option';
+    pastedDiv.className = 'variant-row favicon-pasted-option';
 
     // Build the full data URL for preview
     const dataUrl = `data:image/png;base64,${base64Image}`;
@@ -100,10 +96,10 @@ function addPastedFavicon(base64Image, container, onSelect) {
 
     pastedDiv.innerHTML = `
         <input type="radio" name="favicon_option" value="pasted">
-        <button class="copy-btn" data-html="&lt;img src=&quot;${escapedDataUrl}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
-        <span style="min-width: 100px;"><strong>Pasted</strong></span>
+        <button class="btn-copy" data-html="&lt;img src=&quot;${escapedDataUrl}&quot; height=&quot;20&quot; alt=&quot;Favicon&quot; /&gt;">Copy</button>
+        <span class="variant-label"><strong>Pasted</strong></span>
         <img src="${escapedDataUrl}" height="20" alt="Favicon" />
-        <span style="font-family: monospace; font-size: 0.85em; color: #666; word-break: break-all;">
+        <span class="variant-value favicon-inline-preview">
             ${truncateMiddle(escapedBase64, 60)}
         </span>
     `;
@@ -123,7 +119,7 @@ function addPastedFavicon(base64Image, container, onSelect) {
     }
 
     // Attach copy button listener
-    const copyBtn = pastedDiv.querySelector('.copy-btn');
+    const copyBtn = pastedDiv.querySelector('.btn-copy');
     if (copyBtn) {
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(copyBtn.dataset.html).then(() => {

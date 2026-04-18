@@ -119,7 +119,17 @@ web-tool.py::debug_inline_image()
 
 | Class | Element |
 |-------|---------|
-| `.metadata-panel` | All three sections (Height, Image, Output) |
+| `.page-container` | Outer wrapper for centered layout |
+| `.panel` | All three sections (Height, Image, Output) — elevated card style |
+| `.panel-label` | Section header text (e.g., "Height Control", "Image Input") |
+| `.height-row` | Flex container for height input + disabled width display |
+| `.text-input` | Number input fields with focus states |
+| `.btn-primary` | "Paste Image" and "Copy" buttons |
+| `.image-input-row` | Flex container for file input + "or" text |
+| `.image-input-hint` | Hint text below file input (smaller, muted) |
+| `.code-block` | Monospace output sections (base64 preview) |
+| `.output-section` | Container for output tag |
+| `.output-dimensions` | Dimensions text (muted color) |
 
 ---
 

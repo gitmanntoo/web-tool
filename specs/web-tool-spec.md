@@ -38,6 +38,12 @@ All business logic lives in `library/`:
 
 `static/` contains JavaScript bookmarklets, CSS, and favicon configuration files:
 
+**CSS Design System:**
+- `static/mirror.css` — Main design system with CSS custom properties (tokens) for colors, spacing, typography, and component classes (panels, buttons, badges, form elements)
+- `static/default.css` — Minimal reset: font-family and background only
+- `static/js/tooltip.js` — Shared tooltip utility used by all pages
+
+**Favicon Cache:**
 - `static/favicon-overrides.yml` — User overrides (highest-priority favicon cache)
 - `static/favicon.yml` — App-default favicons (medium-priority favicon cache)
 

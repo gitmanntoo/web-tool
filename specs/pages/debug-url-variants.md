@@ -77,30 +77,36 @@ On GET (no POST data), both variables are empty/empty list.
 ## Template HTML Structure
 
 ```html
-<h1>Debug URL Variants</h1>
+<div class="page-container">
+    <h1>Debug URL Variants</h1>
 
-<div class="metadata-panel">
-    <h2>Input</h2>
-    <form method="POST">
-        <input type="text" name="url" value="{{ input_url|e }}">
-        <button type="submit">Generate</button>
-    </form>
-</div>
-
-{% if url_variants %}
-<div class="metadata-panel">
-    <h2>URL Variants</h2>
-    <div class="url-list">
-        {% for variant in url_variants %}
-        <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6..."{% endif %}>
-            <button class="copy-btn" data-html="{{ variant.url|e }}">Copy</button>
-            <span><strong>{{ variant.label }}</strong></span>
-            <span><a href="{{ variant.url|e }}">{{ variant.url|e }}</a></span>
-        </div>
-        {% endfor %}
+    <div class="panel">
+        <div class="panel-label">Input</div>
+        <form method="POST">
+            <div class="form-row">
+                <input type="text" name="url" value="{{ input_url|e }}" class="text-input" style="flex: 1;">
+                <button type="submit" class="btn-primary">Generate</button>
+            </div>
+        </form>
     </div>
+
+    {% if url_variants %}
+    <div class="panel">
+        <div class="panel-label">URL Variants</div>
+        <div class="variant-list">
+            {% for variant in url_variants %}
+            <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
+                <button class="btn-copy" data-html="{{ variant.url|e }}">Copy</button>
+                <span class="variant-label"><strong>{{ variant.label }}</strong></span>
+                <span><a href="{{ variant.url|e }}">{{ variant.url|e }}</a></span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
+
+<script src="/static/js/tooltip.js"></script>
 ```
 
 ---
@@ -109,15 +115,23 @@ On GET (no POST data), both variables are empty/empty list.
 
 | Class | Element |
 |-------|---------|
-| `.metadata-panel` | Form section, results section |
-| `.url-list` | Container for variant rows |
-| `.url-item` | Each variant row |
+| `.page-container` | Outer wrapper for centered layout |
+| `.panel` | Form section, results section (elevated card) |
+| `.panel-label` | Section header text (e.g., "Input", "URL Variants") |
+| `.form-row` | Flex container for form input + button |
+| `.text-input` | Text input field with focus states |
+| `.btn-primary` | Generate button (primary action style) |
+| `.variant-list` | Container for variant rows |
+| `.variant-row` | Each variant row |
+| `.variant-row--duplicate` | Modifier for duplicate variants (grays out row) |
+| `.variant-label` | Label column (e.g., "Original", "Clean") |
+| `.btn-copy` | Copy button (pill style) |
 
 ---
 
 ## JavaScript
 
-Identical to `debug-title-variants.html` — `showTooltip()` + `data-html` copy pattern.
+Shared tooltip function from `/static/js/tooltip.js`:
 
 **Copy behavior:**
 ```javascript
@@ -141,7 +155,7 @@ btn.addEventListener('click', () => {
 
 - [ ] GET /debug/url-variants → form renders, no results shown
 - [ ] POST "https://example.com/path#section" → 5 variant rows shown
-- [ ] Variant with duplicate URL → row has `opacity: 0.6`
+- [ ] Variant with duplicate URL → row has `.variant-row--duplicate` class
 - [ ] Click Copy → "Copied!" tooltip appears
 - [ ] URL with fragment → "With Fragment" differs from "Clean"
 - [ ] Root and Host variants correctly extracted

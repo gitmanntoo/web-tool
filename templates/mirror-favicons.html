@@ -14,7 +14,7 @@
 
             button.disabled = true;
             messageEl.textContent = 'Adding override...';
-            messageEl.className = 'override-success';
+            messageEl.className = 'override-message override-success';
 
             fetch('/add-favicon-override', {
                 method: 'POST',
@@ -32,40 +32,41 @@
             .then(data => {
                 if (data.success) {
                     messageEl.textContent = '✓ Override added: ' + data.cache_key;
-                    messageEl.className = 'override-success';
+                    messageEl.className = 'override-message override-success';
                     setTimeout(() => {
                         location.reload();
                     }, 1500);
                 } else {
                     messageEl.textContent = '✗ Error: ' + data.error;
-                    messageEl.className = 'override-error';
+                    messageEl.className = 'override-message override-error';
                     button.disabled = false;
                 }
             })
             .catch(err => {
                 messageEl.textContent = '✗ Error: ' + err.message;
-                messageEl.className = 'override-error';
+                messageEl.className = 'override-message override-error';
                 button.disabled = false;
             });
         }
     </script>
 </head>
 <body>
+<div class="page-container">
     <h1>Favicon Browser</h1>
-    
-    <div class="cache-panel">
-        <h2>Three-Tier Cache System</h2>
+
+    <div class="panel">
+        <div class="panel-label">Three-Tier Cache System</div>
         <p>Favicons are searched in order of precedence (highest to lowest):</p>
-        <div class="cache-file-list">
+        <div class="variant-list">
             {% for key in ['overrides', 'defaults', 'discovered'] %}
             {% set cache = cache_files[key] %}
-            <div class="cache-file-item precedence-{{ cache.precedence }}">
-                <div class="cache-file-name">
+            <div class="cache-item cache-item--{{ 'override' if cache.precedence == 1 else ('default' if cache.precedence == 2 else 'discovered') }}">
+                <div class="cache-item__name">
                     {{ cache.precedence }}. {{ cache.name }}
-                    <span class="cache-badge cache-{{ key }}">{{ cache.count }} entries</span>
+                    <span class="badge"><span class="badge-dot badge-dot--{{ 'primary' if key == 'overrides' else ('success' if key == 'defaults' else 'warning') }}"></span>{{ cache.count }} entries</span>
                 </div>
-                <div class="cache-file-path">{{ cache.path }}</div>
-                <div class="cache-file-stats">
+                <div class="cache-item__path">{{ cache.path }}</div>
+                <div class="cache-item__stats">
                     {% if cache.precedence == 1 %}
                         Manual overrides - highest priority, editable via this UI or directly
                     {% elif cache.precedence == 2 %}
@@ -77,44 +78,44 @@
             </div>
             {% endfor %}
         </div>
-        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+        <p class="page-url">
             <strong>Current URL:</strong> {{ url|e }}
         </p>
     </div>
-    
+
     <h2>Available Favicons (sorted by preference)</h2>
     {% for f in favicons %}
     <div class="favicon-entry{% if f.image_type == 'invalid' %} invalid{% endif %}">
         <p>
             <a href="{{ f.href }}">{{ f.href|e }}</a>
-            
+
             {% if f.cache_source.file %}
                 {% if f.cache_source.file == 'override' %}
-                    <span class="cache-badge cache-override">OVERRIDE</span>
+                    <span class="badge"><span class="badge-dot badge-dot--primary"></span>OVERRIDE</span>
                 {% elif f.cache_source.file == 'default' %}
-                    <span class="cache-badge cache-default">DEFAULT</span>
+                    <span class="badge"><span class="badge-dot badge-dot--success"></span>DEFAULT</span>
                 {% elif f.cache_source.file == 'discovered' %}
-                    <span class="cache-badge cache-discovered">DISCOVERED</span>
+                    <span class="badge"><span class="badge-dot badge-dot--warning"></span>DISCOVERED</span>
                 {% endif %}
                 {% if f.inline_image %}
-                <span class="cache-badge cache-override">INLINE</span>
+                <span class="badge"><span class="badge-dot badge-dot--primary"></span>INLINE</span>
                 {% endif %}
-                <span class="cache-key-info">cached as: {{ f.cache_source.cache_key }}</span>
+                <span class="cache-item__path">cached as: {{ f.cache_source.cache_key }}</span>
             {% else %}
-                <span class="cache-badge cache-none">NOT CACHED</span>
+                <span class="badge"><span class="badge-dot badge-dot--muted"></span>NOT CACHED</span>
             {% endif %}
-            
+
             {% if f.image_type == 'invalid' %}
-                <span class="cache-badge cache-invalid">INVALID - FAILED TO LOAD</span>
+                <span class="badge"><span class="badge-dot badge-dot--error"></span>INVALID - FAILED TO LOAD</span>
             {% endif %}
         </p>
-        
+
         {% if f.href != f.resolved_href %}
         <p>Resolves to: <a href="{{ f.resolved_href }}">{{ f.resolved_href|e }}</a></p>
         {% endif %}
-        
+
         <p>Image Type: {{ f.image_type }} | Size: {{ f.width }}x{{ f.height }}</p>
-        
+
         {% if f.image_type != 'invalid' %}
         <p>
             <img src="{{ f.href }}" height="20" alt="20px height preview" /> 20px height preview
@@ -130,7 +131,7 @@
         {% else %}
         <p><em>Image failed to load - URL may be broken or inaccessible</em></p>
         {% endif %}
-        
+
         {% if not f.cache_source.file or f.cache_source.file != 'override' %}
         <div class="override-form" id="form-{{ loop.index }}">
             <strong>Add Override:</strong>
@@ -148,7 +149,7 @@
                 <input type="checkbox" name="save_inline">
                 Save as inline (base64)
             </label>
-            <button onclick="addOverride('{{ f.href|e }}', '{{ url|e }}', 'form-{{ loop.index }}')">
+            <button class="btn-primary" onclick="addOverride('{{ f.href|e }}', '{{ url|e }}', 'form-{{ loop.index }}')">
                 Add to Overrides
             </button>
             <div class="override-message"></div>
@@ -156,5 +157,6 @@
         {% endif %}
     </div>
     {% endfor %}
+</div>
 </body>
 </html>

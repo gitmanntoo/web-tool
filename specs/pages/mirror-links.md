@@ -76,8 +76,8 @@ web-tool.py:get_mirror_links()
 
 **Display fields (per row):**
 - `<span id="format-{format}-display">` — live rendered output
-- `<span id="format-{format}-plain">` — plain text fallback for user verification
-- `<button class="copy-btn" id="copy-{format}">` — copies `data-html`
+- `<div id="format-{format}-plain" class="link-format-row__plain">` — plain text fallback for user verification
+- `<button class="btn-copy" id="copy-{format}">` — copies `data-html` (pill-style button)
 
 ---
 
@@ -85,7 +85,7 @@ web-tool.py:get_mirror_links()
 
 **Purpose:** Let the user pick which title variant to use as link text.
 
-**Content:** Radio list of title variants. Duplicates are shown with `opacity: 0.6`.
+**Content:** Radio list of title variants. Duplicates use `.variant-row--duplicate` modifier class.
 
 **Variants (in order):**
 | Label | Source |
@@ -105,7 +105,7 @@ web-tool.py:get_mirror_links()
 
 **Shown:** Only when `metadata.parsed_url.fragment` or `metadata.fragment_text` is truthy.
 
-**Content:** Radio list of fragment variants. Duplicates grayed out.
+**Content:** Radio list of fragment variants. Duplicates use `.variant-row--duplicate` class.
 | Label | Value |
 |-------|-------|
 | None | `""` |
@@ -318,20 +318,31 @@ Plain `url text` output — URL first, then link text.
 
 ## CSS Classes
 
-**`mirror.css` key classes:**
+**`mirror.css` key classes (Design System):**
 | Class | Used on |
 |-------|---------|
-| `.metadata-panel` | Title, URL, Fragment, Metadata sections |
-| `.url-list` | Container for `.url-item` rows |
-| `.url-item` | Each radio/copy row in Title, URL, Fragment |
-| `.copy-btn` | All Copy buttons |
-| `.favicon-section` | Favicon panel (outer wrapper) |
+| `.panel` | All sections (Links, Title, URL, Fragment, Favicon, Metadata) |
+| `.panel-label` | Section header text (e.g., "Links", "Title") |
+| `.variant-list` | Container for `.variant-row` rows |
+| `.variant-row` | Each radio/copy row in Title, URL, Fragment, Favicon |
+| `.variant-row--duplicate` | Modifier for duplicate variants (grays out row) |
+| `.variant-label` | Label column in variant rows (e.g., "Original", "Clean") |
+| `.variant-value` | Value column in variant rows |
+| `.btn-copy` | All Copy buttons (pill style) |
+| `.link-format-row` | Format rows in Links section (HTML, Markdown, Wiki, Simple) |
+| `.link-format-row__main` | Inner flex container for format row content |
+| `.link-format-row__plain` | Plain text preview below format display |
+| `.favicon-inline-preview` | Monospace inline favicon preview text |
+| `.paste-favicon-btn` | Paste Favicon button |
 
-**`url-item` duplicate state:**
+**`variant-row` duplicate state:**
 ```html
-<div class="url-item" style="opacity: 0.6; background-color: #f5f5f5;">
+<div class="variant-row variant-row--duplicate">
 ```
-Set when `is_duplicate: true` in variant data.
+Set when `is_duplicate: true` in variant data. Uses CSS opacity instead of inline styles.
+
+**Shared components:**
+- `static/js/tooltip.js` — Shared `showTooltip()` function used by copy buttons
 
 ---
 
@@ -365,8 +376,8 @@ Set when `is_duplicate: true` in variant data.
 | Case | Behavior |
 |------|----------|
 | No title | `metadata.title` defaults to `"link"` before title variant generation |
-| Title variant duplicate | Row shown with `opacity: 0.6`, still selectable |
-| URL variant duplicate | Row shown with `opacity: 0.6`, still selectable but grayed out |
+| Title variant duplicate | Row shown with `.variant-row--duplicate` class, still selectable |
+| URL variant duplicate | Row shown with `.variant-row--duplicate` class, still selectable but grayed out |
 | Fragment but no fragment text | Only "None" and "Fragment" options shown |
 | Fragment but no fragment | Section not rendered |
 | Clipboard parse error | `clipboard_error` shown in Metadata section; page still renders |

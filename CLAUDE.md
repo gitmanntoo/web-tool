@@ -26,6 +26,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Git Workflow
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
+- **Feature branches**: Never commit directly to `main`/`master` — always create feature branch first
+- **Style hygiene**: Move inline styles to CSS classes; use existing design tokens before creating new ones
 
 ## Python Runtime
 - **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.14 only (`>=3.14,<3.15`). Using a pyenv-managed Python will fail to find test dependencies.
@@ -44,6 +46,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Template Security
 - **XSS prevention:** Use `|e` filter for HTML context, `|tojson` filter for JavaScript context when rendering user-controlled data in templates
+
+## CSS Design System
+- **Tokens:** Use CSS custom properties (`--color-*`, `--space-*`, `--font-size-*`) from `static/mirror.css`
+- **Components:** Prefer semantic classes (`.panel`, `.variant-row`, `.btn-copy`) over inline styles
+- **Tooltip positioning:** Add `window.scrollX/Y` to `getBoundingClientRect()` coords for accurate placement
+
+## Shared JavaScript
+- **tooltip.js:** Shared `showTooltip()` and `attachCopyListeners()` functions — import in templates with `<script src="/static/js/tooltip.js">`
+- **Paste handlers:** Use `document.body.querySelector()` for tooltip cleanup (tooltips appended to body, not trigger element)
 
 ## URL Parsing
 - **Schemeless URLs:** `urlparse()` treats schemeless inputs as paths; handle by reparsing with `//` prefix when `netloc` is empty and scheme is missing
@@ -64,6 +75,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Workflow
 - **Multi-step implementations:** Use `superpowers:subagent-driven-development` skill. Create tasks with `TaskCreate`, set dependencies, dispatch one `general-purpose` subagent per task.
+- **Code reviews:** Score issues 0-100 for confidence; only report issues ≥80 to minimize false positives
 
 ## Architecture & Project Structure
 

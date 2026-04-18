@@ -4,62 +4,49 @@
     <title>Debug Inline Image</title>
     <link rel="stylesheet" href="/static/default.css">
     <link rel="stylesheet" href="/static/mirror.css">
-    <style>
-        #file-input::file-selector-button {
-            padding: 8px 16px;
-            font-size: 14px;
-            border: none;
-            background: #0066cc;
-            color: white;
-            cursor: pointer;
-        }
-        #file-input::file-selector-button:hover {
-            background: #0052a3;
-        }
-    </style>
 </head>
 <body>
+<div class="page-container">
     <h1>Inline Image Generator</h1>
     <p>Convert a pasted or uploaded image to an inline base64 img tag.</p>
 
-    <div class="metadata-panel">
-        <h2>Height</h2>
-        <div style="display: flex; gap: 10px; align-items: center;">
+    <div class="panel">
+        <div class="panel-label">Height</div>
+        <div class="height-row">
             <input type="number" id="height-input" value="20" min="1" max="100"
-                   style="padding: 8px; font-size: 14px; width: 80px;">
+                   class="text-input text-input--small">
             <span>×</span>
             <input type="number" id="width-display" disabled
-                   style="padding: 8px; font-size: 14px; width: 80px; background: #f5f5f5;">
+                   class="text-input text-input--small">
             <span>px</span>
         </div>
     </div>
 
-    <div class="metadata-panel">
-        <h2>Image</h2>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <button id="paste-btn" style="padding: 8px 16px; font-size: 14px;">
+    <div class="panel">
+        <div class="panel-label">Image</div>
+        <div class="image-input-row">
+            <button id="paste-btn" class="btn-primary">
                 Paste Image
             </button>
-            <span style="color: #666;">or</span>
-            <input type="file" id="file-input" accept="image/*"
-                   style="font-size: 14px;">
+            <span class="text-muted">or</span>
+            <input type="file" id="file-input" accept="image/*">
         </div>
-        <p style="font-size: 12px; color: #666; margin-top: 8px;">
+        <p class="image-input-hint">
             Max file size: 5MB. Images over 2000px in any dimension will be rejected.
         </p>
     </div>
 
-    <div class="metadata-panel">
-        <h2>Output</h2>
-        <button id="copy-output-btn" style="padding: 8px 16px; font-size: 14px;">
+    <div class="panel">
+        <div class="panel-label">Output</div>
+        <button id="copy-output-btn" class="btn-primary">
             Copy
         </button>
-        <div id="output-tag" style="margin-top: 12px;"></div>
-        <div id="output-base64" style="margin-top: 8px; font-family: monospace;
-             font-size: 0.85em; word-break: break-all; color: #666;"></div>
-        <div id="output-dimensions" style="margin-top: 8px; color: #666; font-size: 14px;"></div>
+        <div id="output-tag" class="output-section"></div>
+        <div id="output-base64" class="code-block"></div>
+        <div id="output-dimensions" class="output-dimensions"></div>
     </div>
 
     <script src="/static/js/inline-image.js"></script>
+</div>
 </body>
 </html>
