@@ -5,10 +5,30 @@ import time
 import uuid
 
 from flask import Blueprint, Response, current_app, make_response, request
+from jinja2 import Environment, FileSystemLoader
+from markupsafe import escape
 
 from library import html_util, img_util, text_util, url_util, util
 
 bp = Blueprint("mirror_links", __name__)
+
+BOOKMARKLETS = [
+    ("mirror-links", "links"),
+    ("mirror-favicons", "favicons"),
+    ("mirror-text", "text"),
+    ("mirror-soup-text", "soup-text"),
+    ("mirror-html-source", "html-source"),
+]
+
+
+def _generate_bookmarklet_links():
+    """Generate draggable bookmarklet links for the homepage."""
+    template_env = Environment(loader=FileSystemLoader("templates"))
+    links = []
+    for name, label in BOOKMARKLETS:
+        js = util.get_javascript_file(name, "bookmarklet", template_env=template_env)
+        links.append(f'<a href="{escape(js)}" class="bookmarklet-drag">{label}</a>')
+    return "\n".join(links)
 
 
 @bp.route("/")
@@ -23,11 +43,21 @@ def read_root():
         content = f.read()
         content = content.replace("http://localhost:8532", current_host)
         html = markdown.markdown(content)
-        return (
-            f'<html><head><link rel="stylesheet" '
-            f'href="/static/default.css"></head>'
-            f"<body>{html}</body></html>"
-        )
+
+    bookmarklet_links = _generate_bookmarklet_links()
+    bookmarklet_section = (
+        '<div class="bookmarklet-section">'
+        "<h2>Drag to Bookmarks Bar</h2>"
+        "<p>Drag these links to your bookmarks bar to install:</p>"
+        f'<div class="bookmarklet-links">{bookmarklet_links}</div>'
+        "</div>"
+    )
+
+    return (
+        f'<html><head><link rel="stylesheet" '
+        f'href="/static/default.css"></head>'
+        f"<body>{bookmarklet_section}{html}</body></html>"
+    )
 
 
 @bp.route("/mirror-links", methods=["GET", "POST"])

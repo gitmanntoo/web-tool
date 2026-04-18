@@ -2,3 +2,40 @@ body {
     font-family: system-ui, -apple-system, sans-serif;
     background: #f8fafc;
 }
+
+.bookmarklet-section {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #e2e8f0;
+    border-radius: 0.5rem;
+}
+
+.bookmarklet-section h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+}
+
+.bookmarklet-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.bookmarklet-drag {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    background: #1e293b;
+    color: #f8fafc;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    font-size: 0.875rem;
+    cursor: grab;
+}
+
+.bookmarklet-drag:hover {
+    background: #334155;
+}
+
+.bookmarklet-drag:active {
+    cursor: grabbing;
+}
