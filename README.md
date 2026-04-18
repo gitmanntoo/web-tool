@@ -45,6 +45,9 @@ Stops any running container, pulls the latest image, and starts with auto-restar
 PORT=8532
 DATA_DIR=$(pwd)/web-tool
 
+# Create data directory before Docker creates it as root.
+mkdir -p "${DATA_DIR}"
+
 # Stop and remove the currently running web-tool, ignoring errors.
 docker stop web-tool || true
 docker rm web-tool || true
