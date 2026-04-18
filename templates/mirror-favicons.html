@@ -8,7 +8,9 @@
     <script>
         function addOverride(faviconHref, pageUrl, formId) {
             const form = document.getElementById(formId);
-            const scope = form.querySelector('input[name="scope"]:checked').value;
+            const scopeRadio = form.querySelector('input[name^="scope-"]:checked');
+            if (!scopeRadio) return;
+            const scope = scopeRadio.value;
             const saveInline = form.querySelector('input[name="save_inline"]').checked;
             const messageEl = form.querySelector('.override-message');
             const button = form.querySelector('button');
@@ -100,12 +102,12 @@
                 <div class="override-form" id="form-pasted-1">
                     <strong>Add Override:</strong>
                     <label>
-                        <input type="radio" name="scope" value="domain" checked>
+                        <input type="radio" name="scope-pasted-1" value="domain" checked>
                         Domain only (${escapedOverrideDomain})
                     </label>
                     ${hasPathScope ? `
                     <label>
-                        <input type="radio" name="scope" value="path">
+                        <input type="radio" name="scope-pasted-1" value="path">
                         Domain + first path (${escapedOverridePathScope})
                     </label>
                     ` : ''}
@@ -250,12 +252,12 @@
         <div class="override-form" id="form-{{ loop.index }}">
             <strong>Add Override:</strong>
             <label>
-                <input type="radio" name="scope" value="domain" checked>
+                <input type="radio" name="scope-{{ loop.index }}" value="domain" checked>
                 Domain only ({{ override_domain }})
             </label>
             {% if url.split('/')|length > 3 and url.split('/')[3] %}
             <label>
-                <input type="radio" name="scope" value="path">
+                <input type="radio" name="scope-{{ loop.index }}" value="path">
                 Domain + first path ({{ override_path_scope }})
             </label>
             {% endif %}
