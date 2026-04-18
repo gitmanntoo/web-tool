@@ -478,8 +478,9 @@ uv run pytest tests/
 | `TestStaleBatchId` | test_clipboard.py | 2 | Stale batch_id handling |
 | `TestPyperclipException` | test_clipboard.py | 2 | PyperclipException recovery |
 | `TestExistingClipboardError` | test_clipboard.py | 1 | Pre-existing clipboardError |
+| `TestEncodeDataUrlInline` | test_img_util.py | 4 | Data URL inline encoding |
 
-**Total: 333 tests across 15 test modules**
+**Total: 340 tests across 15 test modules**
 
 ## Continuous Integration
 

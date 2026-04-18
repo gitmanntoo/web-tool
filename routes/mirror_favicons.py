@@ -20,7 +20,19 @@ def validate_favicons(favicons: list, url: str) -> list:
     for favicon in favicons:
         favicon.cache_source = html_util.get_favicon_cache_source(url, favicon.href)
 
-        if size := url_util.get_image_size(favicon.href):
+        # Use inline dimensions if available
+        inline = favicon.inline_image
+        if isinstance(inline, dict) and "width" in inline and "height" in inline:
+            favicon.width = inline["width"]
+            favicon.height = inline["height"]
+            favicon.image_type = "image/png"
+            valid_favicons.append(favicon)
+        elif favicon.href.startswith("data:"):
+            favicon.width = 20
+            favicon.height = 20
+            favicon.image_type = "image/png"
+            valid_favicons.append(favicon)
+        elif size := url_util.get_image_size(favicon.href):
             favicon.width = size.width
             favicon.height = size.height
             favicon.image_type = size.image_type
@@ -85,8 +97,18 @@ def get_mirror_favicons():
             metadata.url, cache_favicon.href
         )
 
-        # Try to get image size, but include even if it fails
-        if size := url_util.get_image_size(cache_favicon.href):
+        # Derive size from inline_image dict if available
+        inline = cache_favicon.inline_image
+        if isinstance(inline, dict) and "width" in inline and "height" in inline:
+            cache_favicon.width = inline["width"]
+            cache_favicon.height = inline["height"]
+            cache_favicon.image_type = "image/png"
+        elif cache_favicon.href.startswith("data:"):
+            # Data URL: can't fetch via HTTP, use defaults
+            cache_favicon.width = 20
+            cache_favicon.height = 20
+            cache_favicon.image_type = "image/png"
+        elif size := url_util.get_image_size(cache_favicon.href):
             cache_favicon.width = size.width
             cache_favicon.height = size.height
             cache_favicon.image_type = size.image_type
@@ -213,13 +235,30 @@ def add_favicon_override():
 
         # Add the new override
         if save_inline:
-            # Encode favicon inline (resized to height=20) and store as dict
-            inline_data = img_util.encode_favicon_inline(favicon_url, html_util.FAVICON_HEIGHT)
-            if inline_data:
-                overrides[cache_key] = {"url": favicon_url, "inline_image": inline_data}
+            if favicon_url.startswith("data:"):
+                # Data URL: decode base64 directly instead of fetching via HTTP
+                inline_data = img_util.encode_data_url_inline(
+                    favicon_url, html_util.FAVICON_HEIGHT
+                )
+                if inline_data:
+                    overrides[cache_key] = {
+                        "url": favicon_url,
+                        "inline_image": inline_data,
+                    }
+                else:
+                    overrides[cache_key] = favicon_url
             else:
-                # Fallback to URL if encoding fails
-                overrides[cache_key] = favicon_url
+                # HTTP URL: fetch and encode inline
+                inline_data = img_util.encode_favicon_inline(
+                    favicon_url, html_util.FAVICON_HEIGHT
+                )
+                if inline_data:
+                    overrides[cache_key] = {
+                        "url": favicon_url,
+                        "inline_image": inline_data,
+                    }
+                else:
+                    overrides[cache_key] = favicon_url
         else:
             overrides[cache_key] = favicon_url
 

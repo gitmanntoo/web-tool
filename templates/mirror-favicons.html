@@ -191,7 +191,11 @@
     {% for f in favicons %}
     <div class="favicon-entry{% if f.image_type == 'invalid' %} invalid{% endif %}">
         <p>
+            {% if f.href.startswith('data:') %}
+            <span class="variant-value">{{ f.href[:30]|e }}...{{ f.href[-20:]|e }}</span>
+            {% else %}
             <a href="{{ f.href }}">{{ f.href|e }}</a>
+            {% endif %}
 
             {% if f.cache_source.file %}
                 {% if f.cache_source.file == 'override' %}
@@ -222,16 +226,22 @@
 
         {% if f.image_type != 'invalid' %}
         <p>
+            {% if f.href.startswith('data:') and f.inline_image_src %}
+            <img src="{{ f.inline_image_src }}" height="20" alt="20px height preview" /> 20px height preview
+            {% else %}
             <img src="{{ f.href }}" height="20" alt="20px height preview" /> 20px height preview
+            {% endif %}
         </p>
-        {% if f.inline_image %}
+        {% if f.inline_image_src %}
         <p>
-            <img src="{{ f.inline_image }}" alt="Inline preview" /> Inline (base64, 20px height)
+            <img src="{{ f.inline_image_src }}" alt="Inline preview" /> Inline (base64, 20px height)
         </p>
         {% endif %}
+        {% if not f.href.startswith('data:') %}
         <p>
             <img src="{{ f.href }}" alt="Full size"/> Full size ({{ f.width }}x{{ f.height }})
         </p>
+        {% endif %}
         {% else %}
         <p><em>Image failed to load - URL may be broken or inaccessible</em></p>
         {% endif %}

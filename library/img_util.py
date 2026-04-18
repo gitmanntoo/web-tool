@@ -165,6 +165,34 @@ def encode_image_inline(image_bytes: bytes, target_height: int = 20) -> dict | N
         return None
 
 
+def encode_data_url_inline(data_url: str, target_height: int = 20) -> dict | None:
+    """Encode a data URL as a base64 PNG string, resized to target height.
+
+    Extracts base64 payload from a data: URL and processes it through
+    encode_image_inline. Handles data:image/png;base64,... format.
+
+    Args:
+        data_url: Data URL string (e.g. "data:image/png;base64,...")
+        target_height: Target height in pixels (default: 20)
+
+    Returns:
+        Dict with keys "data_url", "width", "height" or None on failure
+    """
+    try:
+        if not data_url.startswith("data:"):
+            return None
+
+        # Parse "data:image/TYPE;base64,PAYLOAD"
+        comma_idx = data_url.index(",")
+        b64_payload = data_url[comma_idx + 1 :]
+        image_bytes = base64.b64decode(b64_payload)
+
+        return encode_image_inline(image_bytes, target_height)
+    except (ValueError, IndexError) as e:
+        logging.warning(f"Failed to decode data URL: {e}")
+        return None
+
+
 @lru_cache(maxsize=128)
 def encode_favicon_inline(href: str, target_height: int = 20) -> dict | None:
     """Encode a favicon as a base64 PNG string, resized to target height.

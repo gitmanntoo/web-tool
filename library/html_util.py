@@ -89,8 +89,15 @@ class RelLink:
     height: int = 0
     width: int = 0
     image_type: str = None
-    inline_image: str = None
+    inline_image: str | dict = None
     _validated: bool = False
+
+    @property
+    def inline_image_src(self) -> str | None:
+        """Return the data URL string for inline_image, whether stored as dict or string."""
+        if isinstance(self.inline_image, dict):
+            return self.inline_image.get("data_url")
+        return self.inline_image
 
     def validate(self) -> bool:
         """Lazily fetch the href and get image details.
