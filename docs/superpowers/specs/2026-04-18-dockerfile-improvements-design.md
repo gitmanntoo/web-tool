@@ -46,7 +46,7 @@ Replace Python one-liner with `wget`:
 wget -q --spider http://localhost:8532/ || exit 1
 ```
 
-`--spider` validates the URL responds without downloading the body. `wget` is pre-installed in `python:3.14-slim`.
+`--spider` validates the URL responds without downloading the body. `wget` is installed via `apt-get` in the runtime stage (~4MB installed size).
 
 ### .dockerignore Updates
 
