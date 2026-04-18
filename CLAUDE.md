@@ -116,6 +116,17 @@ Keep work narrowly scoped to the current task. Resist the urge to improve adjace
 
 This prevents surprise PRs and ensures the user controls when and how their work is shared.
 
+#### 7. Test Documentation
+
+When writing tests, always add a comment describing what the test does and why it is important.
+
+- **Describe the behavior being tested** — What specific scenario or edge case does this cover?
+- **Explain the importance** — Why does this test matter? What would break if this behavior changed?
+- **Keep it concise** — One or two sentences is usually sufficient.
+- **Update comments when tests change** — Ensure the description stays accurate.
+
+**The test:** Can someone reading the test file understand the intent without reading the implementation?
+
 ## Development Commands
 
 ### Setup & Running
