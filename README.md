@@ -37,38 +37,6 @@ If the port is changed, the bookmarklets will need to be updated with the new po
     - Display the HTML source of the page using plain text.
     - This should always work.
 
-## Use Docker
-
-Stops any running container, pulls the latest image, and starts with auto-restart and local favicon cache storage:
-
-<pre>
-PORT=8532
-DATA_DIR=$(pwd)/web-tool
-
-# Create data directory before Docker creates it as root.
-mkdir -p "${DATA_DIR}"
-
-# Stop and remove the currently running web-tool, ignoring errors.
-docker stop web-tool || true
-docker rm web-tool || true
-
-# Download the latest image and run it.
-docker pull dockmann/web-tool
-docker run -d --restart always \
-  -p ${PORT}:8532 \
-  -v ${DATA_DIR}:/data \
-  --name web-tool dockmann/web-tool
-</pre>
-
-## Dependencies
-
-- [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) for HTML parsing.
-- [CairoSVG](https://cairosvg.org/) for SVG conversion.
-- [Magika](https://google.github.io/magika/) for content type identification.
-- [NLTK :: Natural Language Toolkit](https://www.nltk.org/) for word identification.
-- [Pillow](https://pillow.readthedocs.io/en/stable/) for ICO conversion.
-- [Prism](https://prismjs.com/index.html) for syntax highlighting in HTML pages.
-
 ## Favicon Configuration
 
 web-tool uses a three-tier favicon cache system:
@@ -165,3 +133,37 @@ Container detection status and clipboard proxy testing are available at:
     - <strong><a href="http://localhost:8532/test-pages-interactive" target="_blank">Interactive test page builder</a></strong> — configure parameters and load test pages in the browser
     - <a href="http://localhost:8532/test-page" target="_blank">Raw test page</a> — parameterized endpoint for direct URL access
     - Parameters: `title`, `fragment`, `anchor-fragment`, `wrap-fragment`, `url-has-parens`, `url-has-brackets`, `url-has-space`, `unicode-content`, `emoji-content`
+
+## Use Docker
+
+Stops any running container, pulls the latest image, and starts with auto-restart and local favicon cache storage.
+- `DATA_DIR` is used to store an optional local favicon cache. If omitted, favicon overrides will not be saved.
+
+<pre>
+PORT=8532
+DATA_DIR=$(pwd)/web-tool
+
+# Create data directory owned by current user so appuser (uid 1000) can write to it.
+mkdir -p "${DATA_DIR}"
+
+# Stop and remove the currently running web-tool, ignoring errors.
+docker stop web-tool || true
+docker rm web-tool || true
+
+# Download the latest image and run it.
+docker pull dockmann/web-tool
+docker run -d --restart always \
+  -p ${PORT}:8532 \
+  -v ${DATA_DIR}:/data \
+  --name web-tool dockmann/web-tool
+</pre>
+
+## Dependencies
+
+- [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) for HTML parsing.
+- [CairoSVG](https://cairosvg.org/) for SVG conversion.
+- [Magika](https://google.github.io/magika/) for content type identification.
+- [NLTK :: Natural Language Toolkit](https://www.nltk.org/) for word identification.
+- [Pillow](https://pillow.readthedocs.io/en/stable/) for ICO conversion.
+- [Prism](https://prismjs.com/index.html) for syntax highlighting in HTML pages.
+
