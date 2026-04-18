@@ -50,11 +50,18 @@
             });
         }
 
+        function truncateMiddle(str, maxLen) {
+            if (str.length <= maxLen) return str;
+            const half = Math.floor((maxLen - 3) / 2);
+            return str.slice(0, half) + '...' + str.slice(-half);
+        }
+
         function addPastedFaviconEntry(data, pageUrl, overrideDomain, overridePathScope, hasPathScope) {
             const container = document.getElementById('paste-favicon-section');
             if (!container) return;
             const dataUrl = `data:image/png;base64,${data.base64}`;
             const escapedDataUrl = escapeHtml(dataUrl);
+            const escapedBase64 = escapeHtml(data.base64);
             const escapedPageUrl = escapeHtml(pageUrl);
             const escapedOverrideDomain = escapeHtml(overrideDomain);
             const escapedOverridePathScope = escapeHtml(overridePathScope);
@@ -63,7 +70,7 @@
             pastedDiv.className = 'favicon-entry favicon-pasted-entry';
             pastedDiv.innerHTML = `
                 <p>
-                    <a href="${escapedDataUrl}">${escapedDataUrl}</a>
+                    <span class="variant-value">${truncateMiddle(escapedBase64, 60)}</span>
                     <span class="badge"><span class="badge-dot badge-dot--muted"></span>NOT CACHED</span>
                     <span class="badge"><span class="badge-dot badge-dot--primary"></span>PASTED</span>
                     <span class="badge"><span class="badge-dot badge-dot--primary"></span>INLINE</span>
