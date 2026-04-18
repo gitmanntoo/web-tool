@@ -105,6 +105,17 @@ Keep work narrowly scoped to the current task. Resist the urge to improve adjace
 
 **The test:** After completing the task, only the lines directly related to the request should have changed. If you "couldn't help but notice" something and fixed it, you went too far.
 
+### Pull Request Discipline
+
+**Never create a pull request without asking the user first.**
+
+- Do not run `gh pr create` or equivalent commands unless explicitly instructed.
+- Do not push branches to remote without confirmation.
+- When work is complete, present a summary and ask: "Ready to create a PR?" or "Shall I push this branch?"
+- Wait for explicit user approval before creating PRs, pushing branches, or opening GitHub/Merge requests.
+
+This prevents surprise PRs and ensures the user controls when and how their work is shared.
+
 ## Development Commands
 
 ### Setup & Running
@@ -182,7 +193,7 @@ Keep work narrowly scoped to the current task. Resist the urge to improve adjace
 - **Doc sync:** When adding/removing test files or test classes, update `TESTING.md` and `TEST_COVERAGE.md` in the same commit or a follow-up — update both test count totals and list new classes
 - **Unused variables:** Run `ruff check --select F841` before committing; unused assignments in tests often indicate incomplete assertions
 - **Test pattern consistency:** When adding paired tests (e.g., ICO/SVG variants), match the existing test's structure exactly — don't assign `result` if sibling test doesn't use it
-- **Test count tracking:** Total test count is tracked in `TEST_COVERAGE.md` — update when adding tests (current: 333)
+- **Test count tracking:** Total test count is tracked in `TEST_COVERAGE.md` — update when adding tests (current: 340)
 - **JS template testing:** Template rendering tests (`test_js_escaping.py`) verify JS variable names and structure in rendered output, but cannot catch runtime ReferenceErrors — use Playwright/browser testing for JS runtime bugs
 
 ## Workflow
