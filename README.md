@@ -78,61 +78,43 @@ Container detection status and clipboard proxy testing are available at:
     - <a href="http://localhost:8532/test-page" target="_blank">Raw test page</a> — parameterized endpoint for direct URL access
     - Parameters: `title`, `fragment`, `anchor-fragment`, `wrap-fragment`, `url-has-parens`, `url-has-brackets`, `url-has-space`, `unicode-content`, `emoji-content`
 
-## Favicon Configuration
+## Favicon Cache
 
-web-tool uses a three-tier favicon cache system:
+web-tool uses a three-tier favicon cache, checked in priority order:
 
-1. **User Overrides** (`static/favicon-overrides.yml`) - Highest priority
-   - Manual customizations that always take precedence
-   - Edit this file to set your preferred favicons for specific sites
-   - Format: `cache_key: favicon_url`
+1. **User Overrides** (`static/favicon-overrides.yml`) — highest priority, manually added via UI or file edit
+2. **App Defaults** (`static/favicon.yml`) — curated favicons shipped with the app
+3. **Auto-discovered** (`local-cache/favicon.yml`, or `/data/favicon.yml` in containers) — cached on first use
 
-2. **App Defaults** (`static/favicon.yml`) - Medium priority
-   - Curated defaults distributed with the application
-   - Updated with new releases
+Lookup searches by progressively broader keys (`docs.google.com/spreadsheets` → `docs.google.com` → `google.com`), checking overrides first, then defaults, then discovered. First match wins.
 
-3. **Auto-discovered** (`local-cache/favicon.yml` or `/data/favicon.yml` in container) - Lowest priority
-   - Dynamically discovered favicons automatically cached on first use
-   - Persists across restarts
+### Inline Images
 
-When looking up a favicon, web-tool searches from most specific to least specific:
-`netloc/path` → `subdomain.domain.tld` → `domain.tld`, checking overrides first, then defaults, then auto-discovered cache.
-
-### Managing Favicon Overrides
-
-**Via UI (Recommended):**
-- Navigate to `/mirror-favicons?url=<page_url>` to see all available favicons for a page
-- Click "Add to Overrides" button to add domain or path-based overrides
-- Changes take effect immediately
-
-**Via File Edit:**
-
-Edit `static/favicon-overrides.yml` directly:
+Overrides can store favicons as inline base64 PNGs, avoiding remote fetches at render time:
 
 <pre>
-# Domain-level override (applies to all pages on domain)
-google.com: https://www.google.com/favicon.ico
+# Plain URL
+crummy.com: https://www.crummy.com/favicon.ico
 
-# Path-level override (applies to specific section)
-github.com/microsoft: https://github.githubassets.com/favicons/favicon.png
+# Inline image (added via UI with "Save as inline" checked)
+ibm.com:
+  url: https://www.ibm.com/content/dam/adobe-cms/default/images/icon-512x512.png
+  inline_image:
+    data_url: data:image/png;base64,iVBORw0KGgo...
+    width: 20
+    height: 20
 </pre>
 
-**Cache Key Rules:**
-- **Domain only**: `example.com` - applies to all pages on the domain
-- **Domain + path**: `example.com/docs` - applies to specific section (first path segment)
-- www prefix is automatically normalized (`www.example.com` → `example.com`)
-- More specific keys take precedence (path > subdomain > domain)
+Inline images are resized to 20px height. Only overrides support inline images; defaults and auto-discovered entries store plain URLs.
 
-**Examples:**
-<pre>
-# Domain-level
-ibm.com: https://www.ibm.com/favicon.ico
-github.com: https://github.githubassets.com/favicons/favicon.svg
+### Adding Overrides
 
-# Path-level
-docs.python.org/3: https://docs.python.org/3/_static/py.svg
-stackoverflow.com/questions: https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico
-</pre>
+**Via UI:** Navigate to `/mirror-favicons?url=<page_url>`, click "Add to Overrides" on any favicon. Check "Save as inline" to embed the image as base64.
+
+**Via file edit:** Add entries to `static/favicon-overrides.yml`. Keys are normalized domains (`www.` is stripped):
+
+- **Domain only**: `example.com` — matches all pages on the domain
+- **Domain + path**: `example.com/docs` — matches the first path segment
 
 ## Running with Docker
 
