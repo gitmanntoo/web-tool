@@ -12,7 +12,9 @@ COPY --from=ghcr.io/astral-sh/uv:0.11.6 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# Copy dependency manifests first (cache-friendly: code changes don't invalidate pip layer)
+# Copy dependency manifests first; source code must also be present for
+# `uv pip install .` (setuptools requires all package dirs), so any source
+# change does invalidate the install layer — but system/base layers stay cached
 COPY pyproject.toml uv.lock ./
 
 # Copy source code (setuptools requires all package dirs present)
@@ -38,7 +40,7 @@ RUN apt-get update && \
         libcairo2 wget && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy installed Python packages from builder
+# Copy installed Python packages from builder (path must match PYTHON_VERSION in FROM lines)
 COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 
 # Copy NLTK data from builder
