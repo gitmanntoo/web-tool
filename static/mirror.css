@@ -378,6 +378,10 @@ h1 {
     color: var(--color-text-muted);
 }
 
+.text-input--small {
+    width: 80px;
+}
+
 /* ============================================
    Code Block
    ============================================ */
@@ -445,6 +449,10 @@ h1 {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
     margin-top: var(--space-sm);
+}
+
+.text-muted {
+    color: var(--color-text-secondary);
 }
 
 /* ============================================

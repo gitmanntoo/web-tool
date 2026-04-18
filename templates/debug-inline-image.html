@@ -14,10 +14,10 @@
         <div class="panel-label">Height</div>
         <div class="height-row">
             <input type="number" id="height-input" value="20" min="1" max="100"
-                   class="text-input" style="width: 80px;">
+                   class="text-input text-input--small">
             <span>×</span>
             <input type="number" id="width-display" disabled
-                   class="text-input" style="width: 80px;">
+                   class="text-input text-input--small">
             <span>px</span>
         </div>
     </div>
@@ -28,9 +28,8 @@
             <button id="paste-btn" class="btn-primary">
                 Paste Image
             </button>
-            <span style="color: var(--color-text-secondary);">or</span>
-            <input type="file" id="file-input" accept="image/*"
-                   style="font-size: 14px;">
+            <span class="text-muted">or</span>
+            <input type="file" id="file-input" accept="image/*">
         </div>
         <p class="image-input-hint">
             Max file size: 5MB. Images over 2000px in any dimension will be rejected.

@@ -121,7 +121,7 @@ The production and debug pages work functionally but look dated — generic Aria
 - Extracted to `static/js/tooltip.js`
 - `position: absolute`, `background: var(--color-text)`, white text
 - `border-radius: var(--radius-sm)`, `var(--font-size-xs)`
-- Auto-remove after 2 seconds
+- Auto-remove after 1500ms
 
 ### Primary Button (`.btn-primary`)
 
