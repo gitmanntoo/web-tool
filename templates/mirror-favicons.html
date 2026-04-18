@@ -50,11 +50,18 @@
             });
         }
 
+        function truncateMiddle(str, maxLen) {
+            if (str.length <= maxLen) return str;
+            const half = Math.floor((maxLen - 3) / 2);
+            return str.slice(0, half) + '...' + str.slice(-half);
+        }
+
         function addPastedFaviconEntry(data, pageUrl, overrideDomain, overridePathScope, hasPathScope) {
             const pastePanel = document.getElementById('paste-favicon-panel');
             if (!pastePanel) return;
             const dataUrl = `data:image/png;base64,${data.base64}`;
             const escapedDataUrl = escapeHtml(dataUrl);
+            const escapedBase64 = escapeHtml(data.base64);
             const escapedPageUrl = escapeHtml(pageUrl);
             const escapedOverrideDomain = escapeHtml(overrideDomain);
             const escapedOverridePathScope = escapeHtml(overridePathScope);
@@ -63,16 +70,16 @@
             pastedDiv.className = 'favicon-entry favicon-pasted-entry';
             pastedDiv.innerHTML = `
                 <p>
-                    <a href="${escapedDataUrl}">${escapedDataUrl}</a>
+                    <span class="variant-value">${truncateMiddle(escapedBase64, 60)}</span>
                     <span class="badge"><span class="badge-dot badge-dot--muted"></span>NOT CACHED</span>
                     <span class="badge"><span class="badge-dot badge-dot--primary"></span>PASTED</span>
                 </p>
-                <p>Image Type: image/png | Size: ${escapeHtml(data.height) || 20}x${escapeHtml(data.width) || 20}</p>
+                <p>Image Type: image/png | Size: ${escapeHtml(data.height_orig) || escapeHtml(data.height) || 20}x${escapeHtml(data.width_orig) || escapeHtml(data.width) || 20}</p>
                 <p>
                     <img src="${escapedDataUrl}" height="20" alt="20px height preview" /> 20px height preview
                 </p>
                 <p>
-                    <img src="${escapedDataUrl}" alt="Full size" /> Full size (${escapeHtml(data.width) || 20}x${escapeHtml(data.height) || 20})
+                    <img src="${escapedDataUrl}" alt="Full size" /> Full size (${escapeHtml(data.width_orig) || escapeHtml(data.width) || 20}x${escapeHtml(data.height_orig) || escapeHtml(data.height) || 20})
                 </p>
                 <div class="override-form" id="form-pasted-1">
                     <strong>Add Override:</strong>
