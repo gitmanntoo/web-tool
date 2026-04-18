@@ -21,7 +21,7 @@ let _pasteKeyHandler = null; // keydown handler for Esc cancel
  */
 function showPasteTooltip(btn, message) {
     // Remove any existing tooltip
-    const existing = btn.querySelector('.tooltip');
+    const existing = document.body.querySelector('.tooltip');
     if (existing) existing.remove();
 
     const tooltip = document.createElement('span');
@@ -29,9 +29,9 @@ function showPasteTooltip(btn, message) {
     tooltip.textContent = message;
 
     const rect = btn.getBoundingClientRect();
-    // Position below the button, left-aligned
-    tooltip.style.left = rect.left + 'px';
-    tooltip.style.top = (rect.bottom + 4) + 'px';
+    // Position below the button, left-aligned (account for scroll)
+    tooltip.style.left = (rect.left + window.scrollX) + 'px';
+    tooltip.style.top = (rect.bottom + window.scrollY + 4) + 'px';
 
     document.body.appendChild(tooltip);
 

@@ -14,7 +14,7 @@
 
             button.disabled = true;
             messageEl.textContent = 'Adding override...';
-            messageEl.className = 'override-success';
+            messageEl.className = 'override-message override-success';
 
             fetch('/add-favicon-override', {
                 method: 'POST',
@@ -32,19 +32,19 @@
             .then(data => {
                 if (data.success) {
                     messageEl.textContent = '✓ Override added: ' + data.cache_key;
-                    messageEl.className = 'override-success';
+                    messageEl.className = 'override-message override-success';
                     setTimeout(() => {
                         location.reload();
                     }, 1500);
                 } else {
                     messageEl.textContent = '✗ Error: ' + data.error;
-                    messageEl.className = 'override-error';
+                    messageEl.className = 'override-message override-error';
                     button.disabled = false;
                 }
             })
             .catch(err => {
                 messageEl.textContent = '✗ Error: ' + err.message;
-                messageEl.className = 'override-error';
+                messageEl.className = 'override-message override-error';
                 button.disabled = false;
             });
         }
