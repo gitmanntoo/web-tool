@@ -24,10 +24,11 @@ tests/
 ├── test_integration_pages.py    # Integration tests (~21 tests)
 ├── test_js_escaping.py          # JavaScript escaping tests (~13 tests)
 ├── test_markdown_escaping.py    # Markdown link escaping tests (~31 tests)
-└── test_url_decoding.py         # URL decoding tests (~6 tests)
+├── test_url_decoding.py         # URL decoding tests (~6 tests)
+└── test_clipboard.py            # Clipboard loading tests (~5 tests)
 ```
 
-**Total: 328 test cases across 14 test modules**
+**Total: 333 test cases across 15 test modules**
 
 ## Module-by-Module Coverage
 
@@ -265,6 +266,14 @@ tests/
 - URL with percent-encoded hash
 - Already-decoded URLs
 - Empty URL handling
+
+### 14. `test_clipboard.py` (~5 tests)
+**Purpose:** Test clipboard loading in PageMetadata
+
+**Test Classes:**
+- `TestStaleBatchId` (2 tests) - Stale batch_id handling (consumed/expired batches)
+- `TestPyperclipException` (2 tests) - PyperclipException recovery (Docker/headless environments)
+- `TestExistingClipboardError` (1 test) - Pre-existing clipboardError skips clipboard access
 
 ## Testing Best Practices Implemented
 

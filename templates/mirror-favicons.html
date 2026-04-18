@@ -34,9 +34,28 @@
                 if (data.success) {
                     messageEl.textContent = '✓ Override added: ' + data.cache_key;
                     messageEl.className = 'override-message override-success';
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    button.disabled = true;
+
+                    // Update badge from NOT CACHED to OVERRIDE
+                    const entry = form.closest('.favicon-entry');
+                    if (entry) {
+                        const notCachedDot = entry.querySelector('.badge-dot--muted');
+                        if (notCachedDot) {
+                            notCachedDot.classList.remove('badge-dot--muted');
+                            notCachedDot.classList.add('badge-dot--primary');
+                            const badge = notCachedDot.closest('.badge');
+                            if (badge) badge.lastChild.textContent = 'OVERRIDE';
+                        }
+                    }
+
+                    // Increment override cache count
+                    const overrideCount = document.querySelector('.cache-item--override .badge');
+                    if (overrideCount) {
+                        const match = overrideCount.textContent.match(/(\d+)/);
+                        if (match) {
+                            overrideCount.lastChild.textContent = (parseInt(match[1]) + 1) + ' entries';
+                        }
+                    }
                 } else {
                     messageEl.textContent = '✗ Error: ' + data.error;
                     messageEl.className = 'override-message override-error';

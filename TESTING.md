@@ -475,8 +475,11 @@ uv run pytest tests/
 | `TestMarkdownUrlWrapping` | test_markdown_escaping.py | 9 | Markdown URL wrapping |
 | `TestBuildMarkdownLink` | test_markdown_escaping.py | 8 | Markdown link construction |
 | `TestRealWorldExamples` | test_markdown_escaping.py | 4 | Real-world escaping scenarios |
+| `TestStaleBatchId` | test_clipboard.py | 2 | Stale batch_id handling |
+| `TestPyperclipException` | test_clipboard.py | 2 | PyperclipException recovery |
+| `TestExistingClipboardError` | test_clipboard.py | 1 | Pre-existing clipboardError |
 
-**Total: 328 tests across 14 test modules**
+**Total: 333 tests across 15 test modules**
 
 ## Continuous Integration
 
