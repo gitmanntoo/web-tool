@@ -197,7 +197,7 @@ function disarmPaste(btn) {
  * @param {HTMLButtonElement} btn
  * @param {HTMLElement} container
  */
-async function handlePasteFavicon(btn, container) {
+async function handlePasteFavicon(btn, container, options = {}) {
     // Disarm any previous paste session
     disarmPaste(null);
 
@@ -251,6 +251,11 @@ async function handlePasteFavicon(btn, container) {
                     state.faviconOption = option;
                 }
             });
+
+            // Call onPasted callback if provided
+            if (options.onPasted) {
+                options.onPasted(data);
+            }
 
             btn.textContent = 'Pasted!';
         } catch (err) {
