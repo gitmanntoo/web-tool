@@ -83,6 +83,16 @@
         </p>
     </div>
 
+    <div class="panel">
+        <div class="panel-label">Paste Favicon</div>
+        <div class="variant-list" id="paste-favicon-section">
+            <div class="variant-row">
+                <button class="paste-favicon-btn" id="paste-favicon-btn">Paste Favicon</button>
+                <span class="variant-label"><strong>&lt;-- Click to paste</strong></span>
+            </div>
+        </div>
+    </div>
+
     <h2>Available Favicons (sorted by preference)</h2>
     {% for f in favicons %}
     <div class="favicon-entry{% if f.image_type == 'invalid' %} invalid{% endif %}">
