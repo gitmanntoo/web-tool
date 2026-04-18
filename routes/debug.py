@@ -326,6 +326,8 @@ def debug_inline_image():
                 "base64": base64_part,
                 "width": result["width"],
                 "height": result["height"],
+                "width_orig": result["width_orig"],
+                "height_orig": result["height_orig"],
             }
         )
     except Exception:

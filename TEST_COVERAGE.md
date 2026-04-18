@@ -16,7 +16,7 @@ tests/
 ├── test_unicode_util.py         # Unicode utility tests (~13 tests)
 ├── test_text_util.py            # Text processing tests (~44 tests)
 ├── test_url_util.py             # URL parsing tests (~22 tests)
-├── test_html_util.py            # HTML/favicon tests (~37 tests)
+├── test_html_util.py            # HTML/favicon tests (~40 tests)
 ├── test_docker_util.py          # Container detection tests (~16 tests)
 ├── test_img_util.py             # Image conversion tests (~55 tests)
 ├── test_favicon_validation.py   # Favicon validation tests (~9 tests)
@@ -24,10 +24,11 @@ tests/
 ├── test_integration_pages.py    # Integration tests (~21 tests)
 ├── test_js_escaping.py          # JavaScript escaping tests (~13 tests)
 ├── test_markdown_escaping.py    # Markdown link escaping tests (~31 tests)
-└── test_url_decoding.py         # URL decoding tests (~6 tests)
+├── test_url_decoding.py         # URL decoding tests (~6 tests)
+└── test_clipboard.py            # Clipboard loading tests (~5 tests)
 ```
 
-**Total: 328 test cases across 14 test modules**
+**Total: 340 test cases across 15 test modules**
 
 ## Module-by-Module Coverage
 
@@ -92,7 +93,7 @@ tests/
 - `normalize_netloc()` - www prefix stripping, schemeless URL support
 - `get_first_path_segment()` - path segment extraction for cache key scoping
 
-### 4. `test_html_util.py` (~37 tests)
+### 4. `test_html_util.py` (~40 tests)
 **Purpose:** Test HTML parsing, favicon discovery, and metadata
 
 **Test Classes:**
@@ -101,7 +102,7 @@ tests/
 - `TestFaviconCacheStructure` (3 tests) - Cache path configuration
 - `TestRelLinkValidation` (5 tests) - Link validation logic
 - `TestRelLinkComparison` (3 tests) - Link comparison
-- `TestRelLinkInlineImage` (3 tests) - inline_image field handling
+- `TestRelLinkInlineImage` (6 tests) - inline_image field handling and inline_image_src property
 - `TestGetFaviconCacheDictFormat` (3 tests) - Dict-format cache entries
 - `TestGetFaviconCacheSource` (3 tests) - Cache source detection with dict format
 - `TestPrettifyHtml` (5 tests) - HTML pretty-printing
@@ -136,7 +137,7 @@ tests/
 - Exception handling for missing/unreadable files
 - Integration with actual system
 
-### 6. `test_img_util.py` (~55 tests)
+### 6. `test_img_util.py` (~59 tests)
 **Purpose:** Test image conversion utilities
 
 **Test Classes:**
@@ -148,6 +149,7 @@ tests/
 - `TestEncodeFaviconInline` (12 tests) - Favicon inline base64 encoding
 - `TestEncodeFaviconInlineIntegration` (2 tests) - Integration tests
 - `TestEncodeImageInline` (11 tests) - Image inline base64 encoding
+- `TestEncodeDataUrlInline` (4 tests) - Data URL inline encoding
 
 **Coverage:**
 - Function signatures and parameters
@@ -265,6 +267,14 @@ tests/
 - URL with percent-encoded hash
 - Already-decoded URLs
 - Empty URL handling
+
+### 14. `test_clipboard.py` (~5 tests)
+**Purpose:** Test clipboard loading in PageMetadata
+
+**Test Classes:**
+- `TestStaleBatchId` (2 tests) - Stale batch_id handling (consumed/expired batches)
+- `TestPyperclipException` (2 tests) - PyperclipException recovery (Docker/headless environments)
+- `TestExistingClipboardError` (1 test) - Pre-existing clipboardError skips clipboard access
 
 ## Testing Best Practices Implemented
 

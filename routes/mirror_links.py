@@ -92,11 +92,15 @@ def get_mirror_links():
     if metadata.favicons:
         # Use cached inline if available
         if metadata.favicons[0].inline_image:
-            favicon_inline = metadata.favicons[0].inline_image
-            # Cached inline images are pre-encoded at FAVICON_HEIGHT; use the
-            # constant as both dimensions since stored cache has no width record.
-            favicon_width = html_util.FAVICON_HEIGHT
-            favicon_height = html_util.FAVICON_HEIGHT
+            inline = metadata.favicons[0].inline_image
+            if isinstance(inline, dict):
+                favicon_inline = inline.get("data_url")
+                favicon_width = inline.get("width", html_util.FAVICON_HEIGHT)
+                favicon_height = inline.get("height", html_util.FAVICON_HEIGHT)
+            else:
+                favicon_inline = inline
+                favicon_width = html_util.FAVICON_HEIGHT
+                favicon_height = html_util.FAVICON_HEIGHT
         # Otherwise generate inline version from the favicon URL
         elif metadata.favicon_url:
             favicon_result = img_util.encode_favicon_inline(
@@ -168,7 +172,12 @@ def get_mirror_links():
             "html_size": metadata.mirror_data.htmlSize if metadata.mirror_data else 0,
             "url_variants": url_variants,
             "links": links,
-            "favicon": metadata.favicon_url,
+            "favicon": (
+                None
+                if metadata.favicon_url
+                and metadata.favicon_url.startswith("data:")
+                else metadata.favicon_url
+            ),
             "favicon_inline": favicon_inline,
             "favicon_width": favicon_width,
             "favicon_height": favicon_height,

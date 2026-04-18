@@ -705,5 +705,49 @@ class TestEncodeImageInline:
         assert result["width"] == 40  # 100/50 * 20
 
 
+class TestEncodeDataUrlInline:
+    """Tests for encode_data_url_inline function."""
+
+    def test_rejects_non_data_url(self):
+        """Non-data URLs should return None."""
+        from library.img_util import encode_data_url_inline
+
+        assert encode_data_url_inline("https://example.com/favicon.ico") is None
+
+    def test_decodes_valid_data_url(self):
+        """Valid data URL should decode and resize."""
+        from library.img_util import encode_data_url_inline
+
+        # Create a valid data URL from a real image
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        import base64
+
+        b64 = base64.b64encode(png_bytes).decode("ascii")
+        data_url = f"data:image/png;base64,{b64}"
+
+        result = encode_data_url_inline(data_url, target_height=20)
+        assert result is not None
+        assert "data_url" in result
+        assert "width" in result
+        assert "height" in result
+
+    def test_returns_none_for_invalid_base64(self):
+        """Invalid base64 in data URL should return None."""
+        from library.img_util import encode_data_url_inline
+
+        result = encode_data_url_inline("data:image/png;base64,not-valid-base64!!!")
+        assert result is None
+
+    def test_returns_none_for_malformed_data_url(self):
+        """Data URL without comma separator should return None."""
+        from library.img_util import encode_data_url_inline
+
+        result = encode_data_url_inline("data:image/png;base64")
+        assert result is None
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

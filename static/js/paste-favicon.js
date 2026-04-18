@@ -197,7 +197,7 @@ function disarmPaste(btn) {
  * @param {HTMLButtonElement} btn
  * @param {HTMLElement} container
  */
-async function handlePasteFavicon(btn, container) {
+async function handlePasteFavicon(btn, container, options = {}) {
     // Disarm any previous paste session
     disarmPaste(null);
 
@@ -246,11 +246,17 @@ async function handlePasteFavicon(btn, container) {
             // Send to server — receives resized base64 at height=20
             const data = await sendToServer(rawBase64);
 
-            addPastedFavicon(data.base64, container, (option) => {
-                if (typeof state !== 'undefined') {
-                    state.faviconOption = option;
-                }
-            });
+            // Call onPasted callback if provided (mirror-favicons handles its own block insertion)
+            if (options.onPasted) {
+                options.onPasted(data);
+            } else if (container) {
+                // Default: add pasted favicon to mirror-links variant list
+                addPastedFavicon(data.base64, container, (option) => {
+                    if (typeof state !== 'undefined') {
+                        state.faviconOption = option;
+                    }
+                });
+            }
 
             btn.textContent = 'Pasted!';
         } catch (err) {

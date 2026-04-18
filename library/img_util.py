@@ -143,6 +143,10 @@ def encode_image_inline(image_bytes: bytes, target_height: int = 20) -> dict | N
             )
             return None
 
+        # Capture original dimensions
+        width_orig = temp_img.width
+        height_orig = temp_img.height
+
         # Open the image
         img = Image.open(BytesIO(image_bytes))
 
@@ -155,9 +159,37 @@ def encode_image_inline(image_bytes: bytes, target_height: int = 20) -> dict | N
         png_bytes = png_buffer.getvalue()
 
         b64 = base64.b64encode(png_bytes).decode("ascii")
-        return {"data_url": f"data:image/png;base64,{b64}", "width": width, "height": height}
+        return {"data_url": f"data:image/png;base64,{b64}", "width": width, "height": height, "width_orig": width_orig, "height_orig": height_orig}
     except Exception as e:
         logging.warning(f"Failed to encode image inline: {e}")
+        return None
+
+
+def encode_data_url_inline(data_url: str, target_height: int = 20) -> dict | None:
+    """Encode a data URL as a base64 PNG string, resized to target height.
+
+    Extracts base64 payload from a data: URL and processes it through
+    encode_image_inline. Handles data:image/png;base64,... format.
+
+    Args:
+        data_url: Data URL string (e.g. "data:image/png;base64,...")
+        target_height: Target height in pixels (default: 20)
+
+    Returns:
+        Dict with keys "data_url", "width", "height" or None on failure
+    """
+    try:
+        if not data_url.startswith("data:"):
+            return None
+
+        # Parse "data:image/TYPE;base64,PAYLOAD"
+        comma_idx = data_url.index(",")
+        b64_payload = data_url[comma_idx + 1 :]
+        image_bytes = base64.b64decode(b64_payload)
+
+        return encode_image_inline(image_bytes, target_height)
+    except (ValueError, IndexError) as e:
+        logging.warning(f"Failed to decode data URL: {e}")
         return None
 
 
