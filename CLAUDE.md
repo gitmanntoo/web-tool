@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Preferences
+
+### Implementation Plans
+
+**Always create an implementation plan before making changes if one does not exist.**
+
+For any non-trivial task, use `TaskCreate` to build a checklist of steps. Then:
+
+1. Mark tasks as `in_progress` when starting work on them
+2. Mark tasks as `completed` when finished
+3. Create corresponding git commits to track progress in both the plan and in git
+
+**Commit linkage:** Each git commit message should reference the plan item it completes (e.g., "feat: add error handling for edge cases - completes plan item #3").
+
+This ensures:
+- Clear visibility into what was done and what's remaining
+- Git history that maps directly to the implementation plan
+- Easy to resume work if interrupted
+
 ## Development Commands
 
 ### Setup & Running
