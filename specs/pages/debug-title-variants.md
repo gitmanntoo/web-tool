@@ -74,30 +74,36 @@ On GET (no POST data), `input_title` is empty string and `title_variants` is emp
 ## Template HTML Structure
 
 ```html
-<h1>Debug Title Variants</h1>
+<div class="page-container">
+    <h1>Debug Title Variants</h1>
 
-<div class="metadata-panel">
-    <h2>Input</h2>
-    <form method="POST">
-        <input type="text" name="title" value="{{ input_title|e }}">
-        <button type="submit">Generate</button>
-    </form>
-</div>
-
-{% if title_variants %}
-<div class="metadata-panel">
-    <h2>Title Variants</h2>
-    <div class="url-list">
-        {% for variant in title_variants %}
-        <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6..."{% endif %}>
-            <button class="copy-btn" data-html="{{ variant.value|e }}">Copy</button>
-            <span><strong>{{ variant.label }}</strong></span>
-            <span>{{ variant.value|e }}</span>
-        </div>
-        {% endfor %}
+    <div class="panel">
+        <div class="panel-label">Input</div>
+        <form method="POST">
+            <div class="form-row">
+                <input type="text" name="title" value="{{ input_title|e }}" class="text-input" style="flex: 1;">
+                <button type="submit" class="btn-primary">Generate</button>
+            </div>
+        </form>
     </div>
+
+    {% if title_variants %}
+    <div class="panel">
+        <div class="panel-label">Title Variants</div>
+        <div class="variant-list">
+            {% for variant in title_variants %}
+            <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
+                <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
+                <span class="variant-label"><strong>{{ variant.label }}</strong></span>
+                <span>{{ variant.value|e }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
+
+<script src="/static/js/tooltip.js"></script>
 ```
 
 ---
@@ -106,9 +112,17 @@ On GET (no POST data), `input_title` is empty string and `title_variants` is emp
 
 | Class | Element |
 |-------|---------|
-| `.metadata-panel` | Form section, results section |
-| `.url-list` | Container for variant rows |
-| `.url-item` | Each variant row (label + value + copy button) |
+| `.page-container` | Outer wrapper for centered layout |
+| `.panel` | Form section, results section (elevated card) |
+| `.panel-label` | Section header text (e.g., "Input", "Title Variants") |
+| `.form-row` | Flex container for form input + button |
+| `.text-input` | Text input field with focus states |
+| `.btn-primary` | Generate button (primary action style) |
+| `.variant-list` | Container for variant rows |
+| `.variant-row` | Each variant row (label + value + copy button) |
+| `.variant-row--duplicate` | Modifier for duplicate variants (grays out row) |
+| `.variant-label` | Label column (e.g., "Original", "ASCII Only") |
+| `.btn-copy` | Copy button (pill style) |
 
 ---
 
@@ -116,10 +130,10 @@ On GET (no POST data), `input_title` is empty string and `title_variants` is emp
 
 **Copy buttons** use `data-html` dataset attribute:
 ```html
-<button class="copy-btn" data-html="{{ variant.value|e }}">Copy</button>
+<button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
 ```
 
-**`showTooltip(btn, message)`** — creates a temporary positioned tooltip span on the button, removes it after 1500ms.
+**`showTooltip(btn, message)`** — shared function from `/static/js/tooltip.js`. Creates a temporary tooltip using the `.tooltip` CSS class, removes it after 1500ms.
 
 **Copy behavior:**
 ```javascript
@@ -143,6 +157,6 @@ btn.addEventListener('click', () => {
 - [ ] GET /debug/title-variants → form renders, no results shown
 - [ ] POST empty title → form re-renders with empty input, no results
 - [ ] POST "Hello World" → 4 variant rows shown
-- [ ] Variant with duplicate value → row has `opacity: 0.6`
+- [ ] Variant with duplicate value → row has `.variant-row--duplicate` class
 - [ ] Click Copy → "Copied!" tooltip appears
 - [ ] Original, ASCII+Emoji, ASCII Only, Path Safe all shown with correct values

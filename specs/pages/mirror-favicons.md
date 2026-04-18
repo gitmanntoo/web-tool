@@ -127,21 +127,21 @@ Displays a summary of all three favicon cache files in precedence order.
 
 **Visual structure:**
 ```html
-<div class="cache-panel">
-  <h2>Three-Tier Cache System</h2>
+<div class="panel">
+  <div class="panel-label">Three-Tier Cache System</div>
   <p>Favicons are searched in order of precedence (highest to lowest):</p>
-  <div class="cache-file-list">
-    <div class="cache-file-item precedence-1">
-      <div class="cache-file-name">
+  <div class="variant-list">
+    <div class="cache-item cache-item--override">
+      <div class="cache-item__name">
         1. User Overrides
-        <span class="cache-badge cache-overrides">N entries</span>
+        <span class="badge"><span class="badge-dot badge-dot--primary"></span>N entries</span>
       </div>
-      <div class="cache-file-path">/absolute/path/to/favicon-overrides.yml</div>
-      <div class="cache-file-stats">Manual overrides - highest priority...</div>
+      <div class="cache-item__path">/absolute/path/to/favicon-overrides.yml</div>
+      <div class="cache-item__stats">Manual overrides - highest priority...</div>
     </div>
-    ... (precedence-2, precedence-3)
+    ... (cache-item--default, cache-item--discovered)
   </div>
-  <p><strong>Current URL:</strong> {{ url|e }}</p>
+  <p class="page-url"><strong>Current URL:</strong> {{ url|e }}</p>
 </div>
 ```
 
@@ -172,12 +172,12 @@ Iterates over `favicons` (sorted by preference) and renders one `.favicon-entry`
 **Cache source badge logic:**
 | Condition | Badge |
 |-----------|-------|
-| `f.cache_source.file == 'override'` | `cache-badge cache-override` with text "OVERRIDE" |
-| `f.cache_source.file == 'default'` | `cache-badge cache-default` with text "DEFAULT" |
-| `f.cache_source.file == 'discovered'` | `cache-badge cache-discovered` with text "DISCOVERED" |
-| `f.inline_image` is set | Additional `cache-badge cache-override` with text "INLINE" |
-| `f.cache_source.file` is None | `cache-badge cache-none` with text "NOT CACHED" |
-| `f.image_type == 'invalid'` | `cache-badge cache-invalid` with text "INVALID - FAILED TO LOAD" |
+| `f.cache_source.file == 'override'` | `.badge` with `.badge-dot--primary` dot + "OVERRIDE" text |
+| `f.cache_source.file == 'default'` | `.badge` with `.badge-dot--success` dot + "DEFAULT" text |
+| `f.cache_source.file == 'discovered'` | `.badge` with `.badge-dot--warning` dot + "DISCOVERED" text |
+| `f.inline_image` is set | Additional badge with `.badge-dot--primary` dot + "INLINE" text |
+| `f.cache_source.file` is None | `.badge` with `.badge-dot--muted` dot + "NOT CACHED" text |
+| `f.image_type == 'invalid'` | `.badge` with `.badge-dot--error` dot + "INVALID - FAILED TO LOAD" text |
 
 **Image preview:**
 - If `image_type != 'invalid'`: shows 20px height preview (`<img src="f.href" height="20">`), inline preview if available, and full-size preview
@@ -249,24 +249,31 @@ function addOverride(faviconHref, pageUrl, formId) {
 
 | Class | Element | Description |
 |-------|---------|-------------|
-| `.cache-panel` | Outer container | Three-tier cache system section |
-| `.cache-file-list` | Container | Wraps all `.cache-file-item` elements |
-| `.cache-file-item` | Item wrapper | Each cache tier entry; also gets `precedence-1`, `precedence-2`, or `precedence-3` |
-| `.precedence-N` | `.cache-file-item` | N = 1 (overrides), 2 (defaults), 3 (discovered) |
-| `.cache-file-name` | Name line | Contains tier name, precedence number, and `.cache-badge` |
-| `.cache-badge` | Badge span | Cache source badge; modifier classes below |
-| `.cache-override` | Badge modifier | Override badge (red/bold) |
-| `.cache-default` | Badge modifier | Default badge |
-| `.cache-discovered` | Badge modifier | Discovered badge |
-| `.cache-none` | Badge modifier | Not cached badge |
-| `.cache-invalid` | Badge modifier | Invalid image badge |
-| `.cache-key-info` | Span | Shows "cached as: {cache_key}" |
+| `.panel` | Outer container | All page sections (cache panel, favicon entries) |
+| `.panel-label` | Section header | "Three-Tier Cache System" label |
+| `.variant-list` | Container | Wraps cache items and favicon entries |
+| `.cache-item` | Item wrapper | Each cache tier entry |
+| `.cache-item--override` | `.cache-item` modifier | User Overrides tier (primary color accent) |
+| `.cache-item--default` | `.cache-item` modifier | App Defaults tier (success color accent) |
+| `.cache-item--discovered` | `.cache-item` modifier | Auto-Discovered tier (warning color accent) |
+| `.cache-item__name` | Name line | Contains tier name and `.badge` |
+| `.cache-item__path` | Path line | File path (monospace font) |
+| `.cache-item__stats` | Stats line | Description text |
+| `.badge` | Badge span | Soft-dot badge with status text |
+| `.badge-dot` | Dot span | Colored dot indicator |
+| `.badge-dot--primary` | Dot modifier | Primary/blue dot for overrides |
+| `.badge-dot--success` | Dot modifier | Success/green dot for defaults |
+| `.badge-dot--warning` | Dot modifier | Warning/orange dot for discovered |
+| `.badge-dot--muted` | Dot modifier | Muted/gray dot for not cached |
+| `.badge-dot--error` | Dot modifier | Error/red dot for invalid |
+| `.page-url` | Paragraph | Current URL display (smaller, muted text) |
 | `.favicon-entry` | Entry container | Each favicon in the list |
-| `.invalid` | `.favicon-entry` modifier | Applied when `image_type == 'invalid'` |
-| `.override-form` | Form container | Add Override form per favicon |
+| `.favicon-entry.invalid` | Entry modifier | Applied when `image_type == 'invalid'` (yellow background) |
+| `.btn-primary` | Button | "Add Override" button (primary action) |
+| `.override-form` | Form container | Add Override form per favicon (gray background panel) |
 | `.override-message` | Message div | Status message area |
-| `.override-success` | Message modifier | Success message styling |
-| `.override-error` | Message modifier | Error message styling |
+| `.override-success` | Message modifier | Success message styling (green text) |
+| `.override-error` | Message modifier | Error message styling (red text) |
 
 ---
 
