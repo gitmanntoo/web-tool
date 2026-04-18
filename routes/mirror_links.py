@@ -13,11 +13,12 @@ from library import html_util, img_util, text_util, url_util, util
 bp = Blueprint("mirror_links", __name__)
 
 BOOKMARKLETS = [
-    ("mirror-links", "links"),
-    ("mirror-favicons", "favicons"),
-    ("mirror-text", "text"),
-    ("mirror-soup-text", "soup-text"),
-    ("mirror-html-source", "html-source"),
+    {"name": "mirror-links", "label": "links"},
+    {"name": "mirror-favicons", "label": "favicons"},
+    {"name": "mirror-text", "label": "text"},
+    {"name": "mirror-soup-text", "label": "soup-text"},
+    {"name": "mirror-html-source", "label": "html-source"},
+    {"name": "mirror-html-source", "label": "html-source-text", "format": "text"},
 ]
 
 
@@ -25,9 +26,14 @@ def _generate_bookmarklet_links():
     """Generate draggable bookmarklet links for the homepage."""
     template_env = Environment(loader=FileSystemLoader("templates"))
     links = []
-    for name, label in BOOKMARKLETS:
-        js = util.get_javascript_file(name, "bookmarklet", template_env=template_env)
-        links.append(f'<a href="{escape(js)}" class="bookmarklet-drag">{label}</a>')
+    for bm in BOOKMARKLETS:
+        js = util.get_javascript_file(
+            bm["name"],
+            "bookmarklet",
+            template_env=template_env,
+            format=bm.get("format", "html"),
+        )
+        links.append(f'<a href="{escape(js)}" class="bookmarklet-drag">{bm["label"]}</a>')
     return "\n".join(links)
 
 
