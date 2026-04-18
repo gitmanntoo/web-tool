@@ -337,8 +337,16 @@
                 }
             }, 100);
 
-            // Listen for changes to update state and render
-            document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+            // Delegated listener — handles dynamically added pasted favicon radio
+            document.getElementById('favicon-options').addEventListener('change', (e) => {
+                if (e.target.name === 'favicon_option') {
+                    state.faviconOption = e.target.value;
+                    render();
+                }
+            });
+
+            // Individual listeners for static radios
+            document.querySelectorAll('input[name="title_variant"], input[name="fragment_variant"], input[name="url_variant"]').forEach(input => {
                 input.addEventListener('change', () => {
                     if (input.name === 'title_variant') {
                         state.title = input.dataset.text;
@@ -346,8 +354,6 @@
                         state.fragmentText = input.dataset.text;
                     } else if (input.name === 'url_variant') {
                         state.url = input.dataset.text;
-                    } else if (input.name === 'favicon_option') {
-                        state.faviconOption = input.value;
                     }
                     render();
                 });
