@@ -348,6 +348,8 @@ h1 {
 .metadata-item {
     margin-bottom: var(--space-sm);
     font-size: var(--font-size-sm);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .metadata-item strong {
