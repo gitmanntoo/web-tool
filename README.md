@@ -1,6 +1,8 @@
 # web-tool
 Utilities for extracting information from web pages.
 
+[![Docker Hub](https://img.shields.io/docker/v/dockmann/web-tool?label=dockmann%2Fweb-tool)](https://hub.docker.com/r/dockmann/web-tool) [![GitHub](https://img.shields.io/badge/GitHub-gitmanntoo%2Fweb--tool-blue)](https://github.com/gitmanntoo/web-tool)
+
 Tools use the following pattern:
 
 1. A bookmarklet captures information from a web page and copies it into the clipboard.
