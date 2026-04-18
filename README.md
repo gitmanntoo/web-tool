@@ -41,7 +41,7 @@ If the port is changed, the bookmarklets will need to be updated with the new po
 
 Stops any running container, pulls the latest image, and starts with auto-restart and local favicon cache storage:
 
-```bash
+<pre>
 PORT=8532
 DATA_DIR=$(pwd)/web-tool
 
@@ -58,7 +58,7 @@ docker run -d --restart always \
   -p ${PORT}:8532 \
   -v ${DATA_DIR}:/data \
   --name web-tool dockmann/web-tool
-```
+</pre>
 
 ## Dependencies
 
@@ -100,13 +100,13 @@ When looking up a favicon, web-tool searches from most specific to least specifi
 
 Edit `static/favicon-overrides.yml` directly:
 
-```yaml
+<pre>
 # Domain-level override (applies to all pages on domain)
 google.com: https://www.google.com/favicon.ico
 
 # Path-level override (applies to specific section)
 github.com/microsoft: https://github.githubassets.com/favicons/favicon.png
-```
+</pre>
 
 **Cache Key Rules:**
 - **Domain only**: `example.com` - applies to all pages on the domain
@@ -115,7 +115,7 @@ github.com/microsoft: https://github.githubassets.com/favicons/favicon.png
 - More specific keys take precedence (path > subdomain > domain)
 
 **Examples:**
-```yaml
+<pre>
 # Domain-level
 ibm.com: https://www.ibm.com/favicon.ico
 github.com: https://github.githubassets.com/favicons/favicon.svg
@@ -123,7 +123,7 @@ github.com: https://github.githubassets.com/favicons/favicon.svg
 # Path-level
 docs.python.org/3: https://docs.python.org/3/_static/py.svg
 stackoverflow.com/questions: https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico
-```
+</pre>
 
 ## Debug
 
