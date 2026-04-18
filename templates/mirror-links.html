@@ -6,157 +6,158 @@
     <link rel="stylesheet" href="/static/mirror.css">
 </head>
 <body>
-    <h1>Mirror Links</h1>
-    
-    <div class="metadata-panel">
-        <h2>Links</h2>
-        <div class="url-list">
-            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <button class="copy-btn" id="copy-html" data-format="html">Copy</button>
-                    <span style="min-width: 100px;"><strong>HTML</strong></span>
-                    <span id="format-html-display"></span>
-                </div>
-                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-html-plain"></div>
-            </div>
-            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <button class="copy-btn" id="copy-markdown" data-format="markdown">Copy</button>
-                    <span style="min-width: 100px;"><strong>Markdown</strong></span>
-                    <span id="format-markdown-display"></span>
-                </div>
-                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-markdown-plain"></div>
-            </div>
-            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <button class="copy-btn" id="copy-wiki" data-format="wiki">Copy</button>
-                    <span style="min-width: 100px;"><strong>Wiki-link</strong></span>
-                    <span id="format-wiki-display"></span>
-                </div>
-                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-wiki-plain"></div>
-            </div>
-            <div class="url-item" style="flex-direction: column; align-items: flex-start;">
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <button class="copy-btn" id="copy-simple" data-format="simple">Copy</button>
-                    <span style="min-width: 100px;"><strong>Simple</strong></span>
-                    <span id="format-simple-display"></span>
-                </div>
-                <div style="color: #666; font-family: monospace; font-size: 0.9em; margin-top: 4px;" id="format-simple-plain"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="metadata-panel">
-        <h2>Title</h2>
-        <div class="url-list">
-            {% for variant in title_variants %}
-                <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
-                    <input type="radio" name="title_variant" value="title{{ loop.index0 }}" data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
-                    <button class="copy-btn" data-html="{{ variant.value|e }}">Copy</button>
-                    <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
-                    <span>{{ variant.value|e }}</span>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    
-    {% if fragment_variants %}
-    <div class="metadata-panel">
-        <h2>Fragment</h2>
-        <div class="url-list">
-            {% for variant in fragment_variants %}
-                <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
-                    <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}" data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
-                    {% if variant.value %}
-                    <button class="copy-btn" data-html="{{ variant.value|e }}">Copy</button>
-                    {% endif %}
-                    <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
-                    <span>{{ variant.value|e }}</span>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-    
-    <div class="metadata-panel">
-        <h2>URL</h2>
-        <div class="url-list">
-            {% set ns = namespace(found_default=false) %}
-            {% for variant in url_variants %}
-                {% set is_default = variant.label == 'Clean' %}
-                {% if is_default and not ns.found_default %}
-                    {% set ns.found_default = true %}
-                {% endif %}
-                <div class="url-item"{% if variant.is_duplicate %} style="opacity: 0.6; background-color: #f5f5f5;"{% endif %}>
-                    <input type="radio" name="url_variant" value="url{{ loop.index0 }}" data-text="{{ variant.url|e }}" {% if is_default or (loop.first and not ns.found_default) %}checked{% endif %}>
-                    <button class="copy-btn" data-html="{{ variant.url|e }}">Copy</button>
-                    <span style="min-width: 100px;"><strong>{{ variant.label }}</strong></span>
-                    <span><a href="{{ variant.url }}">{{ variant.url|e }}</a></span>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    
-    <div class="favicon-section">
-        <h2>Favicon</h2>
-        <div class="url-list" id="favicon-options">
-            <div class="url-item">
-                <input type="radio" name="favicon_option" value="none"{% if not favicon %} checked{% endif %}>
-                <span style="min-width: 100px;"><strong>None</strong></span>
-            </div>
-            {% if favicon %}
-            <div class="url-item">
-                <input type="radio" name="favicon_option" value="url"{% if favicon %} checked{% endif %}>
-                <button class="copy-btn" data-html="{{ favicon|e }}">Copy</button>
-                <span style="min-width: 100px;"><strong>URL</strong></span>
-                <img src="{{ favicon }}" height="20" width="{{ favicon_width or 20 }}" alt="Favicon" />
-                <span><a href="{{ favicon|e }}">{{ favicon|e }}</a></span>
-            </div>
-            {% if favicon_inline %}
-            <div class="url-item">
-                <input type="radio" name="favicon_option" value="inline">
-                <button class="copy-btn" data-html='&lt;img src="{{ favicon_inline|e }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" /&gt;'>Copy</button>
-                <span style="min-width: 100px;"><strong>Inline</strong></span>
-                <img src="{{ favicon_inline }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" />
-                <span style="font-family: monospace; font-size: 0.85em; color: #666; word-break: break-all;">{{ favicon_inline[:25] }}...{{ favicon_inline[-20:] }}</span>
-            </div>
-            {% endif %}
-            {% endif %}
-            <div class="url-item">
-                <button class="paste-favicon-btn" id="paste-favicon-btn"
-                        style="padding: 4px 8px; font-size: 14px;">Paste Favicon</button>
-                <span style="min-width: 160px;"><strong>&lt;-- Click to paste</strong></span>
-            </div>
-        </div>
-    </div>
+    <div class="page-container">
+        <h1>Mirror Links</h1>
 
-    <div class="metadata-panel">
-        <h2>Metadata</h2>
-        {% if html_size %}
-        <div class="metadata-item">
-            <strong>HTML Size:</strong> {{ "{:,}".format(html_size) }} bytes
+        <div class="panel">
+            <div class="panel-label">Links</div>
+            <div class="variant-list">
+                <div class="link-format-row">
+                    <div class="link-format-row__main">
+                        <button class="btn-copy" id="copy-html" data-format="html">Copy</button>
+                        <span class="variant-label"><strong>HTML</strong></span>
+                        <span id="format-html-display"></span>
+                    </div>
+                    <div class="link-format-row__plain" id="format-html-plain"></div>
+                </div>
+                <div class="link-format-row">
+                    <div class="link-format-row__main">
+                        <button class="btn-copy" id="copy-markdown" data-format="markdown">Copy</button>
+                        <span class="variant-label"><strong>Markdown</strong></span>
+                        <span id="format-markdown-display"></span>
+                    </div>
+                    <div class="link-format-row__plain" id="format-markdown-plain"></div>
+                </div>
+                <div class="link-format-row">
+                    <div class="link-format-row__main">
+                        <button class="btn-copy" id="copy-wiki" data-format="wiki">Copy</button>
+                        <span class="variant-label"><strong>Wiki-link</strong></span>
+                        <span id="format-wiki-display"></span>
+                    </div>
+                    <div class="link-format-row__plain" id="format-wiki-plain"></div>
+                </div>
+                <div class="link-format-row">
+                    <div class="link-format-row__main">
+                        <button class="btn-copy" id="copy-simple" data-format="simple">Copy</button>
+                        <span class="variant-label"><strong>Simple</strong></span>
+                        <span id="format-simple-display"></span>
+                    </div>
+                    <div class="link-format-row__plain" id="format-simple-plain"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-label">Title</div>
+            <div class="variant-list">
+                {% for variant in title_variants %}
+                    <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
+                        <input type="radio" name="title_variant" value="title{{ loop.index0 }}" data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
+                        <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
+                        <span class="variant-label"><strong>{{ variant.label }}</strong></span>
+                        <span>{{ variant.value|e }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if fragment_variants %}
+        <div class="panel">
+            <div class="panel-label">Fragment</div>
+            <div class="variant-list">
+                {% for variant in fragment_variants %}
+                    <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
+                        <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}" data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
+                        {% if variant.value %}
+                        <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
+                        {% endif %}
+                        <span class="variant-label"><strong>{{ variant.label }}</strong></span>
+                        <span>{{ variant.value|e }}</span>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
         {% endif %}
-        {% if content_type %}
-        <div class="metadata-item">
-            <strong>Content-Type:</strong> {{ content_type|e }}
+
+        <div class="panel">
+            <div class="panel-label">URL</div>
+            <div class="variant-list">
+                {% set ns = namespace(found_default=false) %}
+                {% for variant in url_variants %}
+                    {% set is_default = variant.label == 'Clean' %}
+                    {% if is_default and not ns.found_default %}
+                        {% set ns.found_default = true %}
+                    {% endif %}
+                    <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
+                        <input type="radio" name="url_variant" value="url{{ loop.index0 }}" data-text="{{ variant.url|e }}" {% if is_default or (loop.first and not ns.found_default) %}checked{% endif %}>
+                        <button class="btn-copy" data-html="{{ variant.url|e }}">Copy</button>
+                        <span class="variant-label"><strong>{{ variant.label }}</strong></span>
+                        <span><a href="{{ variant.url }}">{{ variant.url|e }}</a></span>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-        {% endif %}
-        {% if user_agent %}
-        <div class="metadata-item">
-            <strong>User Agent:</strong> {{ user_agent|e }}
+
+        <div class="panel">
+            <div class="panel-label">Favicon</div>
+            <div class="variant-list" id="favicon-options">
+                <div class="variant-row">
+                    <input type="radio" name="favicon_option" value="none"{% if not favicon %} checked{% endif %}>
+                    <span class="variant-label"><strong>None</strong></span>
+                </div>
+                {% if favicon %}
+                <div class="variant-row">
+                    <input type="radio" name="favicon_option" value="url"{% if favicon %} checked{% endif %}>
+                    <button class="btn-copy" data-html="{{ favicon|e }}">Copy</button>
+                    <span class="variant-label"><strong>URL</strong></span>
+                    <img src="{{ favicon }}" height="20" width="{{ favicon_width or 20 }}" alt="Favicon" />
+                    <span><a href="{{ favicon|e }}">{{ favicon|e }}</a></span>
+                </div>
+                {% if favicon_inline %}
+                <div class="variant-row">
+                    <input type="radio" name="favicon_option" value="inline">
+                    <button class="btn-copy" data-html='&lt;img src="{{ favicon_inline|e }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" /&gt;'>Copy</button>
+                    <span class="variant-label"><strong>Inline</strong></span>
+                    <img src="{{ favicon_inline }}" height="{{ favicon_height or 20 }}" width="{{ favicon_width or 20 }}" alt="Favicon" />
+                    <span class="variant-value favicon-inline-preview">{{ favicon_inline[:25] }}...{{ favicon_inline[-20:] }}</span>
+                </div>
+                {% endif %}
+                {% endif %}
+                <div class="variant-row">
+                    <button class="paste-favicon-btn" id="paste-favicon-btn">Paste Favicon</button>
+                    <span class="variant-label"><strong>&lt;-- Click to paste</strong></span>
+                </div>
+            </div>
         </div>
-        {% endif %}
-        {% if cookie_string %}
-        <div class="metadata-item">
-            <strong>Cookie String:</strong> {{ cookie_string|e }}
+
+        <div class="panel">
+            <div class="panel-label">Metadata</div>
+            {% if html_size %}
+            <div class="metadata-item">
+                <strong>HTML Size:</strong> {{ "{:,}".format(html_size) }} bytes
+            </div>
+            {% endif %}
+            {% if content_type %}
+            <div class="metadata-item">
+                <strong>Content-Type:</strong> {{ content_type|e }}
+            </div>
+            {% endif %}
+            {% if user_agent %}
+            <div class="metadata-item">
+                <strong>User Agent:</strong> {{ user_agent|e }}
+            </div>
+            {% endif %}
+            {% if cookie_string %}
+            <div class="metadata-item">
+                <strong>Cookie String:</strong> {{ cookie_string|e }}
+            </div>
+            {% endif %}
+            {% if clipboard_error %}
+            <div class="metadata-item">
+                <strong>Clipboard Error:</strong> {{ clipboard_error|e }}
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
-        {% if clipboard_error %}
-        <div class="metadata-item">
-            <strong>Clipboard Error:</strong> {{ clipboard_error|e }}
-        </div>
-        {% endif %}
     </div>
 
     <script>
@@ -287,26 +288,9 @@
             }
         }
 
-        // Function to show tooltip
-        function showTooltip(btn, message) {
-            const tooltip = document.createElement('span');
-            tooltip.textContent = message;
-            tooltip.style.cssText = 'position: absolute; background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; z-index: 1000; pointer-events: none;';
-
-            const rect = btn.getBoundingClientRect();
-            tooltip.style.left = rect.left + 'px';
-            tooltip.style.top = (rect.top - 30) + 'px';
-
-            document.body.appendChild(tooltip);
-
-            setTimeout(() => {
-                tooltip.remove();
-            }, 1500);
-        }
-
         // Function to attach copy button listeners
         function attachCopyListeners() {
-            document.querySelectorAll('.copy-btn').forEach(btn => {
+            document.querySelectorAll('.btn-copy').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (btn.dataset.html) {
                         navigator.clipboard.writeText(btn.dataset.html).then(() => {
@@ -379,6 +363,7 @@
             }
         });
     </script>
+    <script src="/static/js/tooltip.js"></script>
     <script src="/static/js/paste-favicon.js"></script>
 </body>
 </html>
