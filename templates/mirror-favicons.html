@@ -50,18 +50,11 @@
             });
         }
 
-        function truncateMiddle(str, maxLen) {
-            if (str.length <= maxLen) return str;
-            const half = Math.floor((maxLen - 3) / 2);
-            return str.slice(0, half) + '...' + str.slice(-half);
-        }
-
         function addPastedFaviconEntry(data, pageUrl, overrideDomain, overridePathScope, hasPathScope) {
-            const container = document.getElementById('paste-favicon-section');
-            if (!container) return;
+            const pastePanel = document.getElementById('paste-favicon-panel');
+            if (!pastePanel) return;
             const dataUrl = `data:image/png;base64,${data.base64}`;
             const escapedDataUrl = escapeHtml(dataUrl);
-            const escapedBase64 = escapeHtml(data.base64);
             const escapedPageUrl = escapeHtml(pageUrl);
             const escapedOverrideDomain = escapeHtml(overrideDomain);
             const escapedOverridePathScope = escapeHtml(overridePathScope);
@@ -70,13 +63,17 @@
             pastedDiv.className = 'favicon-entry favicon-pasted-entry';
             pastedDiv.innerHTML = `
                 <p>
-                    <span class="variant-value">${truncateMiddle(escapedBase64, 60)}</span>
+                    <a href="${escapedDataUrl}">${escapedDataUrl}</a>
                     <span class="badge"><span class="badge-dot badge-dot--muted"></span>NOT CACHED</span>
                     <span class="badge"><span class="badge-dot badge-dot--primary"></span>PASTED</span>
-                    <span class="badge"><span class="badge-dot badge-dot--primary"></span>INLINE</span>
                 </p>
                 <p>Image Type: image/png | Size: ${escapeHtml(data.height) || 20}x${escapeHtml(data.width) || 20}</p>
-                <p><img src="${escapedDataUrl}" height="20" alt="Favicon" /> Inline preview (base64, 20px height)</p>
+                <p>
+                    <img src="${escapedDataUrl}" height="20" alt="20px height preview" /> 20px height preview
+                </p>
+                <p>
+                    <img src="${escapedDataUrl}" alt="Full size" /> Full size (${escapeHtml(data.width) || 20}x${escapeHtml(data.height) || 20})
+                </p>
                 <div class="override-form" id="form-pasted-1">
                     <strong>Add Override:</strong>
                     <label>
@@ -99,17 +96,17 @@
                     <div class="override-message"></div>
                 </div>
             `;
-            container.appendChild(pastedDiv);
+            pastePanel.insertAdjacentElement('afterend', pastedDiv);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             const pasteBtn = document.getElementById('paste-favicon-btn');
-            const faviconSection = document.getElementById('paste-favicon-section');
 
-            if (pasteBtn && faviconSection) {
+            if (pasteBtn) {
                 pasteBtn.addEventListener('click', () => {
-                    handlePasteFavicon(pasteBtn, faviconSection, {
+                    handlePasteFavicon(pasteBtn, null, {
                         onPasted: (data) => {
+                            pasteBtn.textContent = 'Paste Favicon';
                             addPastedFaviconEntry(
                                 data,
                                 '{{ url|e }}',
@@ -157,13 +154,13 @@
         </p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="paste-favicon-panel">
         <div class="panel-label">Paste Favicon</div>
         <div class="variant-list" id="paste-favicon-section">
-            <div class="variant-row">
-                <button class="paste-favicon-btn" id="paste-favicon-btn">Paste Favicon</button>
-                <span class="variant-label"><strong>&lt;-- Click to paste</strong></span>
-            </div>
+        </div>
+        <div class="variant-row">
+            <button class="paste-favicon-btn" id="paste-favicon-btn">Paste Favicon</button>
+            <span class="variant-label"><strong>&lt;-- Click to paste</strong></span>
         </div>
     </div>
 
