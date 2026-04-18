@@ -8,11 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Always create an implementation plan before making changes if one does not exist.**
 
-For any non-trivial task, use `TaskCreate` to build a checklist of steps. Then:
+For any non-trivial task, create a plan using any available mechanism (`TaskCreate`, `superpowers:writing-plans` skill, `superpowers:feature-dev` skill, or manual planning). Then:
 
-1. Mark tasks as `in_progress` when starting work on them
-2. Mark tasks as `completed` when finished
-3. Create corresponding git commits to track progress in both the plan and in git
+1. Mark plan items as `in_progress` when starting work on them
+2. Mark plan items as `completed` when finished
+3. Create corresponding git commits to track progress
 
 **Commit linkage:** Each git commit message should reference the plan item it completes (e.g., "feat: add error handling for edge cases - completes plan item #3").
 
