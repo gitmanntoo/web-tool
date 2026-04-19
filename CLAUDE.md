@@ -244,7 +244,18 @@ The `web-tool` is a utility for extracting and processing information from web p
 
 ### Key Components
 - **Core Application**: `web-tool.py` - The main entry point and Flask server. Registers blueprints from `routes/` (`mirror_links`, `mirror_favicons`, `javascript`, `debug`).
-- **Logic Library**: `library/` — `util.py` (PageMetadata, MirrorData, TitleVariants, ClipCache), `html_util.py` (favicon system, link parsing), `text_util.py` (NLP extraction), `text_format.py` (ascii_text, html_text, path_safe_filename), `title_variants.py` (deduplicate_variants), `url_util.py` (URL parsing, fetching), `img_util.py` (ICO/SVG conversion), `unicode_util.py` (category names), `content_type.py` (MIME type detection), `fragment_handlers.py` (anchor/heading fragment resolution), `docker_util.py` (container detection)
+- **Logic Library**: `library/` — Core modules:
+  - `util.py` (PageMetadata, MirrorData, TitleVariants, ClipCache)
+  - `html_util.py` (favicon system, link parsing)
+  - `text_util.py` (NLP extraction)
+  - `text_format.py` (ascii_text, html_text, path_safe_filename)
+  - `title_variants.py` (deduplicate_variants)
+  - `url_util.py` (URL parsing, fetching)
+  - `img_util.py` (ICO/SVG conversion)
+  - `unicode_util.py` (category names)
+  - `content_type.py` (MIME type detection)
+  - `fragment_handlers.py` (anchor/heading fragment resolution)
+  - `docker_util.py` (container detection)
 - **Favicon System**: Implements a three-tier cache for favicons:
     1. `static/favicon-overrides.yml` (User Overrides - Highest priority)
     2. `static/favicon.yml` (App Defaults - Medium priority)
