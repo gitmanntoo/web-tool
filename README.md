@@ -201,7 +201,7 @@ Create a release via the GitHub UI, then build locally:
 # 5. Pull the new tag locally
 git fetch origin --tags
 
-# 6. Checkout the tagged commit
+# 6. Check out the tagged commit
 git checkout v1.0.1
 
 # 7. Build and push with version tag
