@@ -154,7 +154,7 @@ When writing tests, always add a comment describing what the test does and why i
 - **Stop container**: `make docker-stop`
 
 **Docker Release Patterns:**
-- **Version from git tag**: Use `VERSION =` (lazy, not `:=`) to avoid running git on non-docker targets; include `dev` fallback for non-git contexts
+- **Version from git tag**: The current Makefile uses `VERSION := ...` (evaluated at parse time); keep a `dev` fallback for non-git contexts, and avoid documenting this as lazy assignment unless the Makefile is changed to `=`
 - **Shell pipeline gotcha**: `cmd | sed ... || fallback` won't trigger fallback on first command failure because pipelines return the last command's exit code; use variable storage first: `var=$$(cmd) && echo "$$var" | sed ... || fallback`
 - **Docker Hub API auth**: Use `curl --netrc-file` with temp file + `umask 077` + `trap` cleanup — `curl -u` leaks credentials via argv (visible in `ps`)
 - **JSON payloads in Make**: Use `python3 -c 'import json; print(json.dumps(...))'` — `sed` doesn't escape backslashes, producing invalid JSON
