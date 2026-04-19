@@ -38,8 +38,6 @@ jobs:
           tags: |
             dockmann/web-tool:latest
             dockmann/web-tool:${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - uses: peter-evans/dockerhub-description@v5
         with:
