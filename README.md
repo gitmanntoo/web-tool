@@ -199,7 +199,7 @@ Create a release via the GitHub UI, then build locally:
 # 4. Click "Publish release"
 
 # 5. Pull the new tag locally
-git pull --tags
+git fetch origin --tags
 
 # 6. Checkout the tagged commit
 git checkout v1.0.1
