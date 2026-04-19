@@ -72,6 +72,12 @@ Authentication: Basic auth with username/token.
 
 ### Release a new version
 
+Two workflows are supported for creating release tags. Both use the same `make docker-release` command.
+
+**Option 1: Local Tagging**
+
+Create and push the tag locally, then build:
+
 ```bash
 # 1. Set credentials (in ~/.zshrc or export)
 export DOCKERHUB_USERNAME=dockmann
@@ -84,6 +90,31 @@ git push origin v1.0.1
 # 3. Run release (while checked out at the tagged commit)
 make docker-release
 ```
+
+**Option 2: GitHub Releases**
+
+Create a release via the GitHub UI, then build locally:
+
+```bash
+# 1. Go to https://github.com/gitmanntoo/web-tool/releases/new
+# 2. Click "Choose a tag" → type "v1.0.1" → click "Create new tag"
+# 3. Fill in release title and description
+# 4. Click "Publish release"
+
+# 5. Pull the new tag locally
+git pull --tags
+
+# 6. Checkout the tagged commit
+git checkout v1.0.1
+
+# 7. Run release
+make docker-release
+```
+
+**When to use GitHub Releases:**
+- Writing release notes in GitHub's UI
+- Wanting the tag visible in GitHub releases list
+- Separating tagging decision from build process
 
 ### Build dev version
 
