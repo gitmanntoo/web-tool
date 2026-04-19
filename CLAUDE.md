@@ -147,7 +147,19 @@ When writing tests, always add a comment describing what the test does and why i
 ### Docker
 - **Run published image**: `make docker-run`
 - **Build image**: `make docker-build`
+- **Build multi-platform**: `make docker-buildx`
+- **Push to registry**: `make docker-push` (requires DOCKERHUB_USERNAME/TOKEN env vars)
+- **Full release**: `make docker-release` (build, push, update description)
+- **Update description**: `make docker-describe` (sync README to Docker Hub)
 - **Stop container**: `make docker-stop`
+
+**Docker Release Patterns:**
+- **Version from git tag**: Use `VERSION =` (lazy, not `:=`) to avoid running git on non-docker targets; include `dev` fallback for non-git contexts
+- **Shell pipeline gotcha**: `cmd | sed ... || fallback` won't trigger fallback on first command failure because pipelines return the last command's exit code; use variable storage first: `var=$$(cmd) && echo "$$var" | sed ... || fallback`
+- **Docker Hub API auth**: Use `curl --netrc-file` with temp file + `umask 077` + `trap` cleanup — `curl -u` leaks credentials via argv (visible in `ps`)
+- **JSON payloads in Make**: Use `python3 -c 'import json; print(json.dumps(...))'` — `sed` doesn't escape backslashes, producing invalid JSON
+- **curl failure propagation**: Use `curl -fsS` (fail on HTTP errors) with explicit `exit 1` — `curl | grep` pattern exits 0 on failure
+- **Repo variable**: Define `DOCKER_REPO` once, derive `DOCKER_IMAGE = $(DOCKER_REPO):latest` — avoids hardcoded repo name drift between `:latest` and version tags
 
 ### Git Workflow
 
@@ -159,7 +171,7 @@ When writing tests, always add a comment describing what the test does and why i
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 - **Feature branches**: Never commit directly to `main`/`master` — always create feature branch first
 - **Style hygiene**: Move inline styles to CSS classes; use existing design tokens before creating new ones
-- **Worktrees:** Use `git worktree add .worktrees/<branch> -b <branch>` for isolated feature work. Always run `make dev` and `make test` in the worktree before dispatching subagents
+- **Worktrees:** Use `git worktree add .worktrees/<branch> -b <branch>` for isolated feature work. Always run `make dev` and `make test` in the worktree before dispatching subagents. Verify with `git worktree list` to confirm active worktrees.
 
 ## Python Runtime
 - **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.14 only (`>=3.14,<3.15`). Using a pyenv-managed Python will fail to find test dependencies.

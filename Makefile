@@ -1,6 +1,38 @@
-DOCKER_IMAGE = dockmann/web-tool:latest
+DOCKER_REPO = dockmann/web-tool
+DOCKER_IMAGE = $(DOCKER_REPO):latest
 
-.PHONY: help install dev run lint format check test testcov testv docs check-imports clean docker-run docker-build docker-buildx docker-push docker-stop docker-clean
+# Docker Hub credentials (required for push operations)
+DOCKERHUB_USERNAME ?= $(shell echo $$DOCKERHUB_USERNAME)
+DOCKERHUB_TOKEN ?= $(shell echo $$DOCKERHUB_TOKEN)
+
+# Version resolution: git tag if at tagged commit, else dev-<sha>, else dev
+VERSION = $(shell tag=$$(git describe --tags --exact-match 2>/dev/null || true); \
+	if [ -n "$$tag" ]; then \
+		echo "$$tag" | sed 's/^v//'; \
+	else \
+		sha=$$(git rev-parse --short HEAD 2>/dev/null || true); \
+		if [ -n "$$sha" ]; then \
+			echo "dev-$$sha"; \
+		else \
+			echo "dev"; \
+		fi; \
+	fi)
+
+# Verify Docker Hub credentials are set
+define check-docker-credentials
+	@if [ -z "$(DOCKERHUB_USERNAME)" ]; then \
+		echo "Error: DOCKERHUB_USERNAME environment variable not set"; \
+		echo "Set it with: export DOCKERHUB_USERNAME=your-username"; \
+		exit 1; \
+	fi
+	@if [ -z "$(DOCKERHUB_TOKEN)" ]; then \
+		echo "Error: DOCKERHUB_TOKEN environment variable not set"; \
+		echo "Create a token at: https://hub.docker.com/settings/security"; \
+		exit 1; \
+	fi
+endef
+
+.PHONY: help install dev run lint format check test testcov testv docs check-imports clean docker-run docker-build docker-buildx docker-push docker-release docker-describe docker-stop docker-clean
 
 .DEFAULT_GOAL := help
 
@@ -30,12 +62,14 @@ help:
 	@echo "  make clean      - Remove temporary files and cache"
 	@echo ""
 	@echo "Docker:"
-	@echo "  make docker-run    - Run the published Docker image"
-	@echo "  make docker-build  - Build Docker image for current platform"
-	@echo "  make docker-buildx - Build multi-platform image (amd64/arm64)"
-	@echo "  make docker-push   - Build and push multi-platform image"
-	@echo "  make docker-stop   - Stop running container"
-	@echo "  make docker-clean  - Stop container and prune build cache"
+	@echo "  make docker-run       - Run the published Docker image"
+	@echo "  make docker-build     - Build Docker image for current platform"
+	@echo "  make docker-buildx    - Build multi-platform image (amd64/arm64)"
+	@echo "  make docker-push      - Build and push multi-platform image"
+	@echo "  make docker-release   - Build, push, and update Docker Hub description"
+	@echo "  make docker-describe  - Update Docker Hub description from README"
+	@echo "  make docker-stop      - Stop running container"
+	@echo "  make docker-clean     - Stop container and prune build cache"
 
 # Install with runtime dependencies only
 install:
@@ -120,10 +154,57 @@ docker-buildx:
 	@echo "Building multi-platform Docker image $(DOCKER_IMAGE)..."
 	docker buildx build --platform linux/amd64,linux/arm64 --tag $(DOCKER_IMAGE) .
 
-# Build and push multi-platform image
+# Build and push multi-platform image with version tag
 docker-push:
-	@echo "Building and pushing multi-platform Docker image $(DOCKER_IMAGE)..."
-	docker buildx build --platform linux/amd64,linux/arm64 --tag $(DOCKER_IMAGE) --push .
+	$(call check-docker-credentials)
+	@echo "Building and pushing multi-platform image..."
+	@echo "  Image: $(DOCKER_IMAGE)"
+	@echo "  Version: $(VERSION)"
+	@echo "  Platforms: linux/amd64, linux/arm64"
+	@echo ""
+	@echo "Logging in to Docker Hub..."
+	@echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
+	@echo ""
+	@echo "Building and pushing..."
+	docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		--tag $(DOCKER_IMAGE) \
+		--tag $(DOCKER_REPO):$(VERSION) \
+		--push .
+	@echo ""
+	@echo "Pushed: $(DOCKER_IMAGE)"
+	@echo "Pushed: $(DOCKER_REPO):$(VERSION)"
+
+# Full release: build, push, and update Docker Hub description
+docker-release: docker-push docker-describe
+	@echo ""
+	@echo "=== Release Complete ==="
+	@echo "Image: $(DOCKER_REPO):$(VERSION)"
+	@echo "Latest: $(DOCKER_IMAGE)"
+
+# Update Docker Hub description from README.md
+docker-describe:
+	$(call check-docker-credentials)
+	@echo "Updating Docker Hub description..."
+	@echo "  Repository: $(DOCKER_REPO)"
+	@echo "  Source: README.md"
+	@echo ""
+	@PAYLOAD=$$(python3 -c 'import json, pathlib; print(json.dumps({"full_description": pathlib.Path("README.md").read_text()}))'); \
+	NETRC_FILE=$$(mktemp); \
+	trap 'rm -f "$$NETRC_FILE"' EXIT; \
+	umask 077; \
+	printf 'machine hub.docker.com login %s password %s\n' "$(DOCKERHUB_USERNAME)" "$(DOCKERHUB_TOKEN)" > "$$NETRC_FILE"; \
+	if curl -fsS -X PATCH \
+		-H "Content-Type: application/json" \
+		--netrc-file "$$NETRC_FILE" \
+		-d "$$PAYLOAD" \
+		https://hub.docker.com/v2/repositories/$(DOCKER_REPO)/ \
+		> /dev/null; then \
+		echo "Description updated successfully"; \
+	else \
+		echo "Failed to update description (check credentials)"; \
+		exit 1; \
+	fi
 
 # Stop running container
 docker-stop:
