@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Bump patch version
         id: version
@@ -22,6 +24,8 @@ jobs:
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
+        with:
+          version: v1.0.0
 
       - uses: docker/login-action@v3
         with:
@@ -36,6 +40,8 @@ jobs:
           tags: |
             dockmann/web-tool:latest
             dockmann/web-tool:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - uses: peter-evans/dockerhub-description@v5
         with:
