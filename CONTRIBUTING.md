@@ -12,7 +12,7 @@ To build and push the Docker image locally:
 
 **Setup:**
 <pre>
-export DOCKERHUB_USERNAME=dockmann
+export DOCKERHUB_USERNAME=your-username
 export DOCKERHUB_TOKEN=your-token-here
 </pre>
 
