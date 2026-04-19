@@ -1,22 +1,11 @@
-DOCKER_REPO = dockmann/web-tool
-DOCKER_IMAGE = $(DOCKER_REPO):latest
+DOCKER_IMAGE = dockmann/web-tool:latest
 
 # Docker Hub credentials (required for push operations)
 DOCKERHUB_USERNAME ?= $(shell echo $$DOCKERHUB_USERNAME)
 DOCKERHUB_TOKEN ?= $(shell echo $$DOCKERHUB_TOKEN)
 
-# Version resolution: git tag if at tagged commit, else dev-<sha>, else dev
-VERSION = $(shell tag=$$(git describe --tags --exact-match 2>/dev/null || true); \
-	if [ -n "$$tag" ]; then \
-		echo "$$tag" | sed 's/^v//'; \
-	else \
-		sha=$$(git rev-parse --short HEAD 2>/dev/null || true); \
-		if [ -n "$$sha" ]; then \
-			echo "dev-$$sha"; \
-		else \
-			echo "dev"; \
-		fi; \
-	fi)
+# Version resolution: git tag if at tagged commit, else dev-<sha>
+VERSION := $(shell git describe --tags --exact-match 2>/dev/null | sed 's/^v//' || echo "dev-$$(git rev-parse --short HEAD)")
 
 # Verify Docker Hub credentials are set
 define check-docker-credentials
@@ -169,42 +158,33 @@ docker-push:
 	docker buildx build \
 		--platform linux/amd64,linux/arm64 \
 		--tag $(DOCKER_IMAGE) \
-		--tag $(DOCKER_REPO):$(VERSION) \
+		--tag dockmann/web-tool:$(VERSION) \
 		--push .
 	@echo ""
 	@echo "Pushed: $(DOCKER_IMAGE)"
-	@echo "Pushed: $(DOCKER_REPO):$(VERSION)"
+	@echo "Pushed: dockmann/web-tool:$(VERSION)"
 
 # Full release: build, push, and update Docker Hub description
 docker-release: docker-push docker-describe
 	@echo ""
 	@echo "=== Release Complete ==="
-	@echo "Image: $(DOCKER_REPO):$(VERSION)"
+	@echo "Image: dockmann/web-tool:$(VERSION)"
 	@echo "Latest: $(DOCKER_IMAGE)"
 
 # Update Docker Hub description from README.md
 docker-describe:
 	$(call check-docker-credentials)
 	@echo "Updating Docker Hub description..."
-	@echo "  Repository: $(DOCKER_REPO)"
+	@echo "  Repository: $(DOCKERHUB_USERNAME)/web-tool"
 	@echo "  Source: README.md"
 	@echo ""
-	@PAYLOAD=$$(python3 -c 'import json, pathlib; print(json.dumps({"full_description": pathlib.Path("README.md").read_text()}))'); \
-	NETRC_FILE=$$(mktemp); \
-	trap 'rm -f "$$NETRC_FILE"' EXIT; \
-	umask 077; \
-	printf 'machine hub.docker.com login %s password %s\n' "$(DOCKERHUB_USERNAME)" "$(DOCKERHUB_TOKEN)" > "$$NETRC_FILE"; \
-	if curl -fsS -X PATCH \
+	@DESCRIPTION=$$(cat README.md | sed 's/"/\\"/g' | sed ':a;N;$$!ba;s/\n/\\n/g'); \
+	curl -s -X PATCH \
 		-H "Content-Type: application/json" \
-		--netrc-file "$$NETRC_FILE" \
-		-d "$$PAYLOAD" \
-		https://hub.docker.com/v2/repositories/$(DOCKER_REPO)/ \
-		> /dev/null; then \
-		echo "Description updated successfully"; \
-	else \
-		echo "Failed to update description (check credentials)"; \
-		exit 1; \
-	fi
+		-u "$(DOCKERHUB_USERNAME):$(DOCKERHUB_TOKEN)" \
+		-d "{\"full_description\": \"$$DESCRIPTION\"}" \
+		https://hub.docker.com/v2/repositories/$(DOCKERHUB_USERNAME)/web-tool/ \
+		| grep -q "full_description" && echo "Description updated successfully" || echo "Failed to update description (check credentials)"
 
 # Stop running container
 docker-stop:
