@@ -4,7 +4,7 @@ This document is the developer reference for building, releasing, and contributi
 
 ## Building and Publishing
 
-To build and push the Docker image locally (replaces the deprecated GitHub Actions workflow):
+To build and push the Docker image locally:
 
 **Prerequisites:**
 - Docker with buildx support
@@ -12,7 +12,7 @@ To build and push the Docker image locally (replaces the deprecated GitHub Actio
 
 **Setup:**
 <pre>
-export DOCKERHUB_USERNAME=dockmann
+export DOCKERHUB_USERNAME=your-username
 export DOCKERHUB_TOKEN=your-token-here
 </pre>
 
