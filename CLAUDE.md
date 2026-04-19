@@ -153,6 +153,11 @@ When writing tests, always add a comment describing what the test does and why i
 - **Update description**: `make docker-describe` (sync README to Docker Hub)
 - **Stop container**: `make docker-stop`
 
+**Docker Release Patterns:**
+- **Version from git tag**: `VERSION := $(shell tag=$(git describe --tags --exact-match 2>/dev/null) && echo "$$tag" | sed 's/^v//' || echo "dev-$$(git rev-parse --short HEAD)")` — stores tag or dev-<sha>
+- **Shell pipeline gotcha**: `cmd | sed ... || fallback` won't trigger fallback on first command failure because pipelines return the last command's exit code; use variable storage first: `var=$$(cmd) && echo "$$var" | sed ... || fallback`
+- **Docker Hub description API**: `PATCH /v2/repositories/{username}/{repo}/` with Basic auth and JSON body `{"full_description": "..."}`
+
 ### Git Workflow
 
 #### Branch Verification Check
@@ -163,7 +168,7 @@ When writing tests, always add a comment describing what the test does and why i
 - **Delete merged branch**: `git branch -d <branch>` (safe delete; use `-D` to force delete unmerged)
 - **Feature branches**: Never commit directly to `main`/`master` — always create feature branch first
 - **Style hygiene**: Move inline styles to CSS classes; use existing design tokens before creating new ones
-- **Worktrees:** Use `git worktree add .worktrees/<branch> -b <branch>` for isolated feature work. Always run `make dev` and `make test` in the worktree before dispatching subagents
+- **Worktrees:** Use `git worktree add .worktrees/<branch> -b <branch>` for isolated feature work. Always run `make dev` and `make test` in the worktree before dispatching subagents. Verify with `git worktree list` to confirm active worktrees.
 
 ## Python Runtime
 - **Use `uv run`** for all commands — `pyproject.toml` requires Python 3.14 only (`>=3.14,<3.15`). Using a pyenv-managed Python will fail to find test dependencies.
