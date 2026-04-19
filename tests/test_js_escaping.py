@@ -223,7 +223,7 @@ class TestBuildHtmlLinkTemplate:
             favicon_inline=None,
         )
 
-    def test_buildHtmlLink_uses_favW_not_faviconW(self, template_env):
+    def test_build_html_link_uses_fav_w_not_favicon_w(self, template_env):
         """buildHtmlLink must use favW (local const), not faviconW (undefined)."""
         rendered = self._render_with_favicon(template_env)
 
@@ -233,7 +233,7 @@ class TestBuildHtmlLinkTemplate:
         # the function parameter name and in the const definition
         assert 'width="${faviconW}"' not in rendered
 
-    def test_buildHtmlLink_uses_favH_not_faviconHeight(self, template_env):
+    def test_build_html_link_uses_fav_h_not_favicon_height(self, template_env):
         """buildHtmlLink must use favH (local const) in height attributes."""
         rendered = self._render_with_favicon(template_env)
 
@@ -242,14 +242,14 @@ class TestBuildHtmlLinkTemplate:
         # not inside the img tag template literals
         assert 'height="${faviconHeight}"' not in rendered
 
-    def test_buildHtmlLink_constants_defined(self, template_env):
+    def test_build_html_link_constants_defined(self, template_env):
         """buildHtmlLink must define favH and favW before the favicon branches."""
         rendered = self._render_with_favicon(template_env)
 
         assert "const favH = faviconHeight || 20;" in rendered
         assert "const favW = faviconWidth || 20;" in rendered
 
-    def test_no_undefined_js_references_in_buildHtmlLink(self, template_env):
+    def test_no_undefined_js_references_in_build_html_link(self, template_env):
         """buildHtmlLink must not reference undefined variables.
 
         After the function parameter list, any reference to faviconW
