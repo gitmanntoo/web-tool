@@ -216,6 +216,13 @@ When writing tests, always add a comment describing what the test does and why i
 ## Documentation
 - Keep TEST_COVERAGE.md dependency versions in sync with pyproject.toml constraints
 
+## Superpowers Plans and Specs
+
+**Attach to PR comments, don't commit.** When superpowers plans and specs are created for a PR:
+1. Write the files to `docs/superpowers/plans/` and `docs/superpowers/specs/` as local untracked files (not committed to git)
+2. Attach the files directly to the PR comment using GitHub's file attachment feature — this keeps docs alongside the PR for reviewer context without adding commit noise
+3. Delete local untracked copies after the PR is merged or closed
+
 ## Testing
 - **Mocking Pillow images:** When mocking `Image.resize`, set `.resize.return_value = mock_img` so callers can chain `.width`/`.height` on the returned image
 - **Doc sync:** When adding/removing test files or test classes, update `TESTING.md` and `TEST_COVERAGE.md` in the same commit or a follow-up — update both test count totals and list new classes
