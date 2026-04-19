@@ -160,7 +160,7 @@ When writing tests, always add a comment describing what the test does and why i
 - **JSON payloads in Make**: Use `python3 -c 'import json; print(json.dumps(...))'` — `sed` doesn't escape backslashes, producing invalid JSON
 - **curl failure propagation**: Use `curl -fsS` (fail on HTTP errors) with explicit `exit 1` — `curl | grep` pattern exits 0 on failure
 - **Repo variable**: Define `DOCKER_REPO` once, derive `DOCKER_IMAGE = $(DOCKER_REPO):latest` — avoids hardcoded repo name drift between `:latest` and version tags
-- **Two tagging workflows**: (1) Local: `git tag && git push && make docker-release`; (2) GitHub Releases: create via UI → `git pull --tags` → `git checkout` → `make docker-release`
+- **Two tagging workflows**: (1) Local: `git tag && git push && make docker-release`; (2) GitHub Releases: create via UI → `git fetch --tags` → `git checkout` → `make docker-release`
 
 ### Git Workflow
 
