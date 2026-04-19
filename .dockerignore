@@ -31,5 +31,11 @@ tests/
 # Build cache
 local-cache/
 
+# Design and spec files
+specs/
+
+# Claude Code session files
+.claude/
+
 # Not needed for runtime
 requirements.txt

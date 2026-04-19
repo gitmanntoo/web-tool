@@ -1,4 +1,41 @@
 body {
-    font-family: system-ui, -apple-system, sans-serif;
-    background: #f8fafc;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+}
+
+.bookmarklet-section {
+    margin: var(--space-lg) 0;
+    padding: var(--space-md);
+    background: var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.bookmarklet-section h2 {
+    margin-top: 0;
+    font-size: var(--font-size-md);
+}
+
+.bookmarklet-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.bookmarklet-drag {
+    display: inline-block;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-text);
+    color: var(--color-bg);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-size: var(--font-size-base);
+    cursor: grab;
+}
+
+.bookmarklet-drag:hover {
+    background: var(--color-text-secondary);
+}
+
+.bookmarklet-drag:active {
+    cursor: grabbing;
 }
