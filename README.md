@@ -34,7 +34,7 @@ If the port is changed, the bookmarklets will need to be updated with the new po
     - Displays the HTML source of the page using Prism formatting.
     - This may fail on some larger, complex pages.
 - <a href="http://localhost:8532/js/mirror-html-source.js?mode=bookmarklet&format=text" target="_blank">html-source-text</a>
-    - Display the HTML source of the page using plain text.
+    - Displays the HTML source of the page using plain text.
     - This should always work.
 
 ## Debug Endpoints
@@ -119,6 +119,7 @@ Inline images are resized to 20px height. Only overrides support inline images; 
 ## Running with Docker
 
 Stops any running container, pulls the latest image, and starts web-tool with auto-restart.
+
 - `-d` runs the container in the background
 - `--restart always` restarts the container if it crashes or when Docker restarts
 - `-p ${PORT}:8532` maps a host port to the container's port 8532
@@ -146,10 +147,13 @@ docker run -d --restart always \
 
 ## Dependencies
 
+- [Flask](https://flask.palletsprojects.com/) for the web framework.
 - [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) for HTML parsing.
+- [lxml](https://lxml.de/) for HTML and XML processing.
 - [CairoSVG](https://cairosvg.org/) for SVG conversion.
 - [Magika](https://google.github.io/magika/) for content type identification.
 - [NLTK :: Natural Language Toolkit](https://www.nltk.org/) for word identification.
 - [Pillow](https://pillow.readthedocs.io/en/stable/) for ICO conversion.
+- [PyMuPDF](https://pymupdf.readthedocs.io/) for PDF processing.
 - [Prism](https://prismjs.com/index.html) for syntax highlighting in HTML pages.
 
