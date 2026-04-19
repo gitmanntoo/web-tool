@@ -154,9 +154,12 @@ When writing tests, always add a comment describing what the test does and why i
 - **Stop container**: `make docker-stop`
 
 **Docker Release Patterns:**
-- **Version from git tag**: `VERSION := $(shell tag=$(git describe --tags --exact-match 2>/dev/null) && echo "$$tag" | sed 's/^v//' || echo "dev-$$(git rev-parse --short HEAD)")` — stores tag or dev-<sha>
+- **Version from git tag**: Use `VERSION =` (lazy, not `:=`) to avoid running git on non-docker targets; include `dev` fallback for non-git contexts
 - **Shell pipeline gotcha**: `cmd | sed ... || fallback` won't trigger fallback on first command failure because pipelines return the last command's exit code; use variable storage first: `var=$$(cmd) && echo "$$var" | sed ... || fallback`
-- **Docker Hub description API**: `PATCH /v2/repositories/{username}/{repo}/` with Basic auth and JSON body `{"full_description": "..."}`
+- **Docker Hub API auth**: Use `curl --netrc-file` with temp file + `umask 077` + `trap` cleanup — `curl -u` leaks credentials via argv (visible in `ps`)
+- **JSON payloads in Make**: Use `python3 -c 'import json; print(json.dumps(...))'` — `sed` doesn't escape backslashes, producing invalid JSON
+- **curl failure propagation**: Use `curl -fsS` (fail on HTTP errors) with explicit `exit 1` — `curl | grep` pattern exits 0 on failure
+- **Repo variable**: Define `DOCKER_REPO` once, derive `DOCKER_IMAGE = $(DOCKER_REPO):latest` — avoids hardcoded repo name drift between `:latest` and version tags
 
 ### Git Workflow
 
