@@ -194,6 +194,8 @@ When writing tests, always add a comment describing what the test does and why i
 - **Schemeless URLs:** `urlparse()` treats schemeless inputs as paths; handle by reparsing with `//` prefix when `netloc` is empty and scheme is missing
 
 ## PR Review Comments
+- **Check before addressing:** When asked to address PR comments, first run `gh pr view <num> --json state,headRefName` to verify the PR isn't merged or the branch doesn't already contain the fixes
+- **View all PR details:** `gh pr view <num> --json body,comments --jq '.'` shows body + all comments in one command
 - **View Copilot comments:** `gh api repos/<owner>/<repo>/pulls/<num>/comments` — addresses these before merge
 
 ## Documentation
