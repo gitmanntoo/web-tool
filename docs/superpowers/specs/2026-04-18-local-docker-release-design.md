@@ -107,7 +107,7 @@ make docker-describe
 ## Error Handling
 
 - Missing credentials: Fail fast with clear message
-- Not at a tagged commit: Warn and use dev- prefix version
+- Not at a tagged commit: Use dev- prefix version
 - Docker not running: Standard docker error
 - Push fails: Standard docker error with buildx context
 
