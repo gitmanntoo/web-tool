@@ -15,7 +15,7 @@ WORKDIR /app
 # Copy dependency manifests first; source code must also be present for
 # `uv pip install .` (setuptools requires all package dirs), so any source
 # change does invalidate the install layer — but system/base layers stay cached
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml ./
 
 # Copy source code (setuptools requires all package dirs present)
 COPY library/ ./library/
