@@ -47,7 +47,7 @@ packages = ["library", "routes", "static", "templates"]
 [tool.ruff]
 target-version = "py314"
 line-length = 100
-exclude = ["library/docker_util.py"]
+extend-exclude = ["library/docker_util.py"]
 
 [tool.ruff.lint]
 select = [
