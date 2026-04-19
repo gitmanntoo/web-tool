@@ -749,7 +749,5 @@ class TestEncodeDataUrlInline:
 
         result = encode_data_url_inline("data:image/png;base64")
         assert result is None
-
-
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

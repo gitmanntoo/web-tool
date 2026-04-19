@@ -159,13 +159,7 @@ def encode_image_inline(image_bytes: bytes, target_height: int = 20) -> dict | N
         png_bytes = png_buffer.getvalue()
 
         b64 = base64.b64encode(png_bytes).decode("ascii")
-        return {
-            "data_url": f"data:image/png;base64,{b64}",
-            "width": width,
-            "height": height,
-            "width_orig": width_orig,
-            "height_orig": height_orig,
-        }
+        return {"data_url": f"data:image/png;base64,{b64}", "width": width, "height": height, "width_orig": width_orig, "height_orig": height_orig}
     except Exception as e:
         logging.warning(f"Failed to encode image inline: {e}")
         return None

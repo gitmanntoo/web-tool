@@ -73,8 +73,7 @@ class TestPyperclipException:
         mock_request = _make_mock_request()
 
         with patch.object(
-            pyperclip,
-            "paste",
+            pyperclip, "paste",
             side_effect=pyperclip.PyperclipException("no clipboard"),
         ):
             metadata = PageMetadata(request=mock_request)
@@ -107,6 +106,8 @@ class TestExistingClipboardError:
                 mock_paste.assert_not_called()
 
         assert metadata.clipboard_error == "some error"
+
+
 
 
 if __name__ == "__main__":
