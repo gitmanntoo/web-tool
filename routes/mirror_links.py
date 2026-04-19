@@ -5,7 +5,6 @@ import time
 import uuid
 
 from flask import Blueprint, Response, current_app, make_response, request
-from jinja2 import Environment, FileSystemLoader
 from markupsafe import escape
 
 from library import html_util, img_util, text_util, url_util, util
@@ -24,7 +23,7 @@ BOOKMARKLETS = [
 
 def _generate_bookmarklet_links():
     """Generate draggable bookmarklet links for the homepage."""
-    template_env = Environment(loader=FileSystemLoader("templates"))
+    template_env = current_app.template_env
     links = []
     for bm in BOOKMARKLETS:
         js = util.get_javascript_file(
