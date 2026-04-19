@@ -145,6 +145,42 @@ docker run -d --restart always \
   --name web-tool dockmann/web-tool
 </pre>
 
+## Building and Publishing
+
+To build and push the Docker image locally (replaces the deprecated GitHub Actions workflow):
+
+**Prerequisites:**
+- Docker with buildx support
+- Docker Hub access token ([create one here](https://hub.docker.com/settings/security))
+
+**Setup:**
+<pre>
+export DOCKERHUB_USERNAME=dockmann
+export DOCKERHUB_TOKEN=your-token-here
+</pre>
+
+**Commands:**
+
+| Command | Description |
+|---------|-------------|
+| `make docker-release` | Full release: build, push, and update Docker Hub description |
+| `make docker-push` | Build and push multi-platform image only |
+| `make docker-describe` | Update Docker Hub description from README.md |
+
+**Versioning:**
+- Tagged commits (e.g., `v1.0.1`) → image tagged as `1.0.1`
+- Untagged commits → image tagged as `dev-<short-sha>` (e.g., `dev-abc123`)
+
+**Example workflow:**
+<pre>
+# Create a release tag
+git tag v1.0.1
+git push origin v1.0.1
+
+# Build and push with version tag
+make docker-release
+</pre>
+
 ## Dependencies
 
 - [Flask](https://flask.palletsprojects.com/) for the web framework.

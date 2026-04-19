@@ -147,6 +147,10 @@ When writing tests, always add a comment describing what the test does and why i
 ### Docker
 - **Run published image**: `make docker-run`
 - **Build image**: `make docker-build`
+- **Build multi-platform**: `make docker-buildx`
+- **Push to registry**: `make docker-push` (requires DOCKERHUB_USERNAME/TOKEN env vars)
+- **Full release**: `make docker-release` (build, push, update description)
+- **Update description**: `make docker-describe` (sync README to Docker Hub)
 - **Stop container**: `make docker-stop`
 
 ### Git Workflow
