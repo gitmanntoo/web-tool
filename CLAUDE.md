@@ -237,7 +237,7 @@ When writing tests, always add a comment describing what the test does and why i
 
 ## Known Tool Issues
 
-**Ruff formatter bug:** `make format` incorrectly converts `except (A, B):` to `except A, B:` (Python 2 syntax). If docker_util.py is ever reformatted, add it to `tool.ruff.exclude` in pyproject.toml.
+**Ruff formatter bug:** `make format` incorrectly converts `except (A, B):` to `except A, B:` (Python 2 syntax). If `docker_util.py` ever needs a Ruff workaround, add it to `[tool.ruff.format].extend-exclude` in `pyproject.toml` so formatting skips that file without overriding Ruff's default excludes or disabling linting for it.
 
 ## Architecture & Project Structure
 
