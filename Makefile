@@ -5,7 +5,7 @@ DOCKERHUB_USERNAME ?= $(shell echo $$DOCKERHUB_USERNAME)
 DOCKERHUB_TOKEN ?= $(shell echo $$DOCKERHUB_TOKEN)
 
 # Version resolution: git tag if at tagged commit, else dev-<sha>
-VERSION := $(shell git describe --tags --exact-match 2>/dev/null | sed 's/^v//' || echo "dev-$$(git rev-parse --short HEAD)")
+VERSION := $(shell tag=$$(git describe --tags --exact-match 2>/dev/null) && echo "$$tag" | sed 's/^v//' || echo "dev-$$(git rev-parse --short HEAD)")
 
 # Verify Docker Hub credentials are set
 define check-docker-credentials
