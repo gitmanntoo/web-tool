@@ -101,6 +101,7 @@ Keep work narrowly scoped to the current task. Resist the urge to improve adjace
   - Address now?
   - Add to ISSUES.md for later?
   - Ignore for now?
+- **ISSUES.md discipline:** Capture issues discovered during a session that are not directly related to the current task. Adding them to `ISSUES.md` keeps work focused and prevents scope creep. Include the date, session context, and any workarounds. Resist the urge to fix unrelated issues "while you're here."
 - **Don't fix pre-existing bugs** you encounter unless the user explicitly says yes.
 
 **The test:** After completing the task, only the lines directly related to the request should have changed. If you "couldn't help but notice" something and fixed it, you went too far.
