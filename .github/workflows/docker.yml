@@ -37,7 +37,7 @@ jobs:
             dockmann/web-tool:latest
             dockmann/web-tool:${{ steps.version.outputs.version }}
 
-      - uses: docker/hub-description@v4
+- uses: peterevans/docker-hub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
