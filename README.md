@@ -171,15 +171,47 @@ export DOCKERHUB_TOKEN=your-token-here
 - Tagged commits (e.g., `v1.0.1`) → image tagged as `1.0.1`
 - Untagged commits → image tagged as `dev-<short-sha>` (e.g., `dev-abc123`)
 
-**Example workflow:**
+### Release Workflows
+
+You can create release tags either locally or via GitHub Releases. Both workflows use the same `make docker-release` command.
+
+**Option 1: Local Tagging**
+
+Create and push the tag locally, then build:
+
 <pre>
-# Create a release tag
+# Create and push the tag
 git tag v1.0.1
 git push origin v1.0.1
 
-# Build and push with version tag
+# Build and push with version tag (run at the tagged commit)
 make docker-release
 </pre>
+
+**Option 2: GitHub Releases**
+
+Create a release via the GitHub UI, then build locally:
+
+<pre>
+# 1. Go to https://github.com/gitmanntoo/web-tool/releases/new
+# 2. Click "Choose a tag" → type "v1.0.1" → click "Create new tag"
+# 3. Fill in release title and description
+# 4. Click "Publish release"
+
+# 5. Pull the new tag locally
+git fetch origin --tags
+
+# 6. Check out the tagged commit
+git checkout v1.0.1
+
+# 7. Build and push with version tag
+make docker-release
+</pre>
+
+**Note:** The GitHub Releases workflow is useful when you want to:
+- Write release notes in GitHub's UI
+- Have the tag creation visible in the GitHub releases list
+- Separate the tagging decision from the build process
 
 ## Dependencies
 
