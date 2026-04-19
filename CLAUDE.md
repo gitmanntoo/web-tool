@@ -152,16 +152,17 @@ When writing tests, always add a comment describing what the test does and why i
 - **Full release**: `make docker-release` (build, push, update description)
 - **Update description**: `make docker-describe` (sync README to Docker Hub)
 - **Stop container**: `make docker-stop`
+- **Clean build cache**: `make docker-clean` (stop container and prune buildx cache)
 
 **Docker Release Patterns:**
-- **Version from git tag**: The current Makefile uses `VERSION := ...` (evaluated at parse time); keep a `dev` fallback for non-git contexts, and avoid documenting this as lazy assignment unless the Makefile is changed to `=`
+- **Version from git tag**: Use `VERSION =` (lazy, not `:=`) to avoid running git on non-docker targets; include `dev` fallback for non-git contexts
 - **Shell pipeline gotcha**: `cmd | sed ... || fallback` won't trigger fallback on first command failure because pipelines return the last command's exit code; use variable storage first: `var=$$(cmd) && echo "$$var" | sed ... || fallback`
 - **docker-describe hardening (recommended for future Makefile updates)**: Current `make docker-describe` still uses `curl -u`, `sed` escaping, and `curl -s | grep`; prefer the safer patterns below when updating it
-- **Docker Hub API auth**: Prefer `curl --netrc-file` with temp file + `umask 077` + `trap` cleanup — `curl -u` leaks credentials via argv (visible in `ps`)
-- **JSON payloads in Make**: Prefer `python3 -c 'import json; print(json.dumps(...))'` — `sed` doesn't escape backslashes, producing invalid JSON
-- **curl failure propagation**: Prefer `curl -fsS` (fail on HTTP errors) with explicit `exit 1` — `curl | grep` pattern exits 0 on failure
+- **Docker Hub API auth**: Use `curl --netrc-file` with temp file + `umask 077` + `trap` cleanup — `curl -u` leaks credentials via argv (visible in `ps`)
+- **JSON payloads in Make**: Use `python3 -c 'import json; print(json.dumps(...))'` — `sed` doesn't escape backslashes, producing invalid JSON
+- **curl failure propagation**: Use `curl -fsS` (fail on HTTP errors) with explicit `exit 1` — `curl | grep` pattern exits 0 on failure
 - **Repo variable**: Define `DOCKER_REPO` once, derive `DOCKER_IMAGE = $(DOCKER_REPO):latest` — avoids hardcoded repo name drift between `:latest` and version tags
-- **Two tagging workflows**: (1) Local: `git tag && git push && make docker-release`; (2) GitHub Releases: create via UI → `git fetch --tags` → `git checkout` → `make docker-release`
+- **Two tagging workflows**: (1) Local: `git tag && git push && make docker-release`; (2) GitHub Releases: create via UI → `git fetch origin --tags` → `git checkout` → `make docker-release`
 
 ### Git Workflow
 
