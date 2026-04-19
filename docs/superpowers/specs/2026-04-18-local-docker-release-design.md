@@ -104,7 +104,7 @@ Create a release via the GitHub UI, then build locally:
 # 5. Fetch the new tag locally
 git fetch --tags origin
 
-# 6. Checkout the tagged commit
+# 6. Check out the tagged commit
 git checkout v1.0.1
 
 # 7. Run release
