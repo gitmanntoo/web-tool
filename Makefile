@@ -171,7 +171,7 @@ docker-release: docker-push
 	@echo "Latest: $(DOCKER_IMAGE)"
 	@echo ""
 	@echo "========================================"
-	@echo "  REMINDER: Manual Docker Hub Update  "
+	@echo "  REMINDER: Manual Docker Hub Update"
 	@echo "========================================"
 	@echo ""
 	@echo "The Docker Hub description is NOT updated automatically."
