@@ -158,7 +158,10 @@ When writing tests, always add a comment describing what the test does and why i
 - **Version from git tag**: Use `VERSION =` (lazy, not `:=`) to avoid running git on non-docker targets; include `dev` fallback for non-git contexts
 - **Shell pipeline gotcha**: `cmd | sed ... || fallback` won't trigger fallback on first command failure because pipelines return the last command's exit code; use variable storage first: `var=$$(cmd) && echo "$$var" | sed ... || fallback`
 - **Docker Hub description**: Updated manually via the Docker Hub UI after `make docker-release`
+- **Terminal reminder**: `make docker-release` displays a boxed reminder with manual update steps after a successful push
 - **Two tagging workflows**: (1) Local: `git tag && git push && make docker-release`; (2) GitHub Releases: create via UI → `git fetch origin --tags` → `git checkout` → `make docker-release`
+- **sed macOS compatibility**: Basic `sed 's/pattern/replacement/'` works on both GNU and BSD sed; only `sed -i` (in-place editing) requires macOS-specific handling
+- **Worktree file sync**: If changes exist in the main worktree before creating a new worktree, either stash them first or run `git checkout <branch> -- <file>` in the worktree to get the correct version before editing
 
 ### Git Workflow
 
