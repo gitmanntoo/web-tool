@@ -64,16 +64,31 @@
         {% if fragment_variants %}
         <div class="panel">
             <div class="panel-label">Fragment</div>
-            <div class="variant-list">
+            <div class="variant-list" id="fragment-options">
                 {% for variant in fragment_variants %}
+                    {% if variant.label == 'Fragment Text' %}
                     <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
-                        <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}" data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
+                        <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}"
+                          data-text="{{ variant.value|e }}" data-has-text-input="true"
+                          id="fragment-radio-{{ loop.index0 }}">
+                        <label for="fragment-radio-{{ loop.index0 }}" class="fragment-text-label">
+                            <input type="text" class="fragment-text-input"
+                                   aria-label="Fragment text"
+                                   value="{{ variant.value|e }}"
+                                   placeholder="{{ variant.value|e }}">
+                        </label>
+                    </div>
+                    {% else %}
+                    <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
+                        <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}"
+                          data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
                         {% if variant.value %}
                         <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
                         {% endif %}
                         <span class="variant-label"><strong>{{ variant.label }}</strong></span>
                         <span>{{ variant.value|e }}</span>
                     </div>
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
@@ -359,13 +374,44 @@
                     if (input.name === 'title_variant') {
                         state.title = input.dataset.text;
                     } else if (input.name === 'fragment_variant') {
-                        state.fragmentText = input.dataset.text;
+                        const textInput = document.querySelector('.fragment-text-input');
+                        if (textInput) {
+                            textInput.style.display = input.dataset.hasTextInput ? 'inline-block' : 'none';
+                        }
+                        if (input.dataset.hasTextInput) {
+                            state.fragmentText = textInput ? textInput.value : input.dataset.text;
+                        } else {
+                            state.fragmentText = input.dataset.text;
+                        }
                     } else if (input.name === 'url_variant') {
                         state.url = input.dataset.text;
                     }
                     render();
                 });
             });
+
+            // Fragment text input — live update on typing (only when Fragment Text radio is checked)
+            const fragmentOptions = document.getElementById('fragment-options');
+            if (fragmentOptions) {
+                fragmentOptions.addEventListener('input', (e) => {
+                    if (e.target.classList.contains('fragment-text-input')) {
+                        const checkedRadio = fragmentOptions.querySelector('input[name="fragment_variant"]:checked');
+                        if (checkedRadio && checkedRadio.dataset.hasTextInput) {
+                            state.fragmentText = e.target.value;
+                            render();
+                        }
+                    }
+                });
+            }
+
+            // Initialize fragment text input visibility based on checked radio
+            const checkedFragmentRadio = document.querySelector('input[name="fragment_variant"]:checked');
+            if (checkedFragmentRadio && checkedFragmentRadio.dataset.hasTextInput) {
+                const textInput = document.querySelector('.fragment-text-input');
+                if (textInput) {
+                    textInput.style.display = 'inline-block';
+                }
+            }
 
             // Attach paste favicon button listener
             const pasteBtn = document.getElementById('paste-favicon-btn');

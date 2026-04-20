@@ -24,10 +24,10 @@ The "Fragment Text" radio option's static label becomes an editable `<input>`:
   <div class="radio-list" id="fragment-options">
     {% for variant in fragment_variants %}
     {% if variant.label == 'Fragment Text' %}
-    <div class="fragment-text-option">
+    <div class="variant-row">
       <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}"
-        data-text="{{ variant.value|e }}" data-has-text-input="true" id="fragment-radio-{{ loop.index0 }}"
-        {% if loop.first %}checked{% endif %}>
+        data-text="{{ variant.value|e }}" data-has-text-input="true"
+        id="fragment-radio-{{ loop.index0 }}">
       <label for="fragment-radio-{{ loop.index0 }}" class="fragment-text-label">
         <input type="text" class="fragment-text-input"
                value="{{ variant.value|e }}"
@@ -35,11 +35,13 @@ The "Fragment Text" radio option's static label becomes an editable `<input>`:
       </label>
     </div>
     {% else %}
-    <label class="fragment-label">
+    <div class="variant-row{% if variant.is_duplicate %} variant-row--duplicate{% endif %}">
       <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}"
         data-text="{{ variant.value|e }}" {% if loop.first %}checked{% endif %}>
-      <span class="fragment-static">{{ variant.label }}</span>
-    </label>
+      {% if variant.value %}<button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>{% endif %}
+      <span class="variant-label"><strong>{{ variant.label }}</strong></span>
+      <span>{{ variant.value|e }}</span>
+    </div>
     {% endif %}
     {% endfor %}
   </div>
@@ -48,47 +50,51 @@ The "Fragment Text" radio option's static label becomes an editable `<input>`:
 ```
 
 **Key changes:**
-- Radio group wrapped in `#fragment-options` for delegated event handling
-- "Fragment Text" option: radio and label are siblings inside a wrapper div; the text input is inside the label
-- Radio uses `id` and label uses `for` to link them without nesting — clicking the input checks the radio without toggle confusion
-- Static labels wrapped in `<span class="fragment-static">` for consistent styling
+- Radio group wrapped in `id="fragment-options"` for delegated event handling
+- "Fragment Text" option: radio and label are siblings; the text input is inside the label
+- Radio uses `id` and label uses `for` to link them — clicking the input checks the radio without toggle confusion
+- Other variants use `.variant-row` with `.variant-row--duplicate` class for duplicates
 - Default on page load: "None" radio is always selected
 
 ---
 
 ## JavaScript Event Handling
 
-### Radio change handler (delegated)
+### Radio change handler
 
 ```javascript
-document.addEventListener('change', (e) => {
-  if (e.target.name === 'fragment_variant') {
-    const selected = e.target;
-    const text = selected.dataset.text; // '' for 'None', '#section' for 'Fragment', 'Text' for 'Fragment Text'
-    state.fragmentText = text;
-
-    // Show/hide fragment text input based on selection
-    const fragmentOptions = document.getElementById('fragment-options');
-    const textInput = fragmentOptions.querySelector('.fragment-text-input');
-    if (textInput) {
-      textInput.style.display = selected.dataset.hasTextInput ? 'inline-block' : 'none';
+// Individual listeners for static radios
+document.querySelectorAll('input[name="title_variant"], input[name="fragment_variant"], input[name="url_variant"]').forEach(input => {
+  input.addEventListener('change', () => {
+    if (input.name === 'fragment_variant') {
+      const textInput = document.querySelector('.fragment-text-input');
+      if (textInput) {
+        textInput.style.display = input.dataset.hasTextInput ? 'inline-block' : 'none';
+      }
+      if (input.dataset.hasTextInput) {
+        state.fragmentText = textInput ? textInput.value : input.dataset.text;
+      } else {
+        state.fragmentText = input.dataset.text;
+      }
     }
-
-    updateLinks();
-  }
+    render();
+  });
 });
 ```
 
-### Input event for live editing
+### Input event for live editing (delegated)
 
 ```javascript
-document.addEventListener('input', (e) => {
-  if (e.target.classList.contains('fragment-text-input')) {
-    // Use input value as fragment text when user types
-    state.fragmentText = e.target.value;
-    updateLinks();
-  }
-});
+// Fragment text input — live update on typing
+const fragmentOptions = document.getElementById('fragment-options');
+if (fragmentOptions) {
+  fragmentOptions.addEventListener('input', (e) => {
+    if (e.target.classList.contains('fragment-text-input')) {
+      state.fragmentText = e.target.value;
+      render();
+    }
+  });
+}
 ```
 
 **Key behavior:**
