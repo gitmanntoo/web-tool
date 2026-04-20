@@ -21,7 +21,7 @@ define check-docker-credentials
 	fi
 endef
 
-.PHONY: help install dev run lint format check test testcov testv docs check-imports clean docker-run docker-build docker-buildx docker-push docker-release docker-describe docker-stop docker-clean
+.PHONY: help install dev run lint format check test testcov testv docs check-imports clean docker-run docker-build docker-buildx docker-push docker-release docker-stop docker-clean
 
 .DEFAULT_GOAL := help
 
@@ -55,8 +55,7 @@ help:
 	@echo "  make docker-build     - Build Docker image for current platform"
 	@echo "  make docker-buildx    - Build multi-platform image (amd64/arm64)"
 	@echo "  make docker-push      - Build and push multi-platform image"
-	@echo "  make docker-release   - Build, push, and update Docker Hub description"
-	@echo "  make docker-describe  - Update Docker Hub description from README"
+	@echo "  make docker-release   - Build and push multi-platform image (versioned)"
 	@echo "  make docker-stop      - Stop running container"
 	@echo "  make docker-clean     - Stop container and prune build cache"
 
@@ -164,27 +163,15 @@ docker-push:
 	@echo "Pushed: $(DOCKER_IMAGE)"
 	@echo "Pushed: dockmann/web-tool:$(VERSION)"
 
-# Full release: build, push, and update Docker Hub description
-docker-release: docker-push docker-describe
+# Full release: build and push multi-platform image with version tag
+docker-release: docker-push
 	@echo ""
 	@echo "=== Release Complete ==="
 	@echo "Image: dockmann/web-tool:$(VERSION)"
 	@echo "Latest: $(DOCKER_IMAGE)"
-
-# Update Docker Hub description from README.md
-docker-describe:
-	$(call check-docker-credentials)
-	@echo "Updating Docker Hub description..."
-	@echo "  Repository: $(DOCKERHUB_USERNAME)/web-tool"
-	@echo "  Source: README.md"
 	@echo ""
-	@DESCRIPTION=$$(cat README.md | sed 's/"/\\"/g' | sed ':a;N;$$!ba;s/\n/\\n/g'); \
-	curl -s -X PATCH \
-		-H "Content-Type: application/json" \
-		-u "$(DOCKERHUB_USERNAME):$(DOCKERHUB_TOKEN)" \
-		-d "{\"full_description\": \"$$DESCRIPTION\"}" \
-		https://hub.docker.com/v2/repositories/$(DOCKERHUB_USERNAME)/web-tool/ \
-		| grep -q "full_description" && echo "Description updated successfully" || echo "Failed to update description (check credentials)"
+	@echo "NOTE: Docker Hub description not updated automatically."
+	@echo "      Update it manually at: https://hub.docker.com/r/dockmann/web-tool"
 
 # Stop running container
 docker-stop:

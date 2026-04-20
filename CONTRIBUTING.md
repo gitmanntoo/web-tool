@@ -20,9 +20,8 @@ export DOCKERHUB_TOKEN=your-token-here
 
 | Command | Description |
 |---------|-------------|
-| `make docker-release` | Full release: build, push, and update Docker Hub description |
+| `make docker-release` | Build and push multi-platform image (versioned) |
 | `make docker-push` | Build and push multi-platform image only |
-| `make docker-describe` | Update Docker Hub description from README.md |
 
 **Versioning:**
 - Tagged commits (e.g., `v1.0.1`) → image tagged as `1.0.1`
@@ -60,6 +59,10 @@ git fetch origin --tags
 
 # 6. Check out the tagged commit
 git checkout v1.0.1
+# Note: This puts you in a 'detached HEAD' state. This is expected — you're
+# viewing the code at the tagged commit, not on a branch. After building, you
+# can return to main with: git switch -
+# Or create a worktree for this version: git worktree add .worktrees/v1.0.1 v1.0.1
 
 # 7. Build and push with version tag
 make docker-release
@@ -69,6 +72,17 @@ make docker-release
 - Write release notes in GitHub's UI
 - Have the tag creation visible in the GitHub releases list
 - Separate the tagging decision from the build process
+
+### Updating Docker Hub Description
+
+The Docker Hub description is no longer updated automatically. After pushing a release, update it manually:
+
+1. Go to https://hub.docker.com/r/dockmann/web-tool
+2. Click the **Edit** button (pencil icon) next to the description
+3. Paste the contents of `README.md`
+4. Click **Save**
+
+This ensures the Docker Hub page stays in sync with the project README.
 
 ## Dependencies
 
