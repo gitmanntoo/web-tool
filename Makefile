@@ -170,8 +170,19 @@ docker-release: docker-push
 	@echo "Image: dockmann/web-tool:$(VERSION)"
 	@echo "Latest: $(DOCKER_IMAGE)"
 	@echo ""
-	@echo "NOTE: Docker Hub description not updated automatically."
-	@echo "      Update it manually at: https://hub.docker.com/r/dockmann/web-tool"
+	@echo "========================================"
+	@echo "  REMINDER: Manual Docker Hub Update  "
+	@echo "========================================"
+	@echo ""
+	@echo "The Docker Hub description is NOT updated automatically."
+	@echo ""
+	@echo "Steps to update:"
+	@echo "  1. Go to: https://hub.docker.com/r/dockmann/web-tool"
+	@echo "  2. Click the Edit (pencil) button next to the description"
+	@echo "  3. Paste the contents of README.md"
+	@echo "  4. Click Save"
+	@echo ""
+	@echo "========================================"
 
 # Stop running container
 docker-stop:
