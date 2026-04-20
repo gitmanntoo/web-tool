@@ -392,6 +392,36 @@ h1 {
 }
 
 /* ============================================
+   Fragment Text Input
+   ============================================ */
+
+.fragment-text-label {
+    display: inline-flex;
+    align-items: center;
+}
+
+.fragment-text-input {
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    padding: 0.125rem 0.25rem;
+    font-size: var(--font-size-sm);
+    width: 10rem;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.fragment-text-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+
+.fragment-text-input[disabled] {
+    background: var(--color-border-subtle);
+    color: var(--color-text-muted);
+}
+
+/* ============================================
    Code Block
    ============================================ */
 
