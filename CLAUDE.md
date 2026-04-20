@@ -242,7 +242,7 @@ When writing tests, always add a comment describing what the test does and why i
 - **Unused variables:** Run `ruff check --select F841` before committing; unused assignments in tests often indicate incomplete assertions
 - **Test pattern consistency:** When adding paired tests (e.g., ICO/SVG variants), match the existing test's structure exactly — don't assign `result` if sibling test doesn't use it
 - **JS template testing:** Template rendering tests (`test_js_escaping.py`) verify JS variable names and structure in rendered output, but cannot catch runtime ReferenceErrors — use Playwright/browser testing for JS runtime bugs
-- **Test runtime:** After `make dev`, tests run via `make test` using `.venv/bin/python3.14`. The `uv run pytest` path may fail to find pytest because dev deps are in the venv, not the uv cache.
+- **Test runtime:** After `make dev`, tests run via `make test` (which uses `uv run pytest`). Dev dependencies (pytest, ruff) are available through the uv-managed virtual environment.
 
 ## Workflow
 - **Brainstorming first:** Use `superpowers:brainstorming` before any implementation. Design must be approved before invoking writing-plans. Hard gate: no code until design approved.

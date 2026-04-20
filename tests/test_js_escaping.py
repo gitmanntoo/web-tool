@@ -190,6 +190,37 @@ class TestMirrorLinksJsEscaping:
         # The template should use angle-bracket wrapping with < > encoding
         assert "encodeURIComponent" in rendered
 
+    def test_fragment_text_row_has_readonly_span_and_editable_input(self, template_env):
+        """Test that Fragment Text row contains both read-only span and editable input.
+
+        The Fragment Text row should render with both:
+        - A .fragment-text-readonly span showing the value when radio is unchecked
+        - A .fragment-text-input for editing when radio is checked
+        This ensures UI consistency with other fragment variant rows.
+        """
+        template = template_env.get_template("mirror-links.html")
+
+        rendered = template.render(
+            title="Test",
+            title_variants=[{"value": "Test", "label": "Original"}],
+            fragment="section",
+            fragment_text="build_schema_type_to_method",
+            fragment_variants=[
+                {"value": "build_schema_type_to_method", "label": "Fragment Text"},
+                {"value": "section", "label": "Fragment: section"},
+            ],
+            url_variants=[{"url": "https://example.com", "label": "Original"}],
+            favicon=None,
+            favicon_inline=None,
+        )
+
+        # Should contain the read-only span for displaying value when radio unchecked
+        assert 'class="fragment-text-readonly"' in rendered
+        # Should contain the editable input for editing when radio checked
+        assert 'class="fragment-text-input"' in rendered
+        # Both should contain the fragment text value
+        assert "build_schema_type_to_method" in rendered
+
 
 class TestBuildHtmlLinkTemplate:
     """Regression tests for buildHtmlLink JS variable references.
