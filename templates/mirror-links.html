@@ -397,6 +397,14 @@
                         const checkedRadio = fragmentOptions.querySelector('input[name="fragment_variant"]:checked');
                         if (checkedRadio && checkedRadio.dataset.hasTextInput) {
                             state.fragmentText = e.target.value;
+                            // Sync the read-only span and Copy button with the edited value
+                            const row = e.target.closest('.variant-row');
+                            if (row) {
+                                const readonlySpan = row.querySelector('.fragment-text-readonly');
+                                const copyBtn = row.querySelector('.btn-copy');
+                                if (readonlySpan) readonlySpan.textContent = e.target.value;
+                                if (copyBtn) copyBtn.dataset.html = e.target.value;
+                            }
                             render();
                         }
                     }
