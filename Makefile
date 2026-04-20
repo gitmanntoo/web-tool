@@ -179,8 +179,9 @@ docker-describe:
 	@echo "  Source: README.md"
 	@echo ""
 	@NETRC_FILE=$$(mktemp); \
-	trap "rm -f $$NETRC_FILE" EXIT; \
 	umask 077; \
+	chmod 600 "$$NETRC_FILE"; \
+	trap "rm -f $$NETRC_FILE" EXIT; \
 	( echo "machine hub.docker.com"; \
 	  echo "login $(DOCKERHUB_USERNAME)"; \
 	  echo "password $(DOCKERHUB_TOKEN)" ) > "$$NETRC_FILE"; \
