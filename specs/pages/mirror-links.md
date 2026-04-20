@@ -105,14 +105,14 @@ web-tool.py:get_mirror_links()
 
 **Shown:** Only when `metadata.parsed_url.fragment` or `metadata.fragment_text` is truthy.
 
-**Content:** Radio list of fragment variants. The "Fragment Text" option uses an editable text input instead of a static label.
+**Content:** Radio list of fragment variants. The "Fragment Text" option uses a dual-state UI: read-only span when not selected, editable input when selected.
 
 **Variants (in order):**
 | Label | Value | UI |
 |-------|-------|-----|
 | None | `""` | Static radio + label |
 | Fragment | `metadata.parsed_url.fragment` | Static radio + label |
-| Fragment Text | `metadata.fragment_text` | Radio + label with embedded text input |
+| Fragment Text | `metadata.fragment_text` | Radio + label with read-only span + editable input |
 
 **HTML structure for Fragment Text:**
 ```html
@@ -120,18 +120,38 @@ web-tool.py:get_mirror_links()
     <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}"
       data-text="{{ variant.value|e }}" data-has-text-input="true"
       id="fragment-radio-{{ loop.index0 }}">
+    <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
+    <span class="variant-label"><strong>Fragment Text</strong></span>
     <label for="fragment-radio-{{ loop.index0 }}" class="fragment-text-label">
+        <span class="fragment-text-readonly">{{ variant.value|e }}</span>
         <input type="text" class="fragment-text-input"
-               value="{{ variant.value|e }}"
-               placeholder="{{ variant.value|e }}">
+               aria-label="Fragment text"
+               value="{{ variant.value|e }}">
     </label>
 </div>
 ```
 
 **Behavior:**
-- Radio `change` → detect `data-has-text-input` → show/hide input → `state.fragmentText` from radio `data-text` or input value → `render()`
-- Text input `input` → `state.fragmentText = input.value` → `render()` (live update as user types)
+- **Read-only state (radio NOT checked):** `.fragment-text-readonly` span visible, `.fragment-text-input` hidden via CSS
+- **Editable state (radio checked):** `.fragment-text-readonly` hidden, `.fragment-text-input` shown via CSS `:has()` selector
+- Radio `change` → `state.fragmentText` from radio `data-text` or input value → `render()`
+- Text input `input` → `state.fragmentText = input.value` → `render()` (live update as user types, only when radio is checked)
 - Default selection: "None" is always selected on page load (first variant)
+
+**CSS implementation (mirror.css):**
+```css
+/* Read-only span visible by default */
+.fragment-text-readonly { display: inline; }
+
+/* When radio checked: hide read-only, show editable */
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-readonly { display: none; }
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-input { display: inline-block; }
+
+/* When radio NOT checked: hide editable */
+.variant-row:not(:has(input[name="fragment_variant"]:checked)) .fragment-text-input { display: none; }
+```
+
+**Why `.variant-row:has()` not `.fragment-text-label:has()`:** The radio is a sibling of the label, not a child. The `:has()` selector must target the common ancestor (`.variant-row`) to detect the radio's checked state.
 
 ---
 
@@ -223,10 +243,10 @@ const state = {
 **`render()` function:**
 1. Build HTML format using `buildHtmlLink(...)` with current state
 2. Update `#format-html-display` innerHTML, `#format-html-plain` textContent
-3. Build Markdown format, update display/plain
-4. Build Wiki-link format, update display/plain
-5. Build Simple format, update display/plain
-6. Update each copy button's `data-html` dataset
+3. Update `#copy-html` button's `data-html` dataset
+4. Build Markdown format, update display/plain and copy button
+5. Build Wiki-link format, update display/plain and copy button
+6. Build Simple format, update display/plain and copy button
 7. Auto-copy HTML to clipboard if `linksInitialized` is true
 
 **`linksInitialized` flag:**
@@ -364,6 +384,21 @@ Set when `is_duplicate: true` in variant data. Uses CSS opacity instead of inlin
 
 **Shared components:**
 - `static/js/tooltip.js` — Shared `showTooltip()` function used by copy buttons
+
+**Fragment Text classes (CSS `:has()` pattern):**
+```css
+/* Read-only span visible by default */
+.fragment-text-readonly { display: inline; }
+
+/* When radio checked: hide read-only, show editable */
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-readonly { display: none; }
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-input { display: inline-block; }
+
+/* When radio NOT checked: hide editable */
+.variant-row:not(:has(input[name="fragment_variant"]:checked)) .fragment-text-input { display: none; }
+```
+
+**Why `.variant-row:has()`:** The radio is a sibling of the label, not a child. The `:has()` selector must target the common ancestor (`.variant-row`) to detect the radio's checked state.
 
 ---
 

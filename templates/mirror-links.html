@@ -71,11 +71,13 @@
                         <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}"
                           data-text="{{ variant.value|e }}" data-has-text-input="true"
                           id="fragment-radio-{{ loop.index0 }}">
+                        <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
+                        <span class="variant-label"><strong>{{ variant.label }}</strong></span>
                         <label for="fragment-radio-{{ loop.index0 }}" class="fragment-text-label">
+                            <span class="fragment-text-readonly">{{ variant.value|e }}</span>
                             <input type="text" class="fragment-text-input"
                                    aria-label="Fragment text"
-                                   value="{{ variant.value|e }}"
-                                   placeholder="{{ variant.value|e }}">
+                                   value="{{ variant.value|e }}">
                         </label>
                     </div>
                     {% else %}
@@ -375,9 +377,6 @@
                         state.title = input.dataset.text;
                     } else if (input.name === 'fragment_variant') {
                         const textInput = document.querySelector('.fragment-text-input');
-                        if (textInput) {
-                            textInput.style.display = input.dataset.hasTextInput ? 'inline-block' : 'none';
-                        }
                         if (input.dataset.hasTextInput) {
                             state.fragmentText = textInput ? textInput.value : input.dataset.text;
                         } else {
@@ -398,19 +397,18 @@
                         const checkedRadio = fragmentOptions.querySelector('input[name="fragment_variant"]:checked');
                         if (checkedRadio && checkedRadio.dataset.hasTextInput) {
                             state.fragmentText = e.target.value;
+                            // Sync the read-only span and Copy button with the edited value
+                            const row = e.target.closest('.variant-row');
+                            if (row) {
+                                const readonlySpan = row.querySelector('.fragment-text-readonly');
+                                const copyBtn = row.querySelector('.btn-copy');
+                                if (readonlySpan) readonlySpan.textContent = e.target.value;
+                                if (copyBtn) copyBtn.dataset.html = e.target.value;
+                            }
                             render();
                         }
                     }
                 });
-            }
-
-            // Initialize fragment text input visibility based on checked radio
-            const checkedFragmentRadio = document.querySelector('input[name="fragment_variant"]:checked');
-            if (checkedFragmentRadio && checkedFragmentRadio.dataset.hasTextInput) {
-                const textInput = document.querySelector('.fragment-text-input');
-                if (textInput) {
-                    textInput.style.display = 'inline-block';
-                }
             }
 
             // Attach paste favicon button listener
