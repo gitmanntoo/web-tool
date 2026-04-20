@@ -101,18 +101,37 @@ web-tool.py:get_mirror_links()
 
 ### 3. Fragment (conditional)
 
-**Purpose:** Show fragment/anchor options for the page URL.
+**Purpose:** Show fragment/anchor options for the page URL, with editable text for custom fragment display.
 
 **Shown:** Only when `metadata.parsed_url.fragment` or `metadata.fragment_text` is truthy.
 
-**Content:** Radio list of fragment variants. Duplicates use `.variant-row--duplicate` class.
-| Label | Value |
-|-------|-------|
-| None | `""` |
-| Fragment | `metadata.parsed_url.fragment` |
-| Fragment Text | `metadata.fragment_text` |
+**Content:** Radio list of fragment variants. The "Fragment Text" option uses an editable text input instead of a static label.
 
-**Behavior:** Radio `change` → `state.fragmentText = input.dataset.text` → `render()`
+**Variants (in order):**
+| Label | Value | UI |
+|-------|-------|-----|
+| None | `""` | Static radio + label |
+| Fragment | `metadata.parsed_url.fragment` | Static radio + label |
+| Fragment Text | `metadata.fragment_text` | Radio + label with embedded text input |
+
+**HTML structure for Fragment Text:**
+```html
+<div class="variant-row">
+    <input type="radio" name="fragment_variant" value="fragment{{ loop.index0 }}"
+      data-text="{{ variant.value|e }}" data-has-text-input="true"
+      id="fragment-radio-{{ loop.index0 }}">
+    <label for="fragment-radio-{{ loop.index0 }}" class="fragment-text-label">
+        <input type="text" class="fragment-text-input"
+               value="{{ variant.value|e }}"
+               placeholder="{{ variant.value|e }}">
+    </label>
+</div>
+```
+
+**Behavior:**
+- Radio `change` → detect `data-has-text-input` → show/hide input → `state.fragmentText` from radio `data-text` or input value → `render()`
+- Text input `input` → `state.fragmentText = input.value` → `render()` (live update as user types)
+- Default selection: "None" is always selected on page load (first variant)
 
 ---
 
@@ -334,6 +353,8 @@ Plain `url text` output — URL first, then link text.
 | `.link-format-row__plain` | Plain text preview below format display |
 | `.favicon-inline-preview` | Monospace inline favicon preview text |
 | `.paste-favicon-btn` | Paste Favicon button |
+| `.fragment-text-label` | Label wrapping the fragment text input |
+| `.fragment-text-input` | Editable text input for custom fragment text |
 
 **`variant-row` duplicate state:**
 ```html
@@ -441,6 +462,8 @@ addPastedFavicon(base64, container) →
 - [ ] Title variant change updates all 4 format displays
 - [ ] URL variant change updates all 4 format displays
 - [ ] Fragment section appears when URL has a fragment
+- [ ] Fragment Text input pre-populates with derived fragment text
+- [ ] Typing in Fragment Text input updates links live
 - [ ] HTML format includes favicon when favicon option is set
 - [ ] Markdown format escapes `[`, `]`, `\` in link text
 - [ ] Markdown format wraps URL in `<>` when URL contains `()[] <`
