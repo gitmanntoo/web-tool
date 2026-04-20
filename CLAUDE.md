@@ -222,6 +222,8 @@ When writing tests, always add a comment describing what the test does and why i
 2. Attach files directly to the PR comment using GitHub's file attachment feature — this keeps docs alongside the PR for reviewer context without adding commit noise
 3. Delete local untracked copies after the PR is merged or closed
 
+**Design docs vs. PR docs:** Design specs go to `docs/superpowers/specs/` and get committed (they're part of feature development). PR planning docs (task lists, implementation notes) should be attached to PR comments, not committed.
+
 ## Testing
 - **Mocking Pillow images:** When mocking `Image.resize`, set `.resize.return_value = mock_img` so callers can chain `.width`/`.height` on the returned image
 - **Unused variables:** Run `ruff check --select F841` before committing; unused assignments in tests often indicate incomplete assertions
@@ -281,6 +283,7 @@ The `web-tool` is a utility for extracting and processing information from web p
 - Template domain extraction must use backend-computed `override_domain`/`override_path_scope` — string-splitting on `/` reverses the TLD
 - Walrus operator precedence: `(t := resp.get_type()) != "image/svg"` — parentheses required around walrus assignment before comparison
 - **Dynamic radio buttons:** `querySelectorAll` at `DOMContentLoaded` misses elements added later. Use event delegation on a parent container that exists at load time (e.g., `#favicon-options`) for dynamically added radio/checkbox groups
+- **Radio + input in label:** When embedding an input inside a `<label>` linked to a radio, use `for`/`id` linking (not nesting) to prevent clicking the input from toggling the radio off
 
 ### Technical Stack
 - **Backend**: Python 3.14, Flask
