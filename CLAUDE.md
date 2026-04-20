@@ -199,6 +199,7 @@ When writing tests, always add a comment describing what the test does and why i
 - **Components:** Prefer semantic classes (`.panel`, `.variant-row`, `.btn-copy`) over inline styles
 - **Tooltip positioning:** Add `window.scrollX/Y` to `getBoundingClientRect()` coords for accurate placement
 - **Long metadata strings:** Add `word-wrap: break-word` to any text container that may hold long unbreakable strings (cookie strings, base64, URLs)
+- **CSS :has() for radio sibling states:** When a radio is a sibling of an element you want to style based on checked state, `:has()` must target the common ancestor. E.g., `.variant-row:has(input[name="fragment_variant"]:checked)` not `.fragment-text-label:has(input...)` since the radio and label are siblings.
 
 ## Shared JavaScript
 - **tooltip.js:** Shared `showTooltip()` and `attachCopyListeners()` functions — import in templates with `<script src="/static/js/tooltip.js">`
@@ -229,8 +230,10 @@ When writing tests, always add a comment describing what the test does and why i
 - **Unused variables:** Run `ruff check --select F841` before committing; unused assignments in tests often indicate incomplete assertions
 - **Test pattern consistency:** When adding paired tests (e.g., ICO/SVG variants), match the existing test's structure exactly — don't assign `result` if sibling test doesn't use it
 - **JS template testing:** Template rendering tests (`test_js_escaping.py`) verify JS variable names and structure in rendered output, but cannot catch runtime ReferenceErrors — use Playwright/browser testing for JS runtime bugs
+- **Test runtime:** After `make dev`, tests run via `make test` using `.venv/bin/python3.14`. The `uv run pytest` path may fail to find pytest because dev deps are in the venv, not the uv cache.
 
 ## Workflow
+- **Brainstorming first:** Use `superpowers:brainstorming` before any implementation. Design must be approved before invoking writing-plans. Hard gate: no code until design approved.
 - **Multi-step implementations:** Use `superpowers:subagent-driven-development` skill. Create tasks with `TaskCreate`, set dependencies, dispatch one `general-purpose` subagent per task.
 - **Commit per step:** When implementing task lists or plans with multiple steps, commit and push after each step is completed. Mark steps done in the local plan file so commits in GitHub match execution progress. This ensures status is tracked locally and remotely, and work can be resumed if interrupted.
 - **Code reviews:** Score issues 0-100 for confidence; only report issues ≥80 to minimize false positives
@@ -284,6 +287,7 @@ The `web-tool` is a utility for extracting and processing information from web p
 - Walrus operator precedence: `(t := resp.get_type()) != "image/svg"` — parentheses required around walrus assignment before comparison
 - **Dynamic radio buttons:** `querySelectorAll` at `DOMContentLoaded` misses elements added later. Use event delegation on a parent container that exists at load time (e.g., `#favicon-options`) for dynamically added radio/checkbox groups
 - **Radio + input in label:** When embedding an input inside a `<label>` linked to a radio, use `for`/`id` linking (not nesting) to prevent clicking the input from toggling the radio off
+- **Fragment Text row:** Always includes: radio + Copy button + "Fragment Text" label + (read-only span OR editable input). CSS `:has()` on `.variant-row` shows/hides read-only vs. editable based on radio checked state.
 
 ### Technical Stack
 - **Backend**: Python 3.14, Flask
