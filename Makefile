@@ -178,13 +178,20 @@ docker-describe:
 	@echo "  Repository: $(DOCKERHUB_USERNAME)/web-tool"
 	@echo "  Source: README.md"
 	@echo ""
-	@DESCRIPTION=$$(cat README.md | sed 's/"/\\"/g' | sed ':a;N;$$!ba;s/\n/\\n/g'); \
-	curl -s -X PATCH \
+	@NETRC_FILE=$$(mktemp); \
+	trap "rm -f $$NETRC_FILE" EXIT; \
+	umask 077; \
+	( echo "machine hub.docker.com"; \
+	  echo "login $(DOCKERHUB_USERNAME)"; \
+	  echo "password $(DOCKERHUB_TOKEN)" ) > "$$NETRC_FILE"; \
+	DESCRIPTION=$$(python3 -c 'import json; print(json.dumps(open("README.md").read()))'); \
+	curl -fsS -X PATCH \
+		--netrc-file "$$NETRC_FILE" \
 		-H "Content-Type: application/json" \
-		-u "$(DOCKERHUB_USERNAME):$(DOCKERHUB_TOKEN)" \
-		-d "{\"full_description\": \"$$DESCRIPTION\"}" \
-		https://hub.docker.com/v2/repositories/$(DOCKERHUB_USERNAME)/web-tool/ \
-		| grep -q "full_description" && echo "Description updated successfully" || echo "Failed to update description (check credentials)"
+		-d "{\"full_description\": $$DESCRIPTION}" \
+		https://hub.docker.com/v2/repositories/$(DOCKERHUB_USERNAME)/web-tool/ && \
+	echo "Description updated successfully" || \
+	{ echo "Failed to update description (check credentials)"; exit 1; }
 
 # Stop running container
 docker-stop:
