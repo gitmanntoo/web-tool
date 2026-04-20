@@ -1,4 +1,5 @@
 DOCKER_IMAGE = dockmann/web-tool:latest
+DOCKER_REPO = $(firstword $(subst :, ,$(DOCKER_IMAGE)))
 
 # Docker Hub credentials (required for push operations)
 DOCKERHUB_USERNAME ?= $(shell echo $$DOCKERHUB_USERNAME)
@@ -157,21 +158,32 @@ docker-push:
 	docker buildx build \
 		--platform linux/amd64,linux/arm64 \
 		--tag $(DOCKER_IMAGE) \
-		--tag dockmann/web-tool:$(VERSION) \
+		--tag $(DOCKER_REPO):$(VERSION) \
 		--push .
 	@echo ""
 	@echo "Pushed: $(DOCKER_IMAGE)"
-	@echo "Pushed: dockmann/web-tool:$(VERSION)"
+	@echo "Pushed: $(DOCKER_REPO):$(VERSION)"
 
 # Full release: build and push multi-platform image with version tag
 docker-release: docker-push
 	@echo ""
 	@echo "=== Release Complete ==="
-	@echo "Image: dockmann/web-tool:$(VERSION)"
+	@echo "Image: $(DOCKER_REPO):$(VERSION)"
 	@echo "Latest: $(DOCKER_IMAGE)"
 	@echo ""
-	@echo "NOTE: Docker Hub description not updated automatically."
-	@echo "      Update it manually at: https://hub.docker.com/r/dockmann/web-tool"
+	@echo "========================================"
+	@echo "  REMINDER: Manual Docker Hub Update"
+	@echo "========================================"
+	@echo ""
+	@echo "The Docker Hub description is NOT updated automatically."
+	@echo ""
+	@echo "Steps to update:"
+	@echo "  1. Go to: https://hub.docker.com/r/$(DOCKER_REPO)"
+	@echo "  2. Click the Edit (pencil) button next to the description"
+	@echo "  3. Paste the contents of README.md"
+	@echo "  4. Click Save"
+	@echo ""
+	@echo "========================================"
 
 # Stop running container
 docker-stop:

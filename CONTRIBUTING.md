@@ -75,7 +75,9 @@ make docker-release
 
 ### Updating Docker Hub Description
 
-The Docker Hub description is no longer updated automatically. After pushing a release, update it manually:
+**Important:** The Docker Hub description is no longer updated automatically. After running `make docker-release`, the terminal will display a reminder with instructions.
+
+Update the Docker Hub description manually:
 
 1. Go to https://hub.docker.com/r/dockmann/web-tool
 2. Click the **Edit** button (pencil icon) next to the description
