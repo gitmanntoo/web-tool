@@ -422,6 +422,25 @@ h1 {
     color: var(--color-text-muted);
 }
 
+/* Read-only span shown by default, hidden when radio is checked */
+.fragment-text-readonly {
+    display: inline;
+}
+
+/* When Fragment Text radio is checked, hide read-only span and show editable input */
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-readonly {
+    display: none;
+}
+
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-input {
+    display: inline-block;
+}
+
+/* When Fragment Text radio is NOT checked, hide editable input */
+.variant-row:not(:has(input[name="fragment_variant"]:checked)) .fragment-text-input {
+    display: none;
+}
+
 /* ============================================
    Code Block
    ============================================ */

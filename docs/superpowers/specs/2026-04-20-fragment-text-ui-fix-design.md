@@ -22,31 +22,46 @@ Since nothing is rendered as the read-only display for the non-selected state, t
 
 ## Design
 
-### Layout (Fragment Text row)
+## Implementation Details
+
+### Layout (Fragment Text row — final)
 
 ```
 <div class="variant-row">
     <input type="radio" name="fragment_variant" id="fragment-radio-N" ...>
+    <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
+    <span class="variant-label"><strong>Fragment Text</strong></span>
     <label for="fragment-radio-N" class="fragment-text-label">
-        <span class="fragment-text-readonly">Pretty-printing</span>
+        <span class="fragment-text-readonly">{{ variant.value|e }}</span>
         <input type="text" class="fragment-text-input" ...>
     </label>
 </div>
 ```
 
 - **Radio** is in its own cell (outside label, before label per existing pattern)
+- **Copy button** and **label "Fragment Text"** match other fragment rows
 - **Label** wraps both:
-  - **Read-only span** (`.fragment-text-readonly`): always visible by default, shows the fragment value
-  - **Editable input** (`.fragment-text-input`): always visible by default, becomes editable when radio selected
+  - **Read-only span** (`.fragment-text-readonly`): visible by default, hidden when radio checked
+  - **Editable input** (`.fragment-text-input`): hidden by default, shown when radio checked
 
 ### CSS Behavior
 
 | State | Read-only span | Editable input |
 |-------|----------------|----------------|
 | Radio NOT checked | `display: inline` | `display: none` |
-| Radio checked | `display: none` | `display: inline-block`, `disabled: false` |
+| Radio checked | `display: none` | `display: inline-block` |
 
-Implemented via `.fragment-text-label:has(#fragment-radio-N:checked) .fragment-text-readonly { display: none; }` and similar for `.fragment-text-input`.
+Implemented via `.variant-row:has(input[name="fragment_variant"]:checked)` selectors.
+
+### Why `.variant-row:has()` not `.fragment-text-label:has()`
+
+The radio is a sibling of the label, not a child of it. The `:has()` selector must target `.variant-row` (the common ancestor) to detect the radio's checked state:
+
+```css
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-readonly { display: none; }
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-input { display: inline-block; }
+.variant-row:not(:has(input[name="fragment_variant"]:checked)) .fragment-text-input { display: none; }
+```
 
 ### Why This Works
 
@@ -55,7 +70,7 @@ Implemented via `.fragment-text-label:has(#fragment-radio-N:checked) .fragment-t
 - No JavaScript visibility toggle needed for the read-only/ editable swap
 - JavaScript only needs to read the input value on change (already exists at lines 396–404)
 
-## Files to Modify
+## Files Modified
 
 ### `templates/mirror-links.html`
 
@@ -64,7 +79,7 @@ Implemented via `.fragment-text-label:has(#fragment-radio-N:checked) .fragment-t
 <div class="variant-row ...>
     <input type="radio" ... id="fragment-radio-N">
     <label for="fragment-radio-N" class="fragment-text-label">
-        <input type="text" class="fragment-text-input" ...>
+        <input type="text" class="fragment-text-input" ... placeholder="{{ variant.value|e }}">
     </label>
 </div>
 ```
@@ -73,6 +88,8 @@ Implemented via `.fragment-text-label:has(#fragment-radio-N:checked) .fragment-t
 ```html
 <div class="variant-row ...>
     <input type="radio" ... id="fragment-radio-N">
+    <button class="btn-copy" data-html="{{ variant.value|e }}">Copy</button>
+    <span class="variant-label"><strong>Fragment Text</strong></span>
     <label for="fragment-radio-N" class="fragment-text-label">
         <span class="fragment-text-readonly">{{ variant.value|e }}</span>
         <input type="text" class="fragment-text-input" ...>
@@ -80,22 +97,20 @@ Implemented via `.fragment-text-label:has(#fragment-radio-N:checked) .fragment-t
 </div>
 ```
 
-Also remove JavaScript lines 407–414 that toggle visibility based on checked radio.
+Removed JavaScript lines 407–414 that toggled visibility based on checked radio. Also removed `textInput.style.display` logic from the radio change handler.
 
 ### `static/mirror.css`
 
-Add CSS rules using `:has()`:
+Added CSS rules using `:has()` on `.variant-row` (not `.fragment-text-label` since the radio is a sibling of the label, not a child):
 
 ```css
-/* Read-only span hidden when radio is checked */
-.fragment-text-label:has(input[name="fragment_variant"]:checked) .fragment-text-readonly {
-    display: none;
-}
+/* Read-only span visible by default, hidden when radio checked */
+.fragment-text-readonly { display: inline; }
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-readonly { display: none; }
 
-/* Editable input shown when radio is checked */
-.fragment-text-label:has(input[name="fragment_variant"]:checked) .fragment-text-input {
-    display: inline-block;
-}
+/* Editable input hidden by default, shown when radio checked */
+.variant-row:has(input[name="fragment_variant"]:checked) .fragment-text-input { display: inline-block; }
+.variant-row:not(:has(input[name="fragment_variant"]:checked)) .fragment-text-input { display: none; }
 ```
 
 Note: Browser support for `:has()` is now broad (Chrome 105+, Safari 15.4+, Firefox 121+). The project targets modern browsers via bookmarklet flow, so no IE11 fallback needed.
